@@ -9,3 +9,5 @@ pydantic-settings
 httpx
 pytest
 pytest-asyncio
+pyjwt
+email-validator
