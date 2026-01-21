@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Contribute - Exam Record</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-50 min-h-screen p-6" x-data="wizard()">
     <div class="max-w-2xl mx-auto bg-white shadow rounded p-6">
         <h1 class="text-2xl font-bold mb-4">Exam Report Wizard</h1>
-        
+
         <!-- Step Indicator -->
         <div class="mb-6 flex space-x-4 text-sm">
             <span :class="{'font-bold text-blue-600': step===1}">1. Composer</span>
@@ -20,33 +22,42 @@
         <!-- Step 1: Composer -->
         <div x-show="step === 1">
             <h2 class="text-xl mb-4">Who is the composer?</h2>
-            <input type="text" x-model="searchComposerQuery" @input.debounce.300ms="searchComposer" 
-                   class="w-full border p-2 rounded" placeholder="Search composer (e.g. Bach)">
-            
+            <input type="text" x-model="searchComposerQuery" @input.debounce.300ms="searchComposer"
+                class="w-full border p-2 rounded" placeholder="Search composer (e.g. Bach)">
+
             <div class="mt-4 space-y-2">
-                 <template x-for="c in composerResults" :key="c.id || c.wikidata_id">
-                     <div @click="selectComposer(c)" class="p-2 border rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center bg-gray-50">
-                         <span x-text="c.name"></span>
-                         <span x-show="c.is_verified" class="text-green-500 font-bold">✓</span>
-                     </div>
-                 </template>
+                <template x-for="c in composerResults" :key="c.id || c.wikidata_id">
+                    <div @click="selectComposer(c)"
+                        class="p-2 border rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center bg-gray-50">
+                        <span x-text="c.name"></span>
+                        <span x-show="c.is_verified" class="text-green-500 font-bold">✓</span>
+                    </div>
+                </template>
             </div>
-            
+
             <div x-show="searchComposerQuery.length > 2" class="mt-4 pt-4 border-t">
                 <p class="text-gray-500 text-sm mb-2" x-show="composerResults.length === 0">No local results found.</p>
                 <div class="flex gap-4 items-center">
-                    <button @click="searchWikidata" class="text-blue-600 underline text-sm">Search Global Database (Wikidata)</button>
+                    <button @click="searchWikidata" class="text-blue-600 underline text-sm">Search Global Database
+                        (Wikidata)</button>
                     <span class="text-gray-300">|</span>
-                    <button @click="createUnverifiedComposer" class="text-gray-600 underline text-sm">Use "{{ searchComposerQuery }}" (Unverified)</button>
+                    <button @click="createUnverifiedComposer" class="text-gray-600 underline text-sm">Use "<span
+                            x-text="searchComposerQuery"></span>" (Unverified)</button>
                 </div>
 
                 <div x-show="wikidataResults.length > 0" class="mt-4 bg-blue-50 p-4 rounded">
-                     <h3 class="font-bold text-sm text-blue-800 mb-2">Did you mean?</h3>
-                     <template x-for="c in wikidataResults" :key="c.wikidata_id">
-                         <div @click="selectComposer(c)" class="p-2 border border-blue-100 rounded bg-white hover:bg-blue-100 cursor-pointer mb-1">
-                             <span x-text="c.name"></span> <span class="text-xs text-gray-500 ml-1">(Wikidata)</span>
-                         </div>
-                     </template>
+                    <h3 class="font-bold text-sm text-blue-800 mb-2">Did you mean?</h3>
+                    <template x-for="c in wikidataResults" :key="c.wikidata_id">
+                        <div @click="selectComposer(c)"
+                            class="p-2 border border-blue-100 rounded bg-white hover:bg-blue-100 cursor-pointer mb-1">
+                            <div class="font-bold" x-text="c.name"></div>
+                            <div class="text-xs text-gray-600" x-text="c.description"></div>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="searchComposerQuery.length > 2 && wikidataResults.length === 0 && wikidataSearched"
+                    class="mt-4 text-gray-500 text-sm">
+                    No results found in global database.
                 </div>
             </div>
         </div>
@@ -54,58 +65,80 @@
         <!-- Step 2: Work -->
         <div x-show="step === 2">
             <h2 class="text-xl mb-4">Which work?</h2>
-            <p class="text-sm text-gray-500 mb-4">Composer: <span class="font-bold text-gray-800" x-text="selectedComposer ? selectedComposer.name : ''"></span></p>
-            
-            <input type="text" x-model="searchWorkQuery" @input.debounce.300ms="searchWork" 
-                   class="w-full border p-2 rounded" placeholder="Search work (e.g. Prelude)">
-            
-             <div class="mt-4 space-y-2">
-                 <template x-for="w in workResults" :key="w.id || w.openopus_id">
-                     <div @click="selectWork(w)" class="p-2 border rounded hover:bg-gray-100 cursor-pointer bg-gray-50">
-                         <span x-text="w.title"></span>
-                     </div>
-                 </template>
+            <p class="text-sm text-gray-500 mb-4">Composer: <span class="font-bold text-gray-800"
+                    x-text="selectedComposer ? selectedComposer.name : ''"></span></p>
+
+            <input type="text" x-model="searchWorkQuery" @input.debounce.300ms="searchWork"
+                class="w-full border p-2 rounded" placeholder="Search work (e.g. Prelude)">
+
+            <div class="mt-4 space-y-2">
+                <template x-for="w in workResults" :key="w.id || w.openopus_id">
+                    <div @click="selectWork(w)" class="p-2 border rounded hover:bg-gray-100 cursor-pointer bg-gray-50">
+                        <span x-text="w.title"></span>
+                        <span x-show="w.nickname" x-text="`(${w.nickname})`" class="text-xs text-gray-500 ml-1"></span>
+                    </div>
+                </template>
             </div>
 
             <!-- Lazy Builder Fallback -->
-             <div x-show="searchWorkQuery.length > 2" class="mt-4 border p-4 rounded bg-gray-50">
+            <div x-show="searchWorkQuery.length > 2" class="mt-4 border p-4 rounded bg-gray-50">
                 <h3 class="font-bold text-sm mb-2">Not found? Create a new entry.</h3>
-                <div class="flex gap-2 mt-2">
-                    <input type="text" x-model="lazyGenre" placeholder="Genre (e.g. Sonata)" class="border p-2 rounded flex-1 text-sm">
-                    <input type="text" x-model="lazyKey" placeholder="Key (e.g. C Major)" class="border p-2 rounded flex-1 text-sm">
+                <div class="space-y-2 mt-2">
+                    <div class="flex gap-2">
+                        <input type="text" x-model="lazyGenre" @input.debounce.500ms="updateLazySearch"
+                            placeholder="Genre (e.g. Sonata)" class="border p-2 rounded flex-1 text-sm">
+                        <input type="text" x-model="lazyKey" @input.debounce.500ms="updateLazySearch"
+                            placeholder="Key (e.g. C Major)" class="border p-2 rounded flex-1 text-sm">
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" x-model="lazyOpus" @input.debounce.500ms="updateLazySearch"
+                            placeholder="Opus (e.g. 57)" class="border p-2 rounded flex-1 text-sm">
+                        <input type="text" x-model="lazyNumber" @input.debounce.500ms="updateLazySearch"
+                            placeholder="No. (e.g. 23)" class="border p-2 rounded flex-1 text-sm">
+                    </div>
                 </div>
-                <button @click="createUnverifiedWork" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Create & Continue</button>
+                <button @click="createUnverifiedWork"
+                    class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Create &
+                    Continue</button>
             </div>
-            
-            <button @click="step=1" class="mt-6 text-sm text-gray-500 underline">Back to Composer</button>
+
+            <button @click="step=1; searchComposerQuery=''; composerResults=[]; wikidataResults=[]"
+                class="mt-6 text-sm text-gray-500 underline">Back to Composer</button>
         </div>
 
         <!-- Step 3: Scope -->
         <div x-show="step === 3">
-             <h2 class="text-xl mb-4">Final Details</h2>
-             <div class="mb-6 p-4 bg-blue-50 rounded border border-blue-100">
-                 <p class="mb-1"><span class="font-bold text-gray-600 w-24 inline-block">Composer:</span> <span x-text="selectedComposer ? selectedComposer.name : ''"></span></p>
-                 <p><span class="font-bold text-gray-600 w-24 inline-block">Work:</span> <span x-text="selectedWork ? selectedWork.title : ''"></span></p>
-             </div>
-             
-             <label class="block mb-2 font-bold text-sm">Scope</label>
-             <select x-model="scope" class="w-full border p-2 rounded mb-4">
-                 <option value="Whole Work">Whole Work</option>
-                 <option value="Movement">Movement</option>
-                 <option value="Excerpt">Excerpt</option>
-             </select>
-             
-             <div x-show="scope !== 'Whole Work'">
-                 <label class="block mb-2 font-bold text-sm">Details (Movement No. / Bars)</label>
-                 <input type="text" x-model="movementDetails" class="w-full border p-2 rounded" placeholder="e.g. I. Allegro">
-             </div>
-             
-             <button @click="submitReport" class="mt-6 bg-green-600 text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700 shadow">Submit Report</button>
-             <div x-show="submitStatus" class="mt-4 p-4 rounded text-center" :class="submitSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                 <p x-text="submitStatus"></p>
-             </div>
-             
-             <button @click="step=2" class="mt-4 text-sm text-gray-500 underline text-center w-full">Back to Work</button>
+            <h2 class="text-xl mb-4">Final Details</h2>
+            <div class="mb-6 p-4 bg-blue-50 rounded border border-blue-100">
+                <p class="mb-1"><span class="font-bold text-gray-600 w-24 inline-block">Composer:</span> <span
+                        x-text="selectedComposer ? selectedComposer.name : ''"></span></p>
+                <p><span class="font-bold text-gray-600 w-24 inline-block">Work:</span> <span
+                        x-text="selectedWork ? selectedWork.title : ''"></span></p>
+            </div>
+
+            <label class="block mb-2 font-bold text-sm">Scope</label>
+            <select x-model="scope" class="w-full border p-2 rounded mb-4">
+                <option value="Whole Work">Whole Work</option>
+                <option value="Movement">Movement</option>
+                <option value="Excerpt">Excerpt</option>
+            </select>
+
+            <div x-show="scope !== 'Whole Work'">
+                <label class="block mb-2 font-bold text-sm">Details (Movement No. / Bars)</label>
+                <input type="text" x-model="movementDetails" class="w-full border p-2 rounded"
+                    placeholder="e.g. I. Allegro">
+            </div>
+
+            <button @click="submitReport"
+                class="mt-6 bg-green-600 text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700 shadow">Submit
+                Report</button>
+            <div x-show="submitStatus" class="mt-4 p-4 rounded text-center"
+                :class="submitSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                <p x-text="submitStatus"></p>
+            </div>
+
+            <button @click="step=2" class="mt-4 text-sm text-gray-500 underline text-center w-full">Back to
+                Work</button>
         </div>
     </div>
 
@@ -117,71 +150,143 @@
                 searchComposerQuery: '',
                 composerResults: [],
                 wikidataResults: [],
+                wikidataSearched: false,
                 selectedComposer: null,
-                
+
                 // Work
                 searchWorkQuery: '',
                 workResults: [],
                 selectedWork: null,
                 lazyGenre: '',
                 lazyKey: '',
+                lazyOpus: '',
+                lazyNumber: '',
 
                 // Details
                 scope: 'Whole Work',
                 movementDetails: '',
-                
+
                 // Meta
                 submitStatus: '',
                 submitSuccess: false,
                 eventId: {{ event_id }},
 
+                init() {
+                    this.guestLogin();
+                },
+
+                async guestLogin() {
+                    try {
+                        await fetch('/api/auth/guest', { method: 'POST' });
+                    } catch (e) { console.error("Guest login failed", e); }
+                },
+
                 async searchComposer() {
-                    if (this.searchComposerQuery.length < 2) return;
+                    if (this.searchComposerQuery.length < 2) {
+                        this.composerResults = [];
+                        this.wikidataResults = [];
+                        return;
+                    }
                     try {
                         const res = await fetch(`/api/composers/search?q=${this.searchComposerQuery}&source=local`);
                         if (res.ok) this.composerResults = await res.json();
                     } catch (e) { console.error(e); }
                 },
-                
+
                 async searchWikidata() {
-                     try {
-                         const res = await fetch(`/api/composers/search?q=${this.searchComposerQuery}&source=wikidata`);
-                         if (res.ok) this.wikidataResults = await res.json();
-                     } catch (e) { console.error(e); }
+                    this.wikidataResults = [];
+                    this.wikidataSearched = false;
+                    try {
+                        const res = await fetch(`/api/composers/search?q=${this.searchComposerQuery}&source=wikidata`);
+                        this.wikidataSearched = true;
+                        if (res.ok) {
+                             this.wikidataResults = await res.json();
+                        }
+                    } catch (e) { console.error(e); }
                 },
 
                 selectComposer(c) {
                     this.selectedComposer = c;
                     this.searchWorkQuery = '';
                     this.workResults = [];
+                    // Reset lazy builder
+                    this.lazyGenre = '';
+                    this.lazyKey = '';
+                    this.lazyOpus = '';
+                    this.lazyNumber = '';
                     this.step = 2;
                 },
-                
+
                 createUnverifiedComposer() {
-                    this.selectedComposer = { name: this.searchComposerQuery, is_verified: false };
+                    const name = this.searchComposerQuery;
+                    this.selectedComposer = { name: name, is_verified: false };
                     this.step = 2;
                 },
 
                 async searchWork() {
-                    if (this.searchWorkQuery.length < 2) return;
-                    
-                    let url = `/api/works/search?q=${this.searchWorkQuery}&source=local`;
+                    const query = this.searchWorkQuery;
+                    if (query.length < 2) {
+                        this.workResults = [];
+                        return;
+                    }
+
+                    // If composer is wikidata-only (not in DB yet), don't search local works
+                    // or if unverified. Only search local if we have a local ID.
+                    if (!this.selectedComposer.id) {
+                        this.workResults = [];
+                        return;
+                    }
+
+                    let url = `/api/works/search?q=${query}&source=local`;
                     if (this.selectedComposer && this.selectedComposer.id) {
                         url += `&composer_id=${this.selectedComposer.id}`;
                     }
                     try {
                         const res = await fetch(url);
                         if (res.ok) this.workResults = await res.json();
-                    } catch (e) { console.error(e); }
+                    } catch (e) {
+                        console.error(e);
+                        this.workResults = [];
+                    }
                 },
-                
+
+                // Live search for Lazy Builder
+                updateLazySearch() {
+                    const parts = [
+                        this.lazyGenre,
+                        this.lazyKey,
+                        this.lazyOpus ? 'Op. ' + this.lazyOpus : '',
+                        this.lazyNumber ? 'No. ' + this.lazyNumber : ''
+                    ];
+                    // Join non-empty parts
+                    const validParts = parts.filter(p => p && p.trim().length > 0);
+                    const potentialTitle = validParts.join(' ');
+
+                    if (potentialTitle.length > 2) {
+                        this.searchWorkQuery = potentialTitle;
+                        // Only search if we have a composer ID to search against
+                        if (this.selectedComposer.id) {
+                            this.searchWork();
+                        } else {
+                            this.workResults = [];
+                        }
+                    }
+                },
+
                 selectWork(w) {
                     this.selectedWork = w;
                     this.step = 3;
                 },
-                
+
                 createUnverifiedWork() {
-                    const title = (this.lazyGenre + (this.lazyKey ? ' in ' + this.lazyKey : '')).trim() || this.searchWorkQuery;
+                    const parts = [
+                        this.lazyGenre,
+                        this.lazyKey ? 'in ' + this.lazyKey : '',
+                        this.lazyOpus ? 'Op. ' + this.lazyOpus : '',
+                        this.lazyNumber ? 'No. ' + this.lazyNumber : ''
+                    ];
+                    const title = parts.filter(p => p && p.trim().length > 0).join(' ').trim() || this.searchWorkQuery;
+
                     this.selectedWork = { title: title, is_verified: false };
                     this.step = 3;
                 },
@@ -194,20 +299,19 @@
                         scope: this.scope,
                         movement_details: this.movementDetails
                     };
-                    
+
                     try {
                         const res = await fetch('/api/reports/', {
                             method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        
+
                         if (res.ok) {
                             this.submitSuccess = true;
                             this.submitStatus = "Success! Report submitted.";
                             setTimeout(() => {
-                                // Optional: Redirect or reset
-                                window.location.reload(); 
+                                window.location.reload();
                             }, 2000);
                         } else {
                             const err = await res.json();
@@ -223,4 +327,5 @@
         }
     </script>
 </body>
+
 </html>

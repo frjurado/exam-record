@@ -78,3 +78,45 @@ async def read_users_me(current_user: User = Depends(deps.get_current_user)):
         "role": current_user.role,
         "id": current_user.id
     }
+@router.post("/guest")
+async def guest_login(db: AsyncSession = Depends(get_db)):
+    """
+    Create or retrieve a guest user and return a token.
+    For simplicity, we use a fixed guest account or create new ones.
+    Let's use a single shared 'guest' account for now to keep DB clean, 
+    or random ones. Random is better for separate sessions if strictly needed?
+    Design decision: Shared guest for simplicity or unique? 
+    Let's go limit-less unique for now to avoid collisions if we track sessions.
+    Actually, let's use a consistent 'guest' role user based on a generic email pattern 
+    or just 'guest' for all visitors if they don't provide email.
+    
+    Implementing: Create a generic guest user if not exists.
+    """
+    # Simply create a new guest per session or reuse?
+    # Let's create a deterministic guest for simplicity of 'visitor' role
+    email = "guest@examrecord.local"
+    
+    result = await db.execute(select(User).filter(User.email == email))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        user = User(email=email, role="Visitor", hashed_password="guest_password") # Needs hashed pw if model requires it? Model def says hashed_password is str.
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    token = security.create_access_token(
+        data={"sub": user.email, "role": user.role},
+        expires_delta=access_token_expires
+    )
+    
+    response = JSONResponse(content={"message": "Guest authenticated", "token": token})
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return response

@@ -30,19 +30,16 @@ async def search_composer(query: str) -> List[Dict]:
         
     results = []
     for item in data.get("search", []):
-        # We could filter by 'description' containing 'composer' if we wanted to be stricter,
-        # but for now we follow the plan: return simplified objects.
-        results.append({
-            "name": item.get("label"),
-            "wikidata_id": item.get("id"),
-            "description": item.get("description"),
-            # Wikidata API search doesn't always return birth/death directly in the search result.
-            # We might need a secondary query or just return what we have for the search list.
-            # The plan says "birth/death" but standard wbsearchentities checks text match.
-            # Let's stick to what's available or simple.
-            # If we strictly need birth/death in search key, we'd need SPARQL or EntityData.
-            # For this MVP step, let's return what we can and maybe fetch details later.
-        })
+         # To filter by occupation, we often need a secondary check because standard search doesn't return claims.
+         # Ideally, we would use a SPARQL query or WBGETENTITIES, but for search box speed, we might have to accept some noise.
+         # However, we can check the description for "composer".
+         description = item.get("description", "").lower()
+         if "composer" in description:
+            results.append({
+                "name": item.get("label"),
+                "wikidata_id": item.get("id"),
+                "description": item.get("description"),
+            })
     return results
 
 async def get_composer_by_id(wikidata_id: str) -> Dict:
