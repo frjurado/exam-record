@@ -19,7 +19,7 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
 
 ## Phase 3: The User Experience (Week 3)
 **Goal:** Verified users can submit data via the UI.
-*   **3.1 The "Wizard":** Build the Data Input Form (Alpine.js) utilizing the Search APIs.
+*   **3.1 The "Wizard":** [Done] Build the Data Input Form (Alpine.js) utilizing the Search APIs.
     *   Step 1: Composer (Select/Verify).
     *   Step 2: Work (Select/Alias/Create).
     *   Step 3: Details (Movement/Excerpt).
