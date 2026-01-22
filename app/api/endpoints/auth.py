@@ -1,5 +1,5 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -19,6 +19,7 @@ class MagicLinkRequest(BaseModel):
 
 @router.post("/magic-link")
 async def request_magic_link(
+    request: Request,
     request_data: MagicLinkRequest,
     db: AsyncSession = Depends(get_db)
 ):
@@ -45,8 +46,15 @@ async def request_magic_link(
     )
     
     # In production, send email. Here, logging.
-    base_url = "http://localhost:8000/auth/verify"
-    next_param = f"&next={request_data.next_url}" if request_data.next_url else ""
+    # Dynamic base URL to match the user's current host (localhost vs 127.0.0.1)
+    base_url = str(request.base_url).rstrip("/") + "/auth/verify"
+    
+    next_param = ""
+    if request_data.next_url:
+        from urllib.parse import quote_plus
+        encoded_next = quote_plus(request_data.next_url)
+        next_param = f"&next={encoded_next}"
+        
     magic_link = f"{base_url}?token={access_token}{next_param}"
     
     print(f"MAGIC LINK FOR {email}: {magic_link}") # Print to console for manual testing
@@ -73,6 +81,8 @@ async def verify_magic_link(
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax",
+        path="/"
     )
     return response
 
