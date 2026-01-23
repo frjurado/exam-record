@@ -61,20 +61,23 @@ async def exam_page(
 
     # Calculate Consensus & Sort
     works_list = []
+    has_verified_work = False
+
     for wid, data in works_map.items():
         votes = data["votes"]
         consensus_rate = votes / total_votes if total_votes > 0 else 0
         percentage = int(consensus_rate * 100)
 
-        # Trust State Logic
-        status = "neutral"  # Default
-        if votes == 1:
-            status = "neutral"
-        elif votes >= 2:
+        # Trust State Logic (Per Work)
+        status = "neutral"
+        if votes >= 2:
             if consensus_rate >= 0.75:
                 status = "verified"
+                has_verified_work = True
             else:
                 status = "disputed"
+        elif votes == 1:
+            status = "neutral"
         
         data["percentage"] = percentage
         data["status"] = status
@@ -83,6 +86,17 @@ async def exam_page(
     # Sort by votes descending
     works_list.sort(key=lambda x: x["votes"], reverse=True)
 
+    # Event Level Consensus
+    event_status = "neutral"
+    if total_votes == 0:
+        event_status = "empty"
+    elif total_votes == 1:
+        event_status = "neutral"
+    elif has_verified_work:
+        event_status = "resolved"
+    else:
+        event_status = "disputed"
+
     return templates.TemplateResponse("event.html", {
         "request": request,
         "event": event,
@@ -90,7 +104,8 @@ async def exam_page(
         "discipline_slug": discipline_slug,
         "year": year,
         "works": works_list,
-        "total_votes": total_votes
+        "total_votes": total_votes,
+        "event_status": event_status
     })
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}/contribute", response_class=HTMLResponse)

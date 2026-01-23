@@ -88,13 +88,13 @@ async def test_consensus_logic():
     # 4. Assertions
     # Work A: 2/3 votes = 66%. Should be DISPUTED (Orange).
     assert "Prelude A" in html
+    # Event Level: Disputed (because no verified winner, total votes >= 2)
+    assert "Conflicting reports" in html
     assert "Disputed" in html
     assert "66%" in html
     
-    # Work B: 1/3 votes. Should be NEUTRAL (Gray).
+    # Work B: 1/3 votes. Should be listed but not Verified.
     assert "Prelude B" in html
-    assert "Neutral" in html
-    assert "Verified" not in html
 
     # Case 2: Clean Verified
     # Let's add a NEW event for verified test
@@ -115,5 +115,24 @@ async def test_consensus_logic():
         
     html2 = response.text
     assert "Prelude A" in html2
-    assert "Verified" in html2
-    assert "Disputed" not in html2
+    # Event Level: Resolved/Verified
+    assert "Verified by students" in html2
+    
+    # Case 3: Neutral (Single Source)
+    async with TestingSessionLocal() as db:
+        event3 = ExamEvent(year=2028, region_id=region.id, discipline_id=discipline.id)
+        db.add(event3)
+        await db.commit()
+        
+        # 1 Vote for Work B
+        r6 = Report(user_id=user3.id, event_id=event3.id, work_id=work_b.id)
+        db.add(r6)
+        await db.commit()
+
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.get("/exams/andalucia/piano/2028")
+        
+    html3 = response.text
+    assert "Prelude B" in html3
+    # Event Level: Neutral
+    assert "Single source for this exam" in html3
