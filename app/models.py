@@ -70,6 +70,7 @@ class Work(Base):
     composer = relationship("Composer", back_populates="works")
     reports = relationship("Report", back_populates="work")
 
+
 class Report(Base):
     __tablename__ = "reports"
 
@@ -84,3 +85,19 @@ class Report(Base):
     user = relationship("User", back_populates="reports")
     event = relationship("ExamEvent", back_populates="reports")
     work = relationship("Work", back_populates="reports")
+    votes = relationship("Vote", back_populates="report", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint('event_id', 'work_id', name='uix_event_work_report'),
+    )
+
+class Vote(Base):
+    __tablename__ = "votes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    report_id = Column(Integer, ForeignKey("reports.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User")
+    report = relationship("Report", back_populates="votes")

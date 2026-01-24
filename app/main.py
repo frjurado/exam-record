@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from app.db.session import get_db
 from app.models import ExamEvent, Region, Discipline, Report, Work, Composer
 from app.core.config import settings
@@ -28,6 +28,7 @@ async def exam_page(
             joinedload(ExamEvent.reports)
             .joinedload(Report.work)
             .joinedload(Work.composer),
+            joinedload(ExamEvent.reports).selectinload(Report.votes),
             joinedload(ExamEvent.region),
             joinedload(ExamEvent.discipline)
         )
@@ -46,47 +47,46 @@ async def exam_page(
         return HTMLResponse(content="<h1>Event not found</h1>", status_code=404)
 
     # Aggregation Logic
-    total_votes = len(event.reports)
-    works_map = {}
-
-    for report in event.reports:
-        work_id = report.work.id
-        if work_id not in works_map:
-            works_map[work_id] = {
-                "work": report.work,
-                "composer": report.work.composer,
-                "votes": 0
-            }
-        works_map[work_id]["votes"] += 1
-
-    # Calculate Consensus & Sort
+    total_votes = 0
     works_list = []
-    has_verified_work = False
+    
+    # First pass: Count total votes
+    for report in event.reports:
+        total_votes += len(report.votes)
 
-    for wid, data in works_map.items():
-        votes = data["votes"]
-        consensus_rate = votes / total_votes if total_votes > 0 else 0
+    # Second pass: Build list
+    for report in event.reports:
+        votes_count = len(report.votes)
+        
+        # Calculate percentage based on TOTAL votes for the EVENT
+        consensus_rate = votes_count / total_votes if total_votes > 0 else 0
         percentage = int(consensus_rate * 100)
 
         # Trust State Logic (Per Work)
         status = "neutral"
-        if votes >= 2:
+        if votes_count >= 2:
             if consensus_rate >= 0.75:
                 status = "verified"
-                has_verified_work = True
             else:
                 status = "disputed"
-        elif votes == 1:
+        elif votes_count == 1:
             status = "neutral"
         
-        data["percentage"] = percentage
-        data["status"] = status
-        works_list.append(data)
+        works_list.append({
+            "report_id": report.id,
+            "work": report.work,
+            "composer": report.work.composer,
+            "votes": votes_count,
+            "percentage": percentage,
+            "status": status,
+            "is_flagged": report.is_flagged
+        })
 
     # Sort by votes descending
     works_list.sort(key=lambda x: x["votes"], reverse=True)
 
     # Event Level Consensus
+    has_verified_work = any(item["status"] == "verified" for item in works_list)
     event_status = "neutral"
     if total_votes == 0:
         event_status = "empty"
@@ -142,6 +142,48 @@ async def health_check():
         "app": settings.PROJECT_NAME,
         "environment": settings.ENVIRONMENT
     }
+
+@app.get("/robots.txt", response_class=HTMLResponse)
+async def robots_txt():
+    content = """User-agent: *
+Allow: /
+Sitemap: https://exam-record.com/sitemap.xml
+"""
+    return Response(content=content, media_type="text/plain")
+
+@app.get("/sitemap.xml", response_class=HTMLResponse)
+async def sitemap_xml(request: Request, db: AsyncSession = Depends(get_db)):
+    stmt = (
+        select(ExamEvent)
+        .options(
+            joinedload(ExamEvent.region),
+            joinedload(ExamEvent.discipline)
+        )
+    )
+    result = await db.execute(stmt)
+    events = result.scalars().all()
+    
+    base_url = str(request.base_url).rstrip("/")
+    
+    xml_content = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml_content.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    
+    # Home Page (?) - We don't have one exposed yet, maybe just the base
+    # xml_content.append(f'<url><loc>{base_url}/</loc></url>')
+    
+    for event in events:
+        loc = f"{base_url}/exams/{event.region.slug}/{event.discipline.slug}/{event.year}"
+        xml_content.append(f"""
+            <url>
+                <loc>{loc}</loc>
+                <changefreq>weekly</changefreq>
+                <priority>0.8</priority>
+            </url>
+        """)
+        
+    xml_content.append('</urlset>')
+    
+    return Response(content="".join(xml_content), media_type="application/xml")
 
 if __name__ == "__main__":
     import uvicorn

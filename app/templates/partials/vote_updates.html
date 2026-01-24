@@ -1,0 +1,17 @@
+{% if item %}
+{% include 'partials/work_card.html' %}
+{% endif %}
+
+{% if event_status %}
+{% include 'partials/event_status_banner.html' %}
+{% endif %}
+
+{% for item in other_items %}
+{% with swap_oob=True %}
+{% include 'partials/work_card.html' %}
+{% endwith %}
+{% endfor %}
+
+{% if show_auth_modal %}
+{% include 'partials/auth_modal.html' %}
+{% endif %}

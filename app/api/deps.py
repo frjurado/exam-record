@@ -37,6 +37,7 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     result = await db.execute(select(User).filter(User.email == user_email))
     user = result.scalar_one_or_none()
     
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -44,3 +45,29 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
         )
         
     return user
+
+async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[User]:
+    token = request.cookies.get("access_token")
+    if not token:
+        # Check header
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            
+    if not token:
+        return None
+        
+    try:
+        payload = verify_token(token)
+        if not payload:
+            return None
+            
+        user_email = payload.get("sub")
+        if not user_email:
+            return None
+            
+        result = await db.execute(select(User).filter(User.email == user_email))
+        user = result.scalar_one_or_none()
+        return user
+    except:
+        return None

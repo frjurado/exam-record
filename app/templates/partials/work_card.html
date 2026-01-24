@@ -1,0 +1,106 @@
+{% if item.status == 'verified' %}
+<!-- Resolved Style -->
+<div class="work-card bg-white p-6 rounded-lg shadow-md border border-green-200 ring-2 ring-green-100 flex justify-between items-center"
+    id="report-{{ item.report_id }}" {% if swap_oob %}hx-swap-oob="true" {% endif %}>
+    <div class="flex-1">
+        <h2 class="text-2xl font-bold text-gray-800">
+            {{ item.work.title }}
+            {% if item.work.nickname %}
+            <span class="text-gray-500 font-normal italic">("{{ item.work.nickname }}")</span>
+            {% endif %}
+        </h2>
+        <p class="text-lg text-gray-700">{{ item.composer.name }}</p>
+        <div class="mt-2 text-sm text-green-700 font-medium">
+            {{ item.votes }} verified votes ({{ item.percentage }}% match)
+        </div>
+        {% if item.is_flagged %}
+        <div class="mt-2 text-red-600 text-xs font-bold uppercase tracking-wide">
+            Flagged for review
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="ml-4 flex flex-col items-end gap-2">
+        <!-- Verified Badge -->
+        <span
+            class="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-green-100 text-green-800 mb-2">
+            <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clip-rule="evenodd" />
+            </svg>
+            Correct Entry
+        </span>
+
+        <!-- Actions (Even for verified, to allow flagging or piling on) -->
+        <div class="flex gap-2">
+            <button
+                class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-1 px-3 border border-blue-200 rounded text-sm transition"
+                hx-post="/api/reports/{{ item.report_id }}/vote" hx-target="#report-{{ item.report_id }}"
+                hx-swap="outerHTML">
+                Me too!
+            </button>
+            <button class="text-gray-300 hover:text-red-500 transition" title="Flag as incorrect"
+                hx-post="/api/reports/{{ item.report_id }}/flag" hx-target="#report-{{ item.report_id }}"
+                hx-swap="outerHTML" hx-confirm="Are you sure you want to flag this entry as incorrect?">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 21v-8a2 2 0 01-2.18-2 19.5 19.5 0 0110-6 19.5 19.5 0 0110 6V9a19.5 19.5 0 01-10-6 19.5 19.5 0 01-10 6z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Standard Style (Neutral/Disputed) -->
+<div class="work-card bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition flex justify-between items-center 
+     {% if event_status == 'disputed' or item.status == 'disputed' %}border-orange-300 bg-orange-50{% else %}border-gray-200{% endif %}"
+    id="report-{{ item.report_id }}" {% if swap_oob %}hx-swap-oob="true" {% endif %}>
+
+    <div class="flex-1">
+        <h2 class="text-xl font-bold text-gray-800">
+            {{ item.work.title }}
+            {% if item.work.nickname %}
+            <span class="text-gray-500 font-normal italic">("{{ item.work.nickname }}")</span>
+            {% endif %}
+        </h2>
+        <p class="text-gray-600">{{ item.composer.name }}</p>
+
+        <div class="mt-2 text-sm">
+            {% if event_status == 'disputed' or item.votes > 1 %}
+            <span
+                class="font-medium {% if item.status == 'disputed' %}text-orange-800{% else %}text-gray-600{% endif %}">
+                {{ item.votes }} vote(s) ({{ item.percentage }}%)
+            </span>
+            {% else %}
+            <span class="text-gray-500 italic">Reported 1 time.</span>
+            {% endif %}
+        </div>
+
+        {% if item.is_flagged %}
+        <div class="mt-2 text-red-600 text-xs font-bold uppercase tracking-wide">
+            Flagged for review
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="ml-4 flex flex-col items-end gap-2">
+        <button
+            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-1 px-3 border border-blue-200 rounded text-sm transition"
+            hx-post="/api/reports/{{ item.report_id }}/vote" hx-target="#report-{{ item.report_id }}"
+            hx-swap="outerHTML">
+            Me too!
+        </button>
+
+        <button class="text-gray-300 hover:text-red-500 transition" title="Flag as incorrect"
+            hx-post="/api/reports/{{ item.report_id }}/flag" hx-target="#report-{{ item.report_id }}"
+            hx-swap="outerHTML" hx-confirm="Are you sure you want to flag this entry as incorrect?">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 21v-8a2 2 0 01-2.18-2 19.5 19.5 0 0110-6 19.5 19.5 0 0110 6V9a19.5 19.5 0 01-10-6 19.5 19.5 0 01-10 6z" />
+            </svg>
+        </button>
+    </div>
+</div>
+{% endif %}

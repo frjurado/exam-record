@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Exam Record{% endblock %}</title>
+    <meta name="description"
+        content="{% block description %}Community-verified records of conservatory exam pieces.{% endblock %}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+    {% block og_image %}{% endblock %}
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.url }}">
+    <meta property="twitter:title" content="{{ self.title() }}">
+    <meta property="twitter:description" content="{{ self.description() }}">
+    {% block twitter_image %}{% endblock %}
+
+    {% block canonical %}
+    <link rel="canonical" href="{{ request.url }}">{% endblock %}
+
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Global Modals/Scripts -->
+    <div id="auth-modal"></div>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
