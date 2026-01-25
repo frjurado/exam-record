@@ -299,7 +299,7 @@
 
                     async checkAuth() {
                         try {
-                            const res = await fetch('/auth/me', { credentials: 'include' });
+                            const res = await fetch('/api/auth/me', { credentials: 'include' });
                             if (res.ok) {
                                 this.isAuthenticated = true;
                                 if (this.step === 3) {
@@ -322,7 +322,7 @@
                                 next_url: window.location.href // This ensures we come back here
                             };
 
-                            const res = await fetch('/auth/magic-link', {
+                            const res = await fetch('/api/auth/magic-link', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(payload)
@@ -474,7 +474,8 @@
                                 this.submitStatus = "Success! Report submitted.";
                                 this.clearState(); // Clear stored state on success
                                 setTimeout(() => {
-                                    window.location.reload();
+                                    // Redirect to event page (remove /contribute from URL)
+                                    window.location.href = window.location.href.replace('/contribute', '');
                                 }, 2000);
                             } else {
                                 const err = await res.json();

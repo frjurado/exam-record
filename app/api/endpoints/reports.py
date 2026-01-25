@@ -194,19 +194,17 @@ async def vote_report(
     # Add vote
     # Check if user already voted? Unique constraint usually handles this or we ignore.
     # Assuming simple insert for now.
-    user_voted = any(v.user_id == current_user.id for v in report.votes)
-    if not user_voted:
-        vote = Vote(user_id=current_user.id, report_id=report.id)
-        db.add(vote)
-        await db.commit()
-        # We need to refresh the report's votes collection. 
-        # Since we have the object in session, we can expire it or just re-fetch.
-        # But report.event.reports might be stale too.
-        # Simplest is to re-execute the query or manually append.
-        # Let's re-fetch to be safe and clean.
-        db.expire_all() 
-        result = await db.execute(query)
-        report = result.unique().scalar_one_or_none()
+    # 2. Authenticated Case
+    # Add vote
+    # Unlimited voting allowed for now
+    vote = Vote(user_id=current_user.id, report_id=report.id)
+    db.add(vote)
+    await db.commit()
+
+    # Refresh data
+    db.expire_all() 
+    result = await db.execute(query)
+    report = result.unique().scalar_one_or_none()
     
     # Recalculate context for ALL items
     total_votes = sum(len(r.votes) for r in report.event.reports)

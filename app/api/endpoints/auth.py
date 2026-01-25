@@ -47,7 +47,7 @@ async def request_magic_link(
     
     # In production, send email. Here, logging.
     # Dynamic base URL to match the user's current host (localhost vs 127.0.0.1)
-    base_url = str(request.base_url).rstrip("/") + "/auth/verify"
+    base_url = str(request.base_url).rstrip("/") + "/api/auth/verify"
     
     next_param = ""
     if request_data.next_url:
