@@ -33,4 +33,5 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
     *   Implement "Me Too" button (Quick Vote).
     *   Implement "Flag/Report" button.
 *   **4.2 SEO Basics:** Meta tags, readable URLs.
-*   **4.3 Beta Launch:** Deploy to a VPS/Cloud (Constraint: Andalucía + Piano only).
+*   **4.3 Launch Prep:** Root Page, Region/Discipline Navigation, Routing.
+*   **4.4 Beta Launch:** Deploy to a VPS/Cloud (Constraint: Andalucía + Piano only).

@@ -14,6 +14,58 @@ templates = Jinja2Templates(directory="app/templates")
 
 app.include_router(api_router)
 
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/exams/{region_slug}/{discipline_slug}", response_class=HTMLResponse)
+async def discipline_page(
+    request: Request,
+    region_slug: str,
+    discipline_slug: str,
+    db: AsyncSession = Depends(get_db)
+):
+    # Verify Region and Discipline exist
+    region = (await db.execute(select(Region).filter(Region.slug == region_slug))).scalar_one_or_none()
+    discipline = (await db.execute(select(Discipline).filter(Discipline.slug == discipline_slug))).scalar_one_or_none()
+
+    if not region or not discipline:
+        return HTMLResponse(content="<h1>Region or Discipline not found</h1>", status_code=404)
+
+    # Fetch events for this pair
+    stmt = (
+        select(ExamEvent)
+        .options(joinedload(ExamEvent.reports))
+        .filter(
+            ExamEvent.region_id == region.id,
+            ExamEvent.discipline_id == discipline.id
+        )
+        .order_by(ExamEvent.year.desc())
+    )
+    result = await db.execute(stmt)
+    events = result.scalars().unique().all()
+
+    # Process events to get status for display
+    events_data = []
+    for event in events:
+        report_count = len(event.reports)
+        status = "empty"
+        if report_count > 0:
+            status = f"{report_count} Reports" # enhanced logic can be added later
+        
+        events_data.append({
+            "year": event.year,
+            "status": status,
+            "report_count": report_count
+        })
+
+    return templates.TemplateResponse("discipline.html", {
+        "request": request,
+        "region": region,
+        "discipline": discipline,
+        "events": events_data
+    })
+
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}", response_class=HTMLResponse)
 async def exam_page(
     request: Request,

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Exam Record - Music Conservatory Entrance Exams{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto text-center py-16">
+    <h1 class="text-5xl font-bold mb-6 text-gray-900">
+        Unlock the <span class="text-blue-600">Exam Record</span>
+    </h1>
+    <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+        A community-driven database of music conservatory entrance exam works.
+        Democratizing access to historical exam data for students and teachers.
+    </p>
+
+    <div class="bg-blue-50 border border-blue-100 rounded-xl p-8 mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Beta Launch Access</h2>
+        <p class="text-gray-600 mb-6">
+            We are currently in a constrained beta phase. Access is limited to specific regions and disciplines.
+        </p>
+        <a href="/exams/andalucia/piano"
+            class="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            View Beta Exams (Andalucía Piano)
+            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+        </a>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8 text-left">
+        <div class="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Verified Data</h3>
+            <p class="text-gray-600">Repertoire lists verified by the community using our consensus system.</p>
+        </div>
+        <div class="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+            <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Historical Archive</h3>
+            <p class="text-gray-600">Browse past exam contents to understand trends and requirements.</p>
+        </div>
+        <div class="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">For Teachers</h3>
+            <p class="text-gray-600">Save research time and access printable lists for your students.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
