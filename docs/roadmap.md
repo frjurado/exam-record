@@ -34,4 +34,30 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
     *   Implement "Flag/Report" button.
 *   **4.2 SEO Basics:** Meta tags, readable URLs.
 *   **4.3 Launch Prep:** Root Page, Region/Discipline Navigation, Routing.
-*   **4.4 Beta Launch:** Deploy to a VPS/Cloud (Constraint: Andalucía + Piano only).
+*   **4.4 Beta Launch:** [Done] Deploy to a VPS/Cloud (Constraint: Andalucía + Piano only).
+
+## Phase 5: Refinement & Localization (v0.2.0)
+**Goal:** Transform the raw Beta into a user-friendly, Spanish-language product with reliable systems.
+*   **5.1 Localization (Spanish):**
+    *   Translate all UI text to Spanish.
+    *   Update static data (Regions/Disciplines are already Spanish, ensuring matching UI).
+*   **5.2 Critical Infrastructure:**
+    *   **Real Email System:** Replace console logging with a real provider (e.g., SMTP/SendGrid/SES) for Magic Links.
+    *   **Form Hardening:** Fix usability issues in the Contribution Wizard, improve validation, and ensuring state persistence.
+*   **5.3 Rebranding & Polish:**
+    *   **Appearance:** New Favicon, potential Name Change ("Exam Record" -> ?).
+    *   **SEO:** Verify meta tags and sitemap generation.
+
+## Phase 6: Structure & Navigation (v0.3.0)
+**Goal:** robust navigation and architectural integrity.
+*   **6.1 Navigation Overhaul:**
+    *   Implement "Year" navigation (past/future exams).
+    *   Review and fix all redirect/breadcrumb paths.
+*   **6.2 Codebase Health:**
+    *   **Testing:** Implement specific unit tests (Pytest) for critical paths (voting, submission).
+    *   **Cleanup:** Review directory structure and remove unused artifacts.
+
+## Phase 7: Expansion (v0.4.0+)
+**Goal:** Grow the dataset and scope.
+*   **7.1 New Disciplines/Regions:** Add 1-2 more disciplines (e.g., Violin, Guitar).
+*   **7.2 Advanced features:** Comparative analytics between years/regions.
