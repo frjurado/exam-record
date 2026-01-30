@@ -30,7 +30,7 @@ async def discipline_page(
     discipline = (await db.execute(select(Discipline).filter(Discipline.slug == discipline_slug))).scalar_one_or_none()
 
     if not region or not discipline:
-        return HTMLResponse(content="<h1>Region or Discipline not found</h1>", status_code=404)
+        return HTMLResponse(content="<h1>Región o Especialidad no encontrada</h1>", status_code=404)
 
     # Fetch events for this pair
     stmt = (
@@ -49,9 +49,13 @@ async def discipline_page(
     events_data = []
     for event in events:
         report_count = len(event.reports)
-        status = "empty"
+        status = "vacío"
         if report_count > 0:
-            status = f"{report_count} Reports" # enhanced logic can be added later
+            # Pluralization check
+            if report_count == 1:
+                status = f"{report_count} Aportación"
+            else:
+                status = f"{report_count} Aportaciones"
         
         events_data.append({
             "year": event.year,
@@ -96,7 +100,7 @@ async def exam_page(
     event = result.unique().scalar_one_or_none()
 
     if not event:
-        return HTMLResponse(content="<h1>Event not found</h1>", status_code=404)
+        return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
 
     # Aggregation Logic
     total_votes = 0
@@ -177,7 +181,7 @@ async def contribute_page(
     event = result.scalar_one_or_none()
     
     if not event:
-        return HTMLResponse(content="<h1>Event not found</h1>", status_code=404)
+        return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
 
     return templates.TemplateResponse("wizard.html", {
         "request": request,

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="mb-8">
     <nav class="flex items-center text-sm text-gray-500 mb-4">
-        <a href="/" class="hover:text-blue-600 transition-colors">Home</a>
+        <a href="/" class="hover:text-blue-600 transition-colors">Inicio</a>
         <svg class="h-4 w-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
@@ -14,9 +14,9 @@
 
     <div class="flex items-center space-x-4">
         <h1 class="text-3xl font-bold text-gray-900">{{ region.name }} - {{ discipline.name }}</h1>
-        <span class="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full font-medium">Verified Works</span>
+        <span class="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full font-medium">Obras Verificadas</span>
     </div>
-    <p class="mt-2 text-gray-600">Browse historical entrance exam works for this conservatory region.</p>
+    <p class="mt-2 text-gray-600">Explora obras de examen históricas para esta región.</p>
 </div>
 
 <div class="grid gap-6">
@@ -28,14 +28,14 @@
                 <h2 class="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                     {{ event.year }}
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Entrance Exam Session</p>
+                <p class="text-sm text-gray-500 mt-1">Convocatoria de Acceso</p>
             </div>
 
             <div class="flex items-center">
                 {% if event.status == "empty" %}
                 <span
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-                    No Data
+                    Sin Datos
                 </span>
                 {% else %}
                 <span
@@ -57,7 +57,7 @@
     </a>
     {% else %}
     <div class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-        <p class="text-gray-500 text-lg">No exam events found for this region.</p>
+        <p class="text-gray-500 text-lg">No se encontraron convocatorias para esta región.</p>
     </div>
     {% endfor %}
 </div>
@@ -71,10 +71,10 @@
             </svg>
         </div>
         <div class="ml-4">
-            <h3 class="text-md font-medium text-blue-900">Missing a year?</h3>
+            <h3 class="text-md font-medium text-blue-900">¿Falta un año?</h3>
             <p class="mt-1 text-sm text-blue-700">
-                We are gradually expanding our historical database. If you have verified information for other years,
-                please subscribe to our updates to know when contributions open for older sessions.
+                Estamos ampliando gradualmente nuestra base de datos. Si tienes información verificada de otros años,
+                suscríbete para saber cuándo se abrirán las contribuciones para convocatorias anteriores.
             </p>
         </div>
     </div>

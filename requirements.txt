@@ -11,3 +11,4 @@ pytest
 pytest-asyncio
 pyjwt
 email-validator
+gunicorn

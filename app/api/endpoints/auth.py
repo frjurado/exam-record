@@ -57,7 +57,10 @@ async def request_magic_link(
         
     magic_link = f"{base_url}?token={access_token}{next_param}"
     
-    print(f"MAGIC LINK FOR {email}: {magic_link}") # Print to console for manual testing
+    import logging
+    logger = logging.getLogger("uvicorn")
+    logger.info(f"MAGIC LINK FOR {email}: {magic_link}")
+    print(f"MAGIC LINK FOR {email}: {magic_link}") # Fallback
     
     return {"message": "Magic link sent (check console)"}
 
@@ -71,7 +74,7 @@ async def verify_magic_link(
     """
     payload = security.verify_token(token)
     if not payload:
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise HTTPException(status_code=400, detail="Token inválido")
         
     redirect_url = next if next else "/health"
     response = RedirectResponse(url=redirect_url)

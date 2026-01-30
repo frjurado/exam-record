@@ -29,15 +29,15 @@
 
         <div>
             <h3 class="font-bold text-lg">
-                {% if event_status == 'resolved' %}Verified by students.
-                {% elif event_status == 'disputed' %}Conflicting reports. Please check details.
-                {% else %}Single source for this exam.{% endif %}
+                {% if event_status == 'resolved' %}Verificado por estudiantes.
+                {% elif event_status == 'disputed' %}Reportes conflictivos. Por favor revisa los detalles.
+                {% else %}Reporte único para este examen.{% endif %}
             </h3>
             <p class="text-sm opacity-90">
-                {% if event_status == 'resolved' %}There is high community agreement on this work.{% endif %}
-                {% if event_status == 'disputed' %}Multiple works have been reported. Please help us verify the
-                correct one.{% endif %}
-                {% if event_status == 'neutral' %}Waiting for confirmation from other students.{% endif %}
+                {% if event_status == 'resolved' %}Existe un alto consenso en la comunidad sobre esta obra.{% endif %}
+                {% if event_status == 'disputed' %}Se han reportado varias obras. Ayúdanos a verificar la correcta.{%
+                endif %}
+                {% if event_status == 'neutral' %}Esperando confirmación de otros estudiantes.{% endif %}
             </p>
         </div>
     </div>

@@ -2,8 +2,9 @@
 
 {% block title %}{{ event.discipline.name }} - {{ event.region.name }} - {{ event.year }} | Exam Record{% endblock %}
 
-{% block description %}Vote and verify the work performed for the {{ event.year }} {{ event.discipline.name }} exam in
-{{ event.region.name }}. See current consensus and contribute.{% endblock %}
+{% block description %}Vota y verifica la obra interpretada para el examen de {{ event.discipline.name }} de {{
+event.year }} en
+{{ event.region.name }}. Consulta el consenso actual y contribuye.{% endblock %}
 
 {% block content %}
 <!-- Header -->
@@ -36,7 +37,7 @@
                 viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-            See {{ other_works_count }} other reported option(s) (low confidence)
+            Ver otras {{ other_works_count }} opción(es) reportada(s) (baja confianza)
         </button>
 
         <div x-show="open" class="mt-4 space-y-3 pl-4 border-l-2 border-gray-100" style="display: none;">
@@ -55,10 +56,10 @@
     {% include 'partials/work_card.html' %}
     {% else %}
     <div class="text-center py-10 text-gray-500">
-        <p class="mb-2">No reports found for this exam event yet.</p>
+        <p class="mb-2">Aún no se han encontrado reportes para este examen.</p>
         <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
             class="text-blue-600 underline font-medium">
-            Be the first to contribute!
+            ¡Sé el primero en contribuir!
         </a>
     </div>
     {% endfor %}
@@ -68,10 +69,10 @@
 
 <!-- Contribute Button at Bottom -->
 <div class="mt-12 text-center border-t pt-8">
-    <h3 class="text-lg font-medium text-gray-900 mb-4">Don't see your piece?</h3>
+    <h3 class="text-lg font-medium text-gray-900 mb-4">¿No ves tu obra?</h3>
     <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
         class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition">
-        Contribute a different work
+        Aportar otra obra
     </a>
 </div>
 {% endblock %}

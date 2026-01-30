@@ -25,7 +25,7 @@ async def create_report(
     result = await db.execute(select(ExamEvent).filter(ExamEvent.id == report_in.event_id))
     event = result.scalar_one_or_none()
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=404, detail="Convocatoria no encontrada")
 
     # 2. Process Composer
     composer = None
@@ -34,7 +34,7 @@ async def create_report(
         result = await db.execute(select(Composer).filter(Composer.id == report_in.composer.id))
         composer = result.scalar_one_or_none()
         if not composer:
-            raise HTTPException(status_code=404, detail="Composer not found")
+            raise HTTPException(status_code=404, detail="Compositor no encontrado")
     elif report_in.composer.wikidata_id:
         # Check if exists by wikidata_id
         result = await db.execute(select(Composer).filter(Composer.wikidata_id == report_in.composer.wikidata_id))
@@ -43,7 +43,7 @@ async def create_report(
             # Import from Wikidata
             try:
                 wd_data = await wikidata.get_composer_by_id(report_in.composer.wikidata_id)
-                name = wd_data.get("name") or report_in.composer.name or "Unknown Composer"
+                name = wd_data.get("name") or report_in.composer.name or "Compositor Desconocido"
                 composer = Composer(
                     name=name,
                     wikidata_id=report_in.composer.wikidata_id,
@@ -52,7 +52,7 @@ async def create_report(
                 db.add(composer)
                 await db.flush()
             except Exception as e:
-                 raise HTTPException(status_code=400, detail=f"Failed to verify Wikidata ID: {str(e)}")
+                 raise HTTPException(status_code=400, detail=f"Error verificando ID de Wikidata: {str(e)}")
     elif report_in.composer.name:
         # Unverified creation
         composer = Composer(
@@ -62,7 +62,7 @@ async def create_report(
         db.add(composer)
         await db.flush()
     else:
-        raise HTTPException(status_code=400, detail="Composer identification required")
+        raise HTTPException(status_code=400, detail="Identificación de compositor requerida")
 
     # 3. Process Work
     work = None
@@ -71,7 +71,7 @@ async def create_report(
         result = await db.execute(select(Work).filter(Work.id == report_in.work.id))
         work = result.scalar_one_or_none()
         if not work:
-             raise HTTPException(status_code=404, detail="Work not found")
+             raise HTTPException(status_code=404, detail="Obra no encontrada")
     elif report_in.work.openopus_id:
          # Check if exists
         result = await db.execute(select(Work).filter(Work.openopus_id == report_in.work.openopus_id))
@@ -79,7 +79,7 @@ async def create_report(
         if not work:
             # Create verified work
             if not report_in.work.title:
-                 raise HTTPException(status_code=400, detail="Work title required for new OpenOpus work")
+                 raise HTTPException(status_code=400, detail="Título de obra requerido para nueva obra OpenOpus")
             
             work = Work(
                 title=report_in.work.title,
@@ -99,7 +99,7 @@ async def create_report(
          db.add(work)
          await db.flush()
     else:
-         raise HTTPException(status_code=400, detail="Work identification required")
+         raise HTTPException(status_code=400, detail="Identificación de obra requerida")
 
     # 4. Get or Create Report (Candidate)
     full_details = report_in.movement_details
@@ -161,7 +161,7 @@ async def vote_report(
     report = result.unique().scalar_one_or_none()
     
     if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+        raise HTTPException(status_code=404, detail="Reporte no encontrado")
         
     # Helper to build item dict
     def build_item_dict(r, total_vs):
@@ -252,7 +252,7 @@ async def flag_report(
     report = result.unique().scalar_one_or_none()
     
     if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+        raise HTTPException(status_code=404, detail="Reporte no encontrado")
 
     # Helper (duplicated but safe)
     def build_item_dict(r, total_vs):
