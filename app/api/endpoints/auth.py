@@ -57,12 +57,15 @@ async def request_magic_link(
         
     magic_link = f"{base_url}?token={access_token}{next_param}"
     
-    import logging
-    logger = logging.getLogger("uvicorn")
-    logger.info(f"MAGIC LINK FOR {email}: {magic_link}")
-    print(f"MAGIC LINK FOR {email}: {magic_link}") # Fallback
+    from app.services.email import email_service
+    try:
+        await email_service.send_magic_link(email, magic_link)
+    except Exception as e:
+        # If email fails, don't break the client flow immediately but log it
+        # Actually for auth, if we can't send email, we should probably error out.
+        raise HTTPException(status_code=500, detail="Error sending email")
     
-    return {"message": "Magic link sent (check console)"}
+    return {"message": "Magic link sent"}
 
 @router.get("/verify")
 async def verify_magic_link(

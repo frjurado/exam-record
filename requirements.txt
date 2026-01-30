@@ -12,3 +12,6 @@ pytest-asyncio
 pyjwt
 email-validator
 gunicorn
+
+python-multipart
+resend

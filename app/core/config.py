@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Exam Record"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+    
+    # Email
+    RESEND_API_KEY: str | None = None
+    FROM_EMAIL: str = "onboarding@resend.dev"
 
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True)
 
