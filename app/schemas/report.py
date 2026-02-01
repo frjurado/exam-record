@@ -27,6 +27,7 @@ class ReportCreate(BaseModel):
     work: WorkInput
     scope: ScopeEnum
     movement_details: Optional[str] = None
+    turnstile_token: Optional[str] = None # Optional for backend compat, but frontend sends it
 
 class ReportResponse(BaseModel):
     id: int

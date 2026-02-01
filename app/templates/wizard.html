@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Contribute - Exam Record</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
@@ -130,6 +131,12 @@
                     placeholder="ej. I. Allegro">
             </div>
 
+            <!-- Turnstile Widget -->
+            <div class="mb-4 flex justify-center">
+                <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-callback="onTurnstileSuccess">
+                </div>
+            </div>
+
             <button @click="submitReport"
                 class="mt-6 bg-green-600 text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700 shadow">Enviar
                 Aportación</button>
@@ -238,6 +245,7 @@
                     submitStatus: '',
                     submitSuccess: false,
                     eventId: eventId,
+                    turnstileToken: '',
 
                     async init() {
                         this.restoreState();
@@ -249,6 +257,11 @@
                         this.$watch('selectedWork', () => this.saveState());
                         this.$watch('scope', () => this.saveState());
                         this.$watch('movementDetails', () => this.saveState());
+
+                        // Global callback for Turnstile
+                        window.onTurnstileSuccess = (token) => {
+                            this.turnstileToken = token;
+                        };
 
                         // Auto-submit check
                         if (this.isAuthenticated && this.step === 3 && this.pendingSubmission) {
@@ -292,6 +305,8 @@
                         this.selectedWork = null;
                         this.scope = 'Whole Work';
                         this.movementDetails = '';
+                        this.turnstileToken = '';
+                        if (window.turnstile) window.turnstile.reset();
                     },
 
                     hardReset() {
@@ -457,12 +472,20 @@
                             return;
                         }
 
+                        // Verify Turnstile
+                        if (!this.turnstileToken && '{{ turnstile_site_key }}') {
+                            this.submitStatus = "Por favor completa la verificación anti-spam.";
+                            this.submitSuccess = false;
+                            return;
+                        }
+
                         const payload = {
                             event_id: this.eventId,
                             composer: this.selectedComposer,
                             work: this.selectedWork,
                             scope: this.scope,
-                            movement_details: this.movementDetails
+                            movement_details: this.movementDetails,
+                            turnstile_token: this.turnstileToken
                         };
 
                         try {

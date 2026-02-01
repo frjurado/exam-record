@@ -188,7 +188,8 @@ async def contribute_page(
         "event_id": event.id,
         "region_slug": region_slug,
         "discipline_slug": discipline_slug,
-        "year": year
+        "year": year,
+        "turnstile_site_key": settings.TURNSTILE_SITE_KEY
     })
 
 @app.get("/health")

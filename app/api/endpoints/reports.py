@@ -10,6 +10,8 @@ from app.services import wikidata
 from app.services.consensus import ConsensusService
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import selectinload, joinedload
+import httpx
+from app.core.config import settings
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -21,6 +23,25 @@ async def create_report(
     current_user: User = Depends(deps.get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    # 0. Verify Turnstile (Anti-Spam)
+    if settings.TURNSTILE_SECRET_KEY:
+        if not report_in.turnstile_token:
+             # Make it optional for dev/backward compat if needed, or strict. 
+             # Let's be strict if key is configured.
+             raise HTTPException(status_code=400, detail="Falta validación Anti-Spam (Turnstile)")
+             
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": settings.TURNSTILE_SECRET_KEY,
+                    "response": report_in.turnstile_token
+                }
+            )
+            data = resp.json()
+            if not data.get("success"):
+                raise HTTPException(status_code=400, detail="Token Anti-Spam inválido")
+
     # 1. Check Event
     result = await db.execute(select(ExamEvent).filter(ExamEvent.id == report_in.event_id))
     event = result.scalar_one_or_none()

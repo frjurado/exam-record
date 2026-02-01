@@ -5,65 +5,69 @@ I'm giving you the list of bugs I found in the wizard here, in order to be more 
 
 ### Local Search
 
-1. Where's the local search searching? I could only find Bach & Beethoven. As I understood, we should have seeded the database with a list of composers from OpenOpus, then cache this whole list to the client, is that correct? But there's no Mozart there... 
-    (Solved)
-2. As discussed in the design, I understood that search here would be "smart", meaning: if I start typing "Bethoven" with a typo, it should still find "Beethoven".
-    (Comment) We leave it like this for now, that's ok.
-3. If I click on "Back to composer", the search field should be cleared.
-    (Solved)
+1. (FUTURE) As discussed in the design, I understood that search here would be "smart", meaning: if I start typing "Bethoven" with a typo, it should still find "Beethoven". Not urgent, we'll leave it like this for now.
+
 
 ### Wikidata Search
 
-1. When you click on "Search Global Database", it generates a list of options from Wikidata. But, if I don't choose & start typing again on the composer field, the list remains unupdated until I click on "Search Global Database" again, which is confusing.
-    (Solved)
-2. If Wikidata returns no results, the UI should display a message like "No results found" instead of giving no feedback.
-    (Solved)
-3. The crucial one: is there a way to filter Wikidata results to only show composers? The list is sometimes huge & filled with non-composer results, as well as with the same name multiple times.
-    (Solved) This works like magic now, and the comment-like description ("Austrian composer ...") is also a plus.
-4. A new issue here seems that (a) some very common names don't appear ("Schumann"), and (b) sometimes a very obvious search finds unexpected results ("Mozart" returns both the actual composer & some "Camargo Guarnieri" from Brazil...)
-    (Solved)
+1. If I type, then "Search Global Database", then delete & type again, either the composer list or "Not found" are displayed ahead of time. It's also weird when you type, click on search, then continue typing and you see a mismatch between the composer list and the composer you're typing. I don't really know what the behavior should be.
+
+2. Is the list shown limited somehow to N items? For example: if I type "Johann", only J.S. Bach appears; if I type "Johann Christian", though, his son emerges!
+
+3. Still some very obvious names ("Palestrina") don't show up in the list.
+
+4. If I type the name of a composer who is on the database: should "Search Global Database" really show me the same exact composer? It seems to lead to DB duplicates.
+
+5. (RETHINK) The Search Global/Use unverified workflow should be more subtle. (Should "Use unverified" be disabled at first? Should "Search global" be disabled if no results found? Etc.)
+
 
 ### Unverified Composer
 
-1. The text shown on the link is always 'Add "" (Unverified)': I understand that the intention was to display the name of the composer we're trying to add.
-    (Solved)
-
-### Addition to database
-
-1. If I add a new composer, either from Wikidata or unverified, I understand that it should appear in future searches (cause it's in the database now, right?). If this happens on composer selection, it definitely isn't doing so. If it happens on submission, I'm not sure it does either (as I describe elsewhere in this document, I'm only sometimes getting to submit).
-    (Issue) I don't think I can really test this, as I can't submit because of the authentication issue below.
-
+-
 
 ## Work Section
 
 ### Local Search
 
-1. As with composers, I'm not sure where this search is querying, neither where it should. The docs mention OpenOpus, but I'm pretty sure it's not being used.
-    (Solved?) I'm assuming it's checking just the DB for now.
-2. At some point, I've had works clearly not filtered by composer. So I could select Beethoven, the it would offer me a Brandenburg Concerto as an option, which is clearly not his work. I've tried to reproduce it but I couldn't. Is it possible that the list is cached somewhere and I'm hitting an old version of it?
-    (Solved)
-3. If works can be matched by nickname (ex: Moonlight), the result should display the nickname as well (ex: "Piano Sonata No. 14 in C# Minor (Moonlight)"). 
-    (Solved)
-4. If I un-type the work's name, the work list should disappear. 
-    (Solved)
+1. (RETHINK) Search seems to be just on local DB. Can it start with more pre-populated works?
+
 
 ### Lazy Builder
 
-1. The form should include Genre (mandatory), Key, Number and Opus fields, as stated in the design (better order: Genre, Opus, Number, Key).
-    (Solved)
-2. If I restart the process, the fields should be cleared.
-    (Solved)
-3. The docs state: "As the user fills these fields, the system runs a **Live Search** in the background". That's obviously not happening. One question arises: where does that search happen? If OpenOpus was already used, it doesn't make much sense here. Maybe it should be DB first, then OpenOpus? 
-    (Issue) This isn't happening yet.
+1. Some fields should be mandatory (maybe "Genre"?).
+
+2. Should "Genre" be a dropdown with "Other" option? Or, again, to have some autocomplete based on a common genre list?
+
+3. "Key" should be a dropdown + major/minor (+ doesn't apply, for the rare atonal work?)
+
+4. "Opus number" should be just "Catalog number", to include the options of BWV, KV, Hob., etc.
+
+5. The "Number" field should be forced to be an actual number.
+
+6. Better order: (line one) Genre, Title or nickname, (line two) Catalog number, Work number, (line three) Key
+
+7. Once shown, if I un-type in local search above, the lazy builder form shouldn't disappear.
+
+8. (QUESTION) Shouldn't this lazy builder be actively looking for works in OpenOus??
+   > **ANSWER:** You are correct.
+   > 1. **Verified Composers**: If we have a valid OpenOpus Composer ID (which we do if selected from DB/Wikidata), we **can and should** search OpenOpus.
+   > 2. **Current State**: The current code (`wizard.html`) hardcodes `source=local`.
+   > **Decision**: We will implement "Real-time OpenOpus Search" in Phase 5.3 or 5.4.
+   >    - *Logic*: If `selectedComposer.wikidata_id` exists -> Search OpenOpus. Else -> Search Local.
+
 
 ## Scope section
 
-1. Again, the ideal situation is that, if work is verified, movement information is automatically fetched from OpenOpus & displayed somehow for selection. In this case, also, if no movement applies (ex: a Nocturne), that option could be disabled.
-    (New)
+1. (QUESTION) Again, the ideal situation is that, if work is verified (see item #8 above), movement information is automatically fetched from OpenOpus & displayed somehow for selection. In this case, also, if no movement applies (ex: a Nocturne), that option could be disabled.
+   > **ANSWER:** OpenOpus data is often "flat" (just a title string) and lacks structured movement metadata.
+   > **Decision:** We will adopt your **Scope UI Proposal**:
+   >    - [ ] **Whole Work** OR **Movement** radio buttons.
+   >    - [ ] If Movement: **Number** (Selector) + **Name** (Text) + **Excerpt** (Toggle).
+   >    - [ ] If Excerpt: **Bars/Details** (Text).
+   
 
 ## Submission
 
-1. I'm not allowed to submit. I'm told Error: Not authenticated. 
-    (Issue) This problem is still here. Obviously, I haven't authenticated (that's not set up yet, as far as I know), so maybe it shouldn't require authentication yet?
-2. The message "Error: not authenticated" isn't cleared if I go back to work/composer.
-    (New)
+1. Have to clean up behavior after submission. For example, if I have to send email to get a magic link, if I close the modal I'm back on the form, ready to resubmit???
+
+2. After I click on magic link, I'm redirected to the contribution form (empty) for some seconds, then redirected to the event page. To see the form in a normal state at that point is just weird. (I'd rather see a confirmation message for a sec if that's necessary, then be redirected to the event page.) The situation is similar when I'm logged in, though in this case I see the form with the data I just submitted (just composer, as it's on initial state).
