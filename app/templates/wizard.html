@@ -108,16 +108,24 @@
             <div x-show="searchWorkQuery.length > 2" class="mt-4 border p-4 rounded bg-gray-50">
                 <h3 class="font-bold text-sm mb-2">¿No la encuentras? Crea una nueva entrada.</h3>
                 <div class="space-y-3 mt-2">
-                    <!-- Genre (Mandatory) -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase">Género <span
-                                class="text-red-500">*</span></label>
-                        <input type="text" x-model="lazyGenre" @input.debounce.500ms="updateLazySearch"
-                            placeholder="ej. Sonata, Concierto" class="w-full border p-2 rounded text-sm"
-                            :class="{'border-red-300 bg-red-50': !lazyGenre && searchWorkQuery.length > 2}">
+                    <!-- Row 1: Genre & Nickname -->
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Género <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" x-model="lazyGenre" @input.debounce.500ms="updateLazySearch"
+                                placeholder="ej. Sonata" class="w-full border p-2 rounded text-sm"
+                                :class="{'border-red-300 bg-red-50': !lazyGenre && searchWorkQuery.length > 2}">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Título/Apodo
+                                (Opcional)</label>
+                            <input type="text" x-model="lazyNickname" @input.debounce.500ms="updateLazySearch"
+                                placeholder='ej. "Pathetique"' class="w-full border p-2 rounded text-sm">
+                        </div>
                     </div>
 
-                    <!-- Key (Split) -->
+                    <!-- Row 2: Key (Split) -->
                     <div class="flex gap-2">
                         <div class="flex-1">
                             <label class="block text-xs font-bold text-gray-500 uppercase">Tonalidad</label>
@@ -149,10 +157,10 @@
                         </div>
                     </div>
 
-                    <!-- Identifiers (Numeric) -->
+                    <!-- Row 3: Identifiers (Numeric) -->
                     <div class="flex gap-2">
                         <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Opus</label>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Opus/BWV/KV</label>
                             <input type="number" x-model="lazyOpus" @input.debounce.500ms="updateLazySearch"
                                 placeholder="ej. 57" class="w-full border p-2 rounded text-sm">
                         </div>
@@ -292,8 +300,9 @@
                     workResults: [],
                     selectedWork: null,
                     lazyGenre: '',
-                    lazyKeyNote: '', // New
-                    lazyKeyMode: '', // New
+                    lazyNickname: '', // New
+                    lazyKeyNote: '',
+                    lazyKeyMode: '',
                     lazyOpus: '',
                     lazyNumber: '',
 
@@ -328,6 +337,7 @@
                         this.$watch('movementDetails', () => this.saveState());
                         this.$watch('lazyKeyNote', () => this.saveState()); // Watch these too if you want perfect persistence
                         this.$watch('lazyKeyMode', () => this.saveState()); // ...
+                        this.$watch('lazyNickname', () => this.saveState());
 
                         // Global callback for Turnstile
                         window.onTurnstileSuccess = (token) => {
@@ -350,6 +360,7 @@
                             selectedWork: this.selectedWork,
                             // Persist Lazy Builder State
                             lazyGenre: this.lazyGenre,
+                            lazyNickname: this.lazyNickname,
                             lazyKeyNote: this.lazyKeyNote,
                             lazyKeyMode: this.lazyKeyMode,
                             lazyOpus: this.lazyOpus,
@@ -372,6 +383,7 @@
                             this.selectedWork = state.selectedWork;
                             // Restore Lazy Builder State
                             this.lazyGenre = state.lazyGenre || '';
+                            this.lazyNickname = state.lazyNickname || '';
                             this.lazyKeyNote = state.lazyKeyNote || '';
                             this.lazyKeyMode = state.lazyKeyMode || '';
                             this.lazyOpus = state.lazyOpus || '';
@@ -390,6 +402,7 @@
                         this.selectedComposer = null;
                         this.selectedWork = null;
                         this.lazyGenre = '';
+                        this.lazyNickname = '';
                         this.lazyKeyNote = '';
                         this.lazyKeyMode = '';
                         this.lazyOpus = '';
@@ -477,7 +490,9 @@
                         this.workResults = [];
                         // Reset lazy builder
                         this.lazyGenre = '';
-                        this.lazyKey = '';
+                        this.lazyNickname = '';
+                        this.lazyKeyNote = '';
+                        this.lazyKeyMode = '';
                         this.lazyOpus = '';
                         this.lazyNumber = '';
                         this.step = 2;
@@ -524,6 +539,7 @@
 
                         const parts = [
                             this.lazyGenre,
+                            this.lazyNickname ? `"${this.lazyNickname}"` : '',
                             keyString,
                             this.lazyOpus ? 'Op. ' + this.lazyOpus : '',
                             this.lazyNumber ? 'No. ' + this.lazyNumber : ''
@@ -564,7 +580,11 @@
                         // "Sonata en Do Mayor Op. 57"
                         const title = parts.filter(p => p && p.trim().length > 0).join(' ').trim() || this.searchWorkQuery;
 
-                        this.selectedWork = { title: title, is_verified: false };
+                        this.selectedWork = {
+                            title: title,
+                            nickname: this.lazyNickname,
+                            is_verified: false
+                        };
                         this.step = 3;
                     },
 
