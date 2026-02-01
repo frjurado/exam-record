@@ -107,23 +107,67 @@
             <!-- Lazy Builder Fallback -->
             <div x-show="searchWorkQuery.length > 2" class="mt-4 border p-4 rounded bg-gray-50">
                 <h3 class="font-bold text-sm mb-2">¿No la encuentras? Crea una nueva entrada.</h3>
-                <div class="space-y-2 mt-2">
-                    <div class="flex gap-2">
+                <div class="space-y-3 mt-2">
+                    <!-- Genre (Mandatory) -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Género <span
+                                class="text-red-500">*</span></label>
                         <input type="text" x-model="lazyGenre" @input.debounce.500ms="updateLazySearch"
-                            placeholder="Género (ej. Sonata)" class="border p-2 rounded flex-1 text-sm">
-                        <input type="text" x-model="lazyKey" @input.debounce.500ms="updateLazySearch"
-                            placeholder="Tonalidad (ej. Do Mayor)" class="border p-2 rounded flex-1 text-sm">
+                            placeholder="ej. Sonata, Concierto" class="w-full border p-2 rounded text-sm"
+                            :class="{'border-red-300 bg-red-50': !lazyGenre && searchWorkQuery.length > 2}">
                     </div>
+
+                    <!-- Key (Split) -->
                     <div class="flex gap-2">
-                        <input type="text" x-model="lazyOpus" @input.debounce.500ms="updateLazySearch"
-                            placeholder="Opus (ej. 57)" class="border p-2 rounded flex-1 text-sm">
-                        <input type="text" x-model="lazyNumber" @input.debounce.500ms="updateLazySearch"
-                            placeholder="Nº (ej. 23)" class="border p-2 rounded flex-1 text-sm">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Tonalidad</label>
+                            <select x-model="lazyKeyNote" @change="updateLazySearch"
+                                class="w-full border p-2 rounded text-sm bg-white">
+                                <option value="">- Nota -</option>
+                                <option value="Do">Do</option>
+                                <option value="Do sostenido">Do#</option>
+                                <option value="Re">Re</option>
+                                <option value="Mi bemol">Mib</option>
+                                <option value="Mi">Mi</option>
+                                <option value="Fa">Fa</option>
+                                <option value="Fa sostenido">Fa#</option>
+                                <option value="Sol">Sol</option>
+                                <option value="La bemol">Lab</option>
+                                <option value="La">La</option>
+                                <option value="Si bemol">Sib</option>
+                                <option value="Si">Si</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Modo</label>
+                            <select x-model="lazyKeyMode" @change="updateLazySearch"
+                                class="w-full border p-2 rounded text-sm bg-white">
+                                <option value="">- Modo -</option>
+                                <option value="Mayor">Mayor</option>
+                                <option value="Menor">Menor</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Identifiers (Numeric) -->
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Opus</label>
+                            <input type="number" x-model="lazyOpus" @input.debounce.500ms="updateLazySearch"
+                                placeholder="ej. 57" class="w-full border p-2 rounded text-sm">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Número</label>
+                            <input type="number" x-model="lazyNumber" @input.debounce.500ms="updateLazySearch"
+                                placeholder="ej. 23" class="w-full border p-2 rounded text-sm">
+                        </div>
                     </div>
                 </div>
-                <button @click="createUnverifiedWork"
-                    class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Crear y
-                    Continuar</button>
+                <button @click="createUnverifiedWork" :disabled="!lazyGenre"
+                    :class="{'opacity-50 cursor-not-allowed': !lazyGenre}"
+                    class="mt-4 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 w-full transition">
+                    Crear y Continuar
+                </button>
             </div>
 
             <button @click="step=1; searchComposerQuery=''; composerResults=[]; wikidataResults=[]"
@@ -248,7 +292,8 @@
                     workResults: [],
                     selectedWork: null,
                     lazyGenre: '',
-                    lazyKey: '',
+                    lazyKeyNote: '', // New
+                    lazyKeyMode: '', // New
                     lazyOpus: '',
                     lazyNumber: '',
 
@@ -281,6 +326,8 @@
                         this.$watch('selectedWork', () => this.saveState());
                         this.$watch('scope', () => this.saveState());
                         this.$watch('movementDetails', () => this.saveState());
+                        this.$watch('lazyKeyNote', () => this.saveState()); // Watch these too if you want perfect persistence
+                        this.$watch('lazyKeyMode', () => this.saveState()); // ...
 
                         // Global callback for Turnstile
                         window.onTurnstileSuccess = (token) => {
@@ -301,6 +348,13 @@
                             step: this.step,
                             selectedComposer: this.selectedComposer,
                             selectedWork: this.selectedWork,
+                            // Persist Lazy Builder State
+                            lazyGenre: this.lazyGenre,
+                            lazyKeyNote: this.lazyKeyNote,
+                            lazyKeyMode: this.lazyKeyMode,
+                            lazyOpus: this.lazyOpus,
+                            lazyNumber: this.lazyNumber,
+
                             scope: this.scope,
                             movementDetails: this.movementDetails,
                             eventId: this.eventId,
@@ -316,6 +370,13 @@
                             this.step = state.step || 1;
                             this.selectedComposer = state.selectedComposer;
                             this.selectedWork = state.selectedWork;
+                            // Restore Lazy Builder State
+                            this.lazyGenre = state.lazyGenre || '';
+                            this.lazyKeyNote = state.lazyKeyNote || '';
+                            this.lazyKeyMode = state.lazyKeyMode || '';
+                            this.lazyOpus = state.lazyOpus || '';
+                            this.lazyNumber = state.lazyNumber || '';
+
                             this.scope = state.scope || 'Whole Work';
                             this.movementDetails = state.movementDetails || '';
                             this.pendingSubmission = state.pendingSubmission || false;
@@ -328,6 +389,11 @@
                         this.step = 1;
                         this.selectedComposer = null;
                         this.selectedWork = null;
+                        this.lazyGenre = '';
+                        this.lazyKeyNote = '';
+                        this.lazyKeyMode = '';
+                        this.lazyOpus = '';
+                        this.lazyNumber = '';
                         this.scope = 'Whole Work';
                         this.movementDetails = '';
                         this.turnstileToken = '';
@@ -452,9 +518,13 @@
 
                     // Live search for Lazy Builder
                     updateLazySearch() {
+                        const keyString = (this.lazyKeyNote && this.lazyKeyMode)
+                            ? `${this.lazyKeyNote} ${this.lazyKeyMode}`
+                            : (this.lazyKeyNote ? this.lazyKeyNote : '');
+
                         const parts = [
                             this.lazyGenre,
-                            this.lazyKey,
+                            keyString,
                             this.lazyOpus ? 'Op. ' + this.lazyOpus : '',
                             this.lazyNumber ? 'No. ' + this.lazyNumber : ''
                         ];
@@ -479,12 +549,19 @@
                     },
 
                     createUnverifiedWork() {
+                        if (!this.lazyGenre) return; // Guard
+
+                        const keyString = (this.lazyKeyNote && this.lazyKeyMode)
+                            ? `${this.lazyKeyNote} ${this.lazyKeyMode}`
+                            : (this.lazyKeyNote ? this.lazyKeyNote : '');
+
                         const parts = [
                             this.lazyGenre,
-                            this.lazyKey ? 'in ' + this.lazyKey : '',
+                            keyString ? 'en ' + keyString : '',
                             this.lazyOpus ? 'Op. ' + this.lazyOpus : '',
                             this.lazyNumber ? 'No. ' + this.lazyNumber : ''
                         ];
+                        // "Sonata en Do Mayor Op. 57"
                         const title = parts.filter(p => p && p.trim().length > 0).join(' ').trim() || this.searchWorkQuery;
 
                         this.selectedWork = { title: title, is_verified: false };
