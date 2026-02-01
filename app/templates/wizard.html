@@ -192,51 +192,76 @@
                         x-text="selectedWork ? selectedWork.title : ''"></span></p>
             </div>
 
-            <!-- Scope Selection (Radio) -->
+            <!-- Scope Selection -->
             <label class="block mb-3 font-bold text-sm text-gray-700">Alcance de la Aportación</label>
-            <div class="space-y-3 mb-6">
-                <!-- Option 1: Whole Work -->
-                <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                    :class="{'border-blue-500 bg-blue-50 ring-1 ring-blue-500': scope === 'Whole Work'}">
-                    <input type="radio" x-model="scope" value="Whole Work" class="mt-1 mr-3">
-                    <div>
-                        <span class="font-bold block text-sm">Obra Completa</span>
-                        <span class="text-xs text-gray-500">Se interpretó la obra en su totalidad.</span>
-                    </div>
-                </label>
 
-                <!-- Option 2: Movement -->
-                <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                    :class="{'border-blue-500 bg-blue-50 ring-1 ring-blue-500': scope === 'Movement'}">
-                    <input type="radio" x-model="scope" value="Movement" class="mt-1 mr-3">
-                    <div class="w-full">
-                        <span class="font-bold block text-sm">Movimiento</span>
-                        <span class="text-xs text-gray-500 mb-2 block">Un movimiento específico (ej. 1º
-                            Movimiento).</span>
+            <div class="space-y-4 mb-6">
+                <!-- Main Selector: Whole Work vs Movement -->
+                <div class="flex gap-4">
+                    <label
+                        class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition flex-1"
+                        :class="{'border-blue-500 bg-blue-50 ring-1 ring-blue-500': scopeType === 'Whole Work'}">
+                        <input type="radio" x-model="scopeType" value="Whole Work" class="mr-3">
+                        <span class="font-bold text-sm">Obra Completa</span>
+                    </label>
+                    <label
+                        class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition flex-1"
+                        :class="{'border-blue-500 bg-blue-50 ring-1 ring-blue-500': scopeType === 'Movement'}">
+                        <input type="radio" x-model="scopeType" value="Movement" class="mr-3">
+                        <span class="font-bold text-sm">Movimiento</span>
+                    </label>
+                </div>
 
-                        <!-- Conditional Input for Movement -->
-                        <div x-show="scope === 'Movement'" class="mt-2" @click.stop>
-                            <input type="text" x-model="movementDetails" placeholder="Especifique (ej. I. Allegro)"
-                                class="w-full border p-2 rounded text-sm bg-white focus:ring-2 focus:ring-blue-200 outline-none">
+                <!-- Movement Details (Conditional) -->
+                <div x-show="scopeType === 'Movement'" class="p-4 border rounded bg-gray-50 space-y-3">
+                    <div class="flex gap-2">
+                        <div class="w-1/3">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nº</label>
+                            <select x-model="movementNumber" class="w-full border p-2 rounded text-sm bg-white">
+                                <option value="">-</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                        <div class="w-2/3">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre
+                                (Opcional)</label>
+                            <input type="text" x-model="movementName" placeholder="ej. Allegro ma non troppo"
+                                class="w-full border p-2 rounded text-sm">
                         </div>
                     </div>
-                </label>
+                </div>
 
-                <!-- Option 3: Excerpt -->
-                <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                    :class="{'border-blue-500 bg-blue-50 ring-1 ring-blue-500': scope === 'Excerpt'}">
-                    <input type="radio" x-model="scope" value="Excerpt" class="mt-1 mr-3">
-                    <div class="w-full">
-                        <span class="font-bold block text-sm">Fragmento / Selección</span>
-                        <span class="text-xs text-gray-500 mb-2 block">Solo una parte o selección de compases.</span>
-
-                        <!-- Conditional Input for Excerpt -->
-                        <div x-show="scope === 'Excerpt'" class="mt-2" @click.stop>
-                            <input type="text" x-model="movementDetails" placeholder="Detalles (ej. Compases 1-30)"
-                                class="w-full border p-2 rounded text-sm bg-white focus:ring-2 focus:ring-blue-200 outline-none">
+                <!-- Excerpt Toggle (Orthogonal) -->
+                <div class="pt-2 border-t mt-2">
+                    <label class="flex items-start cursor-pointer">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" x-model="isExcerpt"
+                                class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
                         </div>
+                        <div class="ml-3 text-sm">
+                            <label class="font-bold text-gray-700 block">Es un fragmento / selección</label>
+                            <span class="text-gray-500 text-xs">Marcar si solo se interpretó una parte (compases,
+                                cadenza, etc.)</span>
+                        </div>
+                    </label>
+
+                    <!-- Excerpt Details -->
+                    <div x-show="isExcerpt" class="mt-3 pl-7">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Detalles del
+                            fragmento</label>
+                        <input type="text" x-model="excerptDetails" placeholder="ej. Compases 1-50, solo Cadenza"
+                            class="w-full border p-2 rounded text-sm bg-yellow-50 border-yellow-200">
                     </div>
-                </label>
+                </div>
             </div>
 
             <!-- Turnstile Widget -->
@@ -341,8 +366,11 @@
                     lazyNumber: '',
 
                     // Details
-                    scope: 'Whole Work',
-                    movementDetails: '',
+                    scopeType: 'Whole Work', // 'Whole Work' | 'Movement'
+                    movementNumber: '',
+                    movementName: '',
+                    isExcerpt: false,
+                    excerptDetails: '',
 
                     // Auth
                     isAuthenticated: false,
@@ -367,11 +395,17 @@
                         this.$watch('step', () => this.saveState());
                         this.$watch('selectedComposer', () => this.saveState());
                         this.$watch('selectedWork', () => this.saveState());
-                        this.$watch('scope', () => this.saveState());
-                        this.$watch('movementDetails', () => this.saveState());
-                        this.$watch('lazyKeyNote', () => this.saveState()); // Watch these too if you want perfect persistence
-                        this.$watch('lazyKeyMode', () => this.saveState()); // ...
+
+                        this.$watch('lazyKeyNote', () => this.saveState());
+                        this.$watch('lazyKeyMode', () => this.saveState());
                         this.$watch('lazyNickname', () => this.saveState());
+
+                        // New Scope Watchers
+                        this.$watch('scopeType', () => this.saveState());
+                        this.$watch('movementNumber', () => this.saveState());
+                        this.$watch('movementName', () => this.saveState());
+                        this.$watch('isExcerpt', () => this.saveState());
+                        this.$watch('excerptDetails', () => this.saveState());
 
                         // Global callback for Turnstile
                         window.onTurnstileSuccess = (token) => {
@@ -392,7 +426,7 @@
                             step: this.step,
                             selectedComposer: this.selectedComposer,
                             selectedWork: this.selectedWork,
-                            // Persist Lazy Builder State
+                            // Persist Lazy Builder
                             lazyGenre: this.lazyGenre,
                             lazyNickname: this.lazyNickname,
                             lazyKeyNote: this.lazyKeyNote,
@@ -400,8 +434,13 @@
                             lazyOpus: this.lazyOpus,
                             lazyNumber: this.lazyNumber,
 
-                            scope: this.scope,
-                            movementDetails: this.movementDetails,
+                            // Persist Scope
+                            scopeType: this.scopeType,
+                            movementNumber: this.movementNumber,
+                            movementName: this.movementName,
+                            isExcerpt: this.isExcerpt,
+                            excerptDetails: this.excerptDetails,
+
                             eventId: this.eventId,
                             pendingSubmission: this.pendingSubmission || false
                         };
@@ -415,7 +454,7 @@
                             this.step = state.step || 1;
                             this.selectedComposer = state.selectedComposer;
                             this.selectedWork = state.selectedWork;
-                            // Restore Lazy Builder State
+                            // Restore Lazy
                             this.lazyGenre = state.lazyGenre || '';
                             this.lazyNickname = state.lazyNickname || '';
                             this.lazyKeyNote = state.lazyKeyNote || '';
@@ -423,8 +462,13 @@
                             this.lazyOpus = state.lazyOpus || '';
                             this.lazyNumber = state.lazyNumber || '';
 
-                            this.scope = state.scope || 'Whole Work';
-                            this.movementDetails = state.movementDetails || '';
+                            // Restore Scope
+                            this.scopeType = state.scopeType || 'Whole Work';
+                            this.movementNumber = state.movementNumber || '';
+                            this.movementName = state.movementName || '';
+                            this.isExcerpt = state.isExcerpt || false;
+                            this.excerptDetails = state.excerptDetails || '';
+
                             this.pendingSubmission = state.pendingSubmission || false;
                         }
                     },
@@ -441,8 +485,13 @@
                         this.lazyKeyMode = '';
                         this.lazyOpus = '';
                         this.lazyNumber = '';
-                        this.scope = 'Whole Work';
-                        this.movementDetails = '';
+
+                        this.scopeType = 'Whole Work';
+                        this.movementNumber = '';
+                        this.movementName = '';
+                        this.isExcerpt = false;
+                        this.excerptDetails = '';
+
                         this.turnstileToken = '';
                         if (window.turnstile) window.turnstile.reset();
                     },
@@ -641,12 +690,28 @@
                             return;
                         }
 
+                        // Map UI Scope to Backend Scope
+                        let finalScope = 'Whole Work';
+                        let finalDetails = null;
+
+                        if (this.isExcerpt) {
+                            finalScope = 'Excerpt'; // Backend Enum
+                            // Construct complex detail string
+                            let base = (this.scopeType === 'Movement')
+                                ? `Mov. ${this.movementNumber || '?'} ${this.movementName ? '(' + this.movementName + ')' : ''}`
+                                : 'Obra Completa';
+                            finalDetails = `${base} - Fragmento: ${this.excerptDetails}`;
+                        } else if (this.scopeType === 'Movement') {
+                            finalScope = 'Movement';
+                            finalDetails = `Mov. ${this.movementNumber || '?'} ${this.movementName ? '(' + this.movementName + ')' : ''}`.trim();
+                        }
+
                         const payload = {
                             event_id: this.eventId,
                             composer: this.selectedComposer,
                             work: this.selectedWork,
-                            scope: this.scope,
-                            movement_details: this.movementDetails,
+                            scope: finalScope,
+                            movement_details: finalDetails,
                             turnstile_token: this.turnstileToken
                         };
 
