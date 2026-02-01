@@ -10,6 +10,28 @@
 </head>
 
 <body class="bg-gray-50 min-h-screen p-6" x-data="wizard({{ event_id }})">
+    <!-- Loading Overlay -->
+    <div x-show="isVerifying"
+        class="fixed inset-0 bg-white bg-opacity-90 flex flex-col items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mb-4"></div>
+        <h2 class="text-xl font-bold text-gray-800">Verificando...</h2>
+        <p class="text-gray-500">Estamos validando tu enlace mágico y enviando la aportación.</p>
+    </div>
+
+    <!-- Success Overlay -->
+    <div x-show="submitSuccess"
+        class="fixed inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center z-50">
+        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
+            <svg class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Aportación Enviada!</h2>
+        <p class="text-gray-600 text-center mb-6 max-w-md">Gracias por contribuir al registro. Tu aportación ayuda a la
+            comunidad.</p>
+        <p class="text-sm text-gray-400">Redirigiendo en <span x-text="countdown"></span>...</p>
+    </div>
+
     <div class="max-w-2xl mx-auto bg-white shadow rounded p-6">
         <h1 class="text-2xl font-bold mb-4">Asistente de Aportación</h1>
 
@@ -244,6 +266,8 @@
                     // Meta
                     submitStatus: '',
                     submitSuccess: false,
+                    isVerifying: false,
+                    countdown: 3,
                     eventId: eventId,
                     turnstileToken: '',
 
@@ -266,8 +290,9 @@
                         // Auto-submit check
                         if (this.isAuthenticated && this.step === 3 && this.pendingSubmission) {
                             console.log("Auto-submitting...");
-                            this.submitStatus = "Verificando y enviando...";
-                            await this.submitReport();
+                            this.isVerifying = true; // Show loading overlay
+                            // Small delay to ensure UI renders
+                            setTimeout(() => this.submitReport(), 500);
                         }
                     },
 
@@ -474,8 +499,14 @@
 
                         // Verify Turnstile
                         if (!this.turnstileToken && '{{ turnstile_site_key }}') {
+                            this.isVerifying = false; // Fix: Stop loading overlay
                             this.submitStatus = "Por favor completa la verificación anti-spam.";
                             this.submitSuccess = false;
+
+                            // Scroll to turnstile
+                            const turnstileEl = document.querySelector('.cf-turnstile');
+                            if (turnstileEl) turnstileEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
                             return;
                         }
 
@@ -497,19 +528,26 @@
                             });
 
                             if (res.ok) {
+                                this.isVerifying = false;
                                 this.submitSuccess = true;
-                                this.submitStatus = "¡Éxito! Aportación enviada.";
                                 this.clearState(); // Clear stored state on success
-                                setTimeout(() => {
-                                    // Redirect to event page (remove /contribute from URL)
-                                    window.location.href = window.location.href.replace('/contribute', '');
-                                }, 2000);
+
+                                // Countdown timer
+                                let timer = setInterval(() => {
+                                    this.countdown--;
+                                    if (this.countdown <= 0) {
+                                        clearInterval(timer);
+                                        window.location.href = window.location.href.replace('/contribute', '');
+                                    }
+                                }, 1000);
                             } else {
+                                this.isVerifying = false;
                                 const err = await res.json();
                                 this.submitSuccess = false;
                                 this.submitStatus = "Error: " + (err.detail || "Unknown error");
                             }
                         } catch (e) {
+                            this.isVerifying = false;
                             this.submitSuccess = false;
                             this.submitStatus = "Error: Error de red";
                         }

@@ -1,7 +1,7 @@
 <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
     hx-swap-oob="true">
     <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4 relative"
-        @click.away="document.getElementById('auth-modal').innerHTML = ''" x-data="{
+        @click.away="document.getElementById('auth-modal').outerHTML = '<div id=\'auth-modal\'></div>'" x-data="{
             email: '',
             isLoading: false,
             sent: false,
@@ -30,7 +30,7 @@
             }
         }">
 
-        <button onclick="document.getElementById('auth-modal').innerHTML = ''"
+        <button onclick="document.getElementById('auth-modal').outerHTML = '<div id=\'auth-modal\'></div>'"
             class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -77,7 +77,7 @@
                 <p class="text-sm text-gray-500">
                     Por favor revisa tu email <strong><span x-text="email"></span></strong>.
                 </p>
-                <button onclick="document.getElementById('auth-modal').innerHTML = ''"
+                <button onclick="document.getElementById('auth-modal').outerHTML = '<div id=\'auth-modal\'></div>'"
                     class="mt-6 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
                     Cerrar
                 </button>
