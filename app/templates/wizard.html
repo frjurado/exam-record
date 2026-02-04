@@ -444,11 +444,11 @@
                             eventId: this.eventId,
                             pendingSubmission: this.pendingSubmission || false
                         };
-                        localStorage.setItem('wizardState_' + this.eventId, JSON.stringify(state));
+                        sessionStorage.setItem('wizardState_' + this.eventId, JSON.stringify(state));
                     },
 
                     restoreState() {
-                        const saved = localStorage.getItem('wizardState_' + this.eventId);
+                        const saved = sessionStorage.getItem('wizardState_' + this.eventId);
                         if (saved) {
                             const state = JSON.parse(saved);
                             this.step = state.step || 1;
@@ -474,7 +474,7 @@
                     },
 
                     clearState() {
-                        localStorage.removeItem('wizardState_' + this.eventId);
+                        sessionStorage.removeItem('wizardState_' + this.eventId);
                         // Also clear specific fields
                         this.step = 1;
                         this.selectedComposer = null;
