@@ -34,6 +34,7 @@ async def search_composers(
                     "id": c.id,
                     "name": c.name,
                     "wikidata_id": c.wikidata_id,
+                    "openopus_id": c.openopus_id,
                     "is_verified": c.is_verified
                 }
                 for c in composers

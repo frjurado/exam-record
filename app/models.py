@@ -53,6 +53,7 @@ class Composer(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     wikidata_id = Column(String, unique=True, index=True, nullable=True)
+    openopus_id = Column(String, unique=True, index=True, nullable=True)
     is_verified = Column(Boolean, default=False)
 
     works = relationship("Work", back_populates="composer")

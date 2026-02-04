@@ -47,6 +47,8 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
 *   **5.3 Rebranding & Polish:**
     *   **Appearance:** New Favicon, potential Name Change ("Exam Record" -> ?).
     *   **SEO:** Verify meta tags and sitemap generation.
+*   **5.4 Wizard Improvement:**
+    *   **Works from OpenOpus:** Fetch works from OpenOpus for verified composers.
 
 ## Phase 6: Structure & Navigation (v0.3.0)
 **Goal:** robust navigation and architectural integrity.

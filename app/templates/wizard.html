@@ -95,7 +95,7 @@
             <input type="text" x-model="searchWorkQuery" @input.debounce.300ms="searchWork"
                 class="w-full border p-2 rounded" placeholder="Buscar obra (ej. Preludio)">
 
-            <div class="mt-4 space-y-2">
+            <div class="mt-4 space-y-2 max-h-60 overflow-y-auto">
                 <template x-for="w in workResults" :key="w.id || w.openopus_id">
                     <div @click="selectWork(w)" class="p-2 border rounded hover:bg-gray-100 cursor-pointer bg-gray-50">
                         <span x-text="w.title"></span>
@@ -594,24 +594,34 @@
                             return;
                         }
 
-                        // If composer is wikidata-only (not in DB yet), don't search local works
-                        // or if unverified. Only search local if we have a local ID.
-                        if (!this.selectedComposer.id) {
-                            this.workResults = [];
+                        // Priority 1: OpenOpus Search (if validated link exists)
+                        if (this.selectedComposer.openopus_id) {
+                            try {
+                                const url = `/api/works/search?q=${query}&source=openopus&composer_id=${this.selectedComposer.openopus_id}`;
+                                const res = await fetch(url);
+                                if (res.ok) this.workResults = await res.json();
+                            } catch (e) {
+                                console.error("OpenOpus search failed", e);
+                                this.workResults = [];
+                            }
                             return;
                         }
 
-                        let url = `/api/works/search?q=${query}&source=local`;
-                        if (this.selectedComposer && this.selectedComposer.id) {
-                            url += `&composer_id=${this.selectedComposer.id}`;
+                        // Priority 2: Local Search (fallback)
+                        if (this.selectedComposer.id) {
+                            try {
+                                const url = `/api/works/search?q=${query}&source=local&composer_id=${this.selectedComposer.id}`;
+                                const res = await fetch(url);
+                                if (res.ok) this.workResults = await res.json();
+                            } catch (e) {
+                                console.error("Local search failed", e);
+                                this.workResults = [];
+                            }
+                            return;
                         }
-                        try {
-                            const res = await fetch(url);
-                            if (res.ok) this.workResults = await res.json();
-                        } catch (e) {
-                            console.error(e);
-                            this.workResults = [];
-                        }
+
+                        // No ID available to search
+                        this.workResults = [];
                     },
 
                     // Live search for Lazy Builder
@@ -633,8 +643,8 @@
 
                         if (potentialTitle.length > 2) {
                             this.searchWorkQuery = potentialTitle;
-                            // Only search if we have a composer ID to search against
-                            if (this.selectedComposer.id) {
+                            // Only search if we have a composer ID (Local or OpenOpus) to search against
+                            if (this.selectedComposer.id || this.selectedComposer.openopus_id) {
                                 this.searchWork();
                             } else {
                                 this.workResults = [];

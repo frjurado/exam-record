@@ -1,6 +1,11 @@
 I'm giving you the list of bugs I found in the wizard here, in order to be more structured about them.
 
 
+## General
+
+1. Data persistence goes way beyond the current session. I'd expect it to be cleared once I close the browser tab.
+
+
 ## Composer Section
 
 ### Local Search
@@ -21,10 +26,6 @@ I'm giving you the list of bugs I found in the wizard here, in order to be more 
 5. (RETHINK) The Search Global/Use unverified workflow should be more subtle. (Should "Use unverified" be disabled at first? Should "Search global" be disabled if no results found? Etc.)
 
 
-### Unverified Composer
-
--
-
 ## Work Section
 
 ### Local Search
@@ -34,21 +35,15 @@ I'm giving you the list of bugs I found in the wizard here, in order to be more 
 
 ### Lazy Builder
 
-1. Some fields should be mandatory (maybe "Genre"?).
+1. Should "Genre" be a dropdown with "Other" option? Or, again, to have some autocomplete based on a common genre list?
 
-2. Should "Genre" be a dropdown with "Other" option? Or, again, to have some autocomplete based on a common genre list?
+2. "Key" could be further divided into Note/Accidental? It would allow for rare keys (D flat major) without having a huge dropdown list.
 
-3. "Key" should be a dropdown + major/minor (+ doesn't apply, for the rare atonal work?)
+3. "Opus number" (now "Opus/BWV/KV") should be renamed to "Catalog number". In that case you should type the catalog (ex: "BWV") and then the number. Maybe: a regex to ensure you type some number? Also: if known composer, we could pre-populate the catalog field with the most common catalog for that composer? (ex: if I select Bach, it should default to BWV).
 
-4. "Opus number" should be just "Catalog number", to include the options of BWV, KV, Hob., etc.
+4. Once shown, if I un-type in local search above, the lazy builder form shouldn't disappear. Maybe, as it is now functioning as a "show the title you're typing", it should be non-editable when you start typing on the "lazy builder".
 
-5. The "Number" field should be forced to be an actual number.
-
-6. Better order: (line one) Genre, Title or nickname, (line two) Catalog number, Work number, (line three) Key
-
-7. Once shown, if I un-type in local search above, the lazy builder form shouldn't disappear.
-
-8. (QUESTION) Shouldn't this lazy builder be actively looking for works in OpenOus??
+5. (QUESTION) Shouldn't this lazy builder be actively looking for works in OpenOpus??
    > **ANSWER:** You are correct.
    > 1. **Verified Composers**: If we have a valid OpenOpus Composer ID (which we do if selected from DB/Wikidata), we **can and should** search OpenOpus.
    > 2. **Current State**: The current code (`wizard.html`) hardcodes `source=local`.
@@ -58,16 +53,9 @@ I'm giving you the list of bugs I found in the wizard here, in order to be more 
 
 ## Scope section
 
-1. (QUESTION) Again, the ideal situation is that, if work is verified (see item #8 above), movement information is automatically fetched from OpenOpus & displayed somehow for selection. In this case, also, if no movement applies (ex: a Nocturne), that option could be disabled.
-   > **ANSWER:** OpenOpus data is often "flat" (just a title string) and lacks structured movement metadata.
-   > **Decision:** We will adopt your **Scope UI Proposal**:
-   >    - [ ] **Whole Work** OR **Movement** radio buttons.
-   >    - [ ] If Movement: **Number** (Selector) + **Name** (Text) + **Excerpt** (Toggle).
-   >    - [ ] If Excerpt: **Bars/Details** (Text).
+1. (FUTURE) The ideal situation is that, if work is verified, movement information is automatically fetched from OpenOpus & displayed somehow for selection. In this case, also, if no movement applies (ex: a Nocturne), that option could be disabled.
    
 
 ## Submission
 
 1. Have to clean up behavior after submission. For example, if I have to send email to get a magic link, if I close the modal I'm back on the form, ready to resubmit???
-
-2. After I click on magic link, I'm redirected to the contribution form (empty) for some seconds, then redirected to the event page. To see the form in a normal state at that point is just weird. (I'd rather see a confirmation message for a sec if that's necessary, then be redirected to the event page.) The situation is similar when I'm logged in, though in this case I see the form with the data I just submitted (just composer, as it's on initial state).

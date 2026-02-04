@@ -28,6 +28,7 @@ async def search_works(
                  # For now, we propagate the requirement
                  raise HTTPException(status_code=400, detail="composer_id is required for OpenOpus search")
             results = await openopus.search_work(q, composer_id=composer_id)
+            # Map OpenOpus results to unified format if needed, but service now returns consistent dict
             return results
         else:
             # Local search

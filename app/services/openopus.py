@@ -47,7 +47,30 @@ async def search_work(query: str, composer_id: str = None) -> List[Dict]:
     # Filter works by query (case-insensitive)
     query_lower = query.lower()
     return [
-        work for work in all_works 
+        {
+            "title": work.get("title", ""),
+            "nickname": work.get("nickname", ""),
+            "openopus_id": str(work.get("id")),
+            "is_verified": True # It comes from OpenOpus
+        }
+        for work in all_works 
         if query_lower in work.get("title", "").lower() 
         or query_lower in work.get("nickname", "").lower()
     ]
+
+async def search_composer_by_name(name: str) -> List[Dict]:
+    """
+    Search for a composer by name in OpenOpus.
+    POST /composer/list/search.json
+    """
+    url = f"{OPENOPUS_API_URL}/composer/list/search.json"
+    data = {"criteria": name}
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=data)
+        if response.status_code == 404:
+            return []
+        response.raise_for_status()
+        res_data = response.json()
+        
+    return res_data.get("composers", [])

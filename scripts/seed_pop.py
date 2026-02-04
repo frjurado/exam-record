@@ -40,12 +40,19 @@ async def seed_pop():
                     composer = Composer(
                         name=name,
                         is_verified=True,
-                        # We might want to store OpenOpus ID if we add column, but not strict req now.
+                        openopus_id=str(c_data.get("id"))
                     )
                     session.add(composer)
                     logger.info(f"Added: {name}")
                 else:
-                    logger.debug(f"Skipping existing: {name}")
+                    # Update existing if needed
+                    if not existing.openopus_id:
+                        existing.openopus_id = str(c_data.get("id"))
+                        # existing.is_verified = True # Optional: enforce verification
+                        session.add(existing)
+                        logger.info(f"Updated: {name} with OpenOpus ID")
+                    else:
+                        logger.debug(f"Skipping existing: {name}")
             
             await session.commit()
             logger.info("Seeding Popular Composers Complete.")
