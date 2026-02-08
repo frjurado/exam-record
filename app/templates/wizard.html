@@ -33,7 +33,73 @@
     </div>
 
     <div class="max-w-2xl mx-auto bg-white shadow rounded p-6">
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center text-xs text-gray-500 mb-6">
+            <a href="/" class="hover:text-blue-600 transition-colors">Inicio</a>
+            <span class="mx-2">/</span>
+            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}" class="hover:text-blue-600 transition-colors">
+                Región - Especialidad
+            </a>
+            <span class="mx-2">/</span>
+            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}"
+                class="hover:text-blue-600 transition-colors">
+                {{ year }}
+            </a>
+            <span class="mx-2">/</span>
+            <span class="font-bold text-gray-700">Contribuir</span>
+        </nav>
+
         <h1 class="text-2xl font-bold mb-4">Asistente de Aportación</h1>
+
+        <!-- Email Verified Banner (Post-Magic Link) -->
+        <div x-show="isAuthenticated && pendingSubmission" class="mb-6 bg-green-50 border-l-4 border-green-400 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path count="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700 font-bold">
+                        ¡Email verificado correctamente!
+                    </p>
+                    <p class="text-sm text-green-600 mt-1">
+                        Por favor, valida el captcha abajo y pulsa "Enviar Aportación" para terminar.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blocking Overlay for Pending Verification -->
+        <div x-show="pendingSubmission && !isAuthenticated && !showAuthModal"
+            class="fixed inset-0 bg-gray-50 bg-opacity-80 z-40 flex flex-col items-center justify-center text-center p-4">
+            <div class="bg-white p-6 rounded-lg shadow-xl border border-yellow-200 max-w-md">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                    <svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Esperando Verificación</h3>
+                <p class="text-gray-600 mb-4">
+                    Hemos enviado un enlace a tu correo. Por favor, haz clic en él para confirmar tu aportación.
+                </p>
+                <button @click="showAuthModal = true" class="text-blue-600 underline text-sm hover:text-blue-800">
+                    ¿No recibiste el correo?
+                </button>
+                <div class="mt-4 pt-4 border-t">
+                    <button @click="pendingSubmission = false; saveState()"
+                        class="text-gray-400 underline text-xs hover:text-gray-600">
+                        Cancelar y volver a editar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting for Verification Banner (Small) - Removed/Replaced by Overlay -->
 
         <!-- Step Indicator -->
         <div class="mb-6 flex space-x-4 text-sm">
@@ -270,7 +336,8 @@
                 </div>
             </div>
 
-            <button @click="submitReport"
+            <button @click="submitReport" :disabled="!turnstileToken"
+                :class="{'opacity-50 cursor-not-allowed': !turnstileToken}"
                 class="mt-6 bg-green-600 text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700 shadow">Enviar
                 Aportación</button>
             <div x-show="submitStatus" class="mt-4 p-4 rounded text-center"
@@ -286,7 +353,7 @@
             </div>
         </div>
         <!-- Auth Modal -->
-        <div x-show="showAuthModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full"
+        <div x-show="showAuthModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
             style="display: none;">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
 
@@ -410,15 +477,20 @@
                         // Global callback for Turnstile
                         window.onTurnstileSuccess = (token) => {
                             this.turnstileToken = token;
+                            this.submitStatus = ""; // Clear errors
                         };
 
-                        // Auto-submit check
-                        if (this.isAuthenticated && this.step === 3 && this.pendingSubmission) {
-                            console.log("Auto-submitting...");
-                            this.isVerifying = true; // Show loading overlay
-                            // Small delay to ensure UI renders
-                            setTimeout(() => this.submitReport(), 500);
+                        // Handle return from Magic Link
+                        if (this.isAuthenticated && this.pendingSubmission && this.step === 3) {
+                            // Wait a bit for DOM
+                            setTimeout(() => {
+                                const btn = document.querySelector('button[x-text="Enviar Aportación"]');
+                                if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // We don't auto-submit because Turnstile needs interaction
+                            }, 800);
                         }
+
+                        // Auto-submit check removed from here - waiting for Turnstile instead
                     },
 
                     saveState() {
@@ -743,7 +815,7 @@
                                     this.countdown--;
                                     if (this.countdown <= 0) {
                                         clearInterval(timer);
-                                        window.location.href = window.location.href.replace('/contribute', '');
+                                        window.location.href = `/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}`;
                                     }
                                 }, 1000);
                             } else {

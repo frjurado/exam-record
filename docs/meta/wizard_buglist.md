@@ -1,11 +1,6 @@
 I'm giving you the list of bugs I found in the wizard here, in order to be more structured about them.
 
 
-## General
-
-1. Data persistence goes way beyond the current session. I'd expect it to be cleared once I close the browser tab.
-
-
 ## Composer Section
 
 ### Local Search
@@ -30,7 +25,7 @@ I'm giving you the list of bugs I found in the wizard here, in order to be more 
 
 ### Local Search
 
-1. (RETHINK) Search seems to be just on local DB. Can it start with more pre-populated works?
+1. OpenOpus search works fine for composers in the DB, but not for those found in Wikidata. Can we pick the id once we find the composer so that works as well?
 
 
 ### Lazy Builder
@@ -42,13 +37,6 @@ I'm giving you the list of bugs I found in the wizard here, in order to be more 
 3. "Opus number" (now "Opus/BWV/KV") should be renamed to "Catalog number". In that case you should type the catalog (ex: "BWV") and then the number. Maybe: a regex to ensure you type some number? Also: if known composer, we could pre-populate the catalog field with the most common catalog for that composer? (ex: if I select Bach, it should default to BWV).
 
 4. Once shown, if I un-type in local search above, the lazy builder form shouldn't disappear. Maybe, as it is now functioning as a "show the title you're typing", it should be non-editable when you start typing on the "lazy builder".
-
-5. (QUESTION) Shouldn't this lazy builder be actively looking for works in OpenOpus??
-   > **ANSWER:** You are correct.
-   > 1. **Verified Composers**: If we have a valid OpenOpus Composer ID (which we do if selected from DB/Wikidata), we **can and should** search OpenOpus.
-   > 2. **Current State**: The current code (`wizard.html`) hardcodes `source=local`.
-   > **Decision**: We will implement "Real-time OpenOpus Search" in Phase 5.3 or 5.4.
-   >    - *Logic*: If `selectedComposer.wikidata_id` exists -> Search OpenOpus. Else -> Search Local.
 
 
 ## Scope section

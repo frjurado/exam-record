@@ -6,73 +6,183 @@
 event.year }} en
 {{ event.region.name }}. Consulta el consenso actual y contribuye.{% endblock %}
 
+{% block breadcrumbs %}
+<nav class="flex items-center text-sm text-gray-500">
+    <a href="/" class="hover:text-blue-600 transition-colors">Inicio</a>
+    <svg class="h-4 w-4 mx-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+    <a href="/exams/{{ region_slug }}/{{ discipline_slug }}" class="hover:text-blue-600 transition-colors">
+        {{ event.region.name }} - {{ event.discipline.name }}
+    </a>
+    <svg class="h-4 w-4 mx-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+    <span class="text-gray-900 font-medium">{{ event.year }}</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<!-- Header -->
-<div class="mb-8 border-b pb-4">
-    <h1 class="text-3xl font-bold text-gray-900">{{ event.discipline.name }}</h1>
-    <p class="text-xl text-gray-600">{{ event.region.name }} {{ event.year }}</p>
-</div>
+<div x-data="{
+    pendingVoteModalOpen: false,
+    pendingReportId: null,
+    
+    init() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('action') === 'vote' && params.get('report_id')) {
+            this.pendingReportId = params.get('report_id');
+            this.pendingVoteModalOpen = true;
+            
+            // Clean URL
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    },
+    
+    async confirmPendingVote() {
+        if (!this.pendingReportId) return;
+        
+        // Find the button to trigger HTMX or just call the API directly?
+        // HTMX is attached to the button in the list.
+        // We can just find the button by ID if we add IDs to buttons.
+        // Or we can just make a POST request manually.
+        // Let's make a manual request for simplicity and reload.
+        
+        try {
+            const response = await fetch(`/api/reports/${this.pendingReportId}/vote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error al registrar el voto.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error al conectar con el servidor.');
+        }
+        this.pendingVoteModalOpen = false;
+    }
+}">
 
-<!-- Consensus Banner -->
-{% include 'partials/event_status_banner.html' %}
+    <!-- Pending Vote Modal -->
+    <div x-show="pendingVoteModalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
 
-<!-- Works List -->
-<div class="space-y-4">
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-    <!-- Resolved View: Show Winner Prominently -->
-    {% if event_status == 'resolved' %}
-    {% for item in works %}
-    {% if item.status == 'verified' %}
-    {% include 'partials/work_card.html' %}
-    {% endif %}
-    {% endfor %}
-
-    <!-- Disclosure for specific others -->
-    {% set other_works_count = works|length - 1 %}
-    {% if other_works_count > 0 %}
-    <div x-data="{ open: false }" class="mt-6 border-t pt-4">
-        <button @click="open = !open"
-            class="flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium focus:outline-none">
-            <svg class="h-4 w-4 mr-1 transform transition-transform" :class="{'rotate-90': open}" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-            Ver otras {{ other_works_count }} opción(es) reportada(s) (baja confianza)
-        </button>
-
-        <div x-show="open" class="mt-4 space-y-3 pl-4 border-l-2 border-gray-100" style="display: none;">
-            {% for item in works %}
-            {% if item.status != 'verified' %}
-            {% include 'partials/work_card.html' %}
-            {% endif %}
-            {% endfor %}
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div
+                            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Completar Voto
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">
+                                    Has iniciado sesión correctamente. ¿Quieres confirmar tu voto para esta obra?
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" @click="confirmPendingVote()"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Confirmar Voto
+                    </button>
+                    <button type="button" @click="pendingVoteModalOpen = false"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
-    {% endif %}
 
-    <!-- Disputed / Neutral / Empty View: Standard List -->
-    {% else %}
-    {% for item in works %}
-    {% include 'partials/work_card.html' %}
-    {% else %}
-    <div class="text-center py-10 text-gray-500">
-        <p class="mb-2">Aún no se han encontrado reportes para este examen.</p>
+    <!-- Header -->
+    <div class="mb-8 border-b pb-4">
+        <h1 class="text-3xl font-bold text-gray-900">{{ event.discipline.name }}</h1>
+        <p class="text-xl text-gray-600">{{ event.region.name }} {{ event.year }}</p>
+    </div>
+
+    <!-- Consensus Banner -->
+    {% include 'partials/event_status_banner.html' %}
+
+    <!-- Works List -->
+    <div class="space-y-4">
+
+        <!-- Resolved View: Show Winner Prominently -->
+        {% if event_status == 'resolved' %}
+        {% for item in works %}
+        {% if item.status == 'verified' %}
+        {% include 'partials/work_card.html' %}
+        {% endif %}
+        {% endfor %}
+
+        <!-- Disclosure for specific others -->
+        {% set other_works_count = works|length - 1 %}
+        {% if other_works_count > 0 %}
+        <div x-data="{ open: false }" class="mt-6 border-t pt-4">
+            <button @click="open = !open"
+                class="flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium focus:outline-none">
+                <svg class="h-4 w-4 mr-1 transform transition-transform" :class="{'rotate-90': open}" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                Ver otras {{ other_works_count }} opción(es) reportada(s) (baja confianza)
+            </button>
+
+            <div x-show="open" class="mt-4 space-y-3 pl-4 border-l-2 border-gray-100" style="display: none;">
+                {% for item in works %}
+                {% if item.status != 'verified' %}
+                {% include 'partials/work_card.html' %}
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Disputed / Neutral / Empty View: Standard List -->
+        {% else %}
+        {% for item in works %}
+        {% include 'partials/work_card.html' %}
+        {% else %}
+        <div class="text-center py-10 text-gray-500">
+            <p class="mb-2">Aún no se han encontrado reportes para este examen.</p>
+            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
+                class="text-blue-600 underline font-medium">
+                ¡Sé el primero en contribuir!
+            </a>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+    </div>
+
+    <!-- Contribute Button at Bottom -->
+    <div class="mt-12 text-center border-t pt-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">¿No ves tu obra?</h3>
         <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
-            class="text-blue-600 underline font-medium">
-            ¡Sé el primero en contribuir!
+            class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition">
+            Aportar otra obra
         </a>
     </div>
-    {% endfor %}
-    {% endif %}
-
-</div>
-
-<!-- Contribute Button at Bottom -->
-<div class="mt-12 text-center border-t pt-8">
-    <h3 class="text-lg font-medium text-gray-900 mb-4">¿No ves tu obra?</h3>
-    <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
-        class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition">
-        Aportar otra obra
-    </a>
 </div>
 {% endblock %}

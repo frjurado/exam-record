@@ -1,0 +1,52 @@
+{% for item in years %}
+{% if item.has_event %}
+<a href="/exams/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}" class="block group" id="year-{{ item.year }}">
+    <div
+        class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                {{ item.year }}
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">Convocatoria de Acceso</p>
+        </div>
+
+        <div class="flex items-center">
+            {% if item.status == "vacío" %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+                Sin Datos
+            </span>
+            {% else %}
+            <span
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                {{ item.status }}
+                <svg class="ml-1.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </span>
+            {% endif %}
+
+            <svg class="w-5 h-5 ml-4 text-gray-400 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </div>
+    </div>
+</a>
+{% else %}
+<!-- Empty Year State -->
+<div id="year-{{ item.year }}"
+    class="bg-gray-50 border border-gray-200 border-dashed rounded-lg p-6 flex items-center justify-between opacity-75 hover:opacity-100 transition-opacity">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-400">
+            {{ item.year }}
+        </h2>
+        <p class="text-sm text-gray-400 mt-1">Sin información registrada</p>
+    </div>
+    <a href="/exams/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}/contribute"
+        class="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm">
+        Contribuir
+    </a>
+</div>
+{% endif %}
+{% endfor %}

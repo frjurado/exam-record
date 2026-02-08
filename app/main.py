@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Depends
+from datetime import datetime
 from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +27,8 @@ async def discipline_page(
     request: Request,
     region_slug: str,
     discipline_slug: str,
+    cursor: int | None = None, # The year to start *after* (e.g. if cursor=2020, we start at 2019). Or we can treat cursor as "start from this year". Let's say cursor is the *last shown* year, so we start from cursor-1.
+    partial: bool = False,
     db: AsyncSession = Depends(get_db)
 ):
     # Verify Region and Discipline exist
@@ -35,43 +38,97 @@ async def discipline_page(
     if not region or not discipline:
         return HTMLResponse(content="<h1>Región o Especialidad no encontrada</h1>", status_code=404)
 
-    # Fetch events for this pair
+    # Determine Anchor Year (Academic Year Logic)
+    now = datetime.now()
+    if now.month >= 6:
+        base_anchor_year = now.year
+    else:
+        base_anchor_year = now.year - 1
+    
+    # Pagination Logic
+    batch_size = 10
+    min_year_limit = 2000
+    
+    # If cursor is provided, we start from cursor - 1 (the next year in descending order)
+    # If no cursor, we start from base_anchor_year
+    if cursor:
+        start_year = cursor - 1
+    else:
+        start_year = base_anchor_year
+        
+    # Validation
+    if start_year < min_year_limit:
+         # Nothing more to show
+         if partial:
+             return HTMLResponse("")
+    
+    target_stop = start_year - batch_size
+    real_stop = max(min_year_limit - 1, target_stop)
+    years_range = range(start_year, real_stop, -1)
+    
+    # Fetch events for this range
     stmt = (
         select(ExamEvent)
         .options(joinedload(ExamEvent.reports))
         .filter(
             ExamEvent.region_id == region.id,
-            ExamEvent.discipline_id == discipline.id
+            ExamEvent.discipline_id == discipline.id,
+            ExamEvent.year <= start_year, 
+            ExamEvent.year > real_stop 
         )
-        .order_by(ExamEvent.year.desc())
     )
     result = await db.execute(stmt)
-    events = result.scalars().unique().all()
+    existing_events = result.scalars().unique().all()
+    events_map = {e.year: e for e in existing_events}
 
     # Process events to get status for display
-    events_data = []
-    for event in events:
-        report_count = len(event.reports)
-        status = "vacío"
-        if report_count > 0:
-            # Pluralization check
+    years_data = []
+    for year in years_range:
+        event = events_map.get(year)
+        if event and len(event.reports) > 0:
+            report_count = len(event.reports)
             if report_count == 1:
                 status = f"{report_count} Aportación"
             else:
                 status = f"{report_count} Aportaciones"
-        
-        events_data.append({
-            "year": event.year,
-            "status": status,
-            "report_count": report_count
-        })
+            
+            years_data.append({
+                "year": year,
+                "status": status,
+                "report_count": report_count,
+                "has_event": True,
+                "event_status": "neutral",
+                "region": region, # Pass to template
+                "discipline": discipline
+            })
+        else:
+            years_data.append({
+                "year": year,
+                "status": "Sin datos",
+                "report_count": 0,
+                "has_event": False,
+                "region": region, 
+                "discipline": discipline
+            })
 
-    return templates.TemplateResponse("discipline.html", {
+    # Determine if "Show More" should be visible (only for initial load really, but logic holds)
+    # Actually, JS will handle visibility based on result, but we need to know if there ARE more.
+    last_year_in_batch = years_data[-1]["year"] if years_data else start_year
+    show_more = last_year_in_batch > min_year_limit
+
+    context = {
         "request": request,
         "region": region,
         "discipline": discipline,
-        "events": events_data
-    })
+        "years": years_data,
+        "show_more": show_more,
+        "last_year": last_year_in_batch
+    }
+
+    if partial:
+        return templates.TemplateResponse("partials/year_list.html", context)
+
+    return templates.TemplateResponse("discipline.html", context)
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}", response_class=HTMLResponse)
 async def exam_page(
@@ -103,6 +160,12 @@ async def exam_page(
     event = result.unique().scalar_one_or_none()
 
     if not event:
+        # Check if year is valid? For now, just 404. 
+        # But maybe we should redirect to contribute if it's a valid past year?
+        # User requirement says: "if a year doesn't have any data, just say so, and give a button directly to contribute".
+        # This page logic handles EXISTING events. If event doesn't exist, it 404s.
+        # We should probably handle non-existent event here too?
+        # Let's keep 404 for now, relying on discipline list to guide users.
         return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
 
     # Aggregation Logic
@@ -175,6 +238,7 @@ async def contribute_page(
     year: int,
     db: AsyncSession = Depends(get_db)
 ):
+    # 1. Check if event exists
     stmt = select(ExamEvent).join(Region).join(Discipline).filter(
         Region.slug == region_slug,
         Discipline.slug == discipline_slug,
@@ -183,8 +247,27 @@ async def contribute_page(
     result = await db.execute(stmt)
     event = result.scalar_one_or_none()
     
+    # 2. Lazy Creation Logic
     if not event:
-        return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
+        # Validate year (Optional: limit to reasonable range?)
+        # For now, trust the user or the upstream link.
+        
+        # We need Region and Discipline objects to create the event
+        region = (await db.execute(select(Region).filter(Region.slug == region_slug))).scalar_one_or_none()
+        discipline = (await db.execute(select(Discipline).filter(Discipline.slug == discipline_slug))).scalar_one_or_none()
+        
+        if not region or not discipline:
+             return HTMLResponse(content="<h1>Región o Especialidad no encontrada</h1>", status_code=404)
+
+        # Create the missing event
+        event = ExamEvent(
+            region_id=region.id,
+            discipline_id=discipline.id,
+            year=year
+        )
+        db.add(event)
+        await db.commit()
+        await db.refresh(event)
 
     return templates.TemplateResponse("wizard.html", {
         "request": request,

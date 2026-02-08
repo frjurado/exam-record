@@ -204,11 +204,18 @@ async def vote_report(
         total_votes = sum(len(r.votes) for r in report.event.reports)
         item = build_item_dict(report, total_votes)
         
+        # Preserve voting intent
+        next_url = request.headers.get("referer", "/")
+        if "?" in next_url:
+            next_url += f"&action=vote&report_id={report_id}"
+        else:
+            next_url += f"?action=vote&report_id={report_id}"
+        
         return templates.TemplateResponse("partials/vote_updates.html", {
             "request": request,
             "item": item, # Restore the card
             "show_auth_modal": True, # Show modal OOB
-            "next_url": request.headers.get("referer", "/")
+            "next_url": next_url
         })
 
     # 2. Authenticated Case
