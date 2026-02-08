@@ -46,4 +46,8 @@ I'm giving you the list of bugs I found in the wizard here, in order to be more 
 
 ## Submission
 
-1. Have to clean up behavior after submission. For example, if I have to send email to get a magic link, if I close the modal I'm back on the form, ready to resubmit???
+1. Redirection after magic link is not working: I'm stuck on the contribution form, with no overlay, and never getting back to the event page.
+    > It still doesn't work: I'm stuck on the contribution form.
+
+2. Contribution after magic link is not working: data is not saved to the DB.
+    > It still doesn't work: data is not saved to the DB.

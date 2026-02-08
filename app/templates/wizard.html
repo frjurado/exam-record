@@ -395,8 +395,9 @@
                             Haz clic en el enlace del email para volver aquí y enviar tu reporte.
                         </p>
                         <div class="mt-4 p-2 bg-blue-50 text-xs text-blue-800 rounded text-left">
-                            <strong>Siguiente:</strong> Haz clic en el enlace de tu email. Te traerá de vuelta aquí y
-                            <strong>enviará tu reporte automáticamente</strong>.
+                            <strong>Siguiente:</strong> Haz clic en el enlace de tu email. Te traerá de vuelta aquí para
+                            que puedas
+                            <strong>confirmar el captcha y enviar tu reporte</strong>.
                         </div>
                     </div>
                     <div class="items-center px-4 py-3">
@@ -516,11 +517,11 @@
                             eventId: this.eventId,
                             pendingSubmission: this.pendingSubmission || false
                         };
-                        sessionStorage.setItem('wizardState_' + this.eventId, JSON.stringify(state));
+                        localStorage.setItem('wizardState_' + this.eventId, JSON.stringify(state));
                     },
 
                     restoreState() {
-                        const saved = sessionStorage.getItem('wizardState_' + this.eventId);
+                        const saved = localStorage.getItem('wizardState_' + this.eventId);
                         if (saved) {
                             const state = JSON.parse(saved);
                             this.step = state.step || 1;
@@ -546,7 +547,7 @@
                     },
 
                     clearState() {
-                        sessionStorage.removeItem('wizardState_' + this.eventId);
+                        localStorage.removeItem('wizardState_' + this.eventId);
                         // Also clear specific fields
                         this.step = 1;
                         this.selectedComposer = null;
