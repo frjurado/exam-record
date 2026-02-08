@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 from app.db.session import get_db
-from app.models import ExamEvent, Region, Discipline, Report, Work, Composer
+from app.models import ExamEvent, Region, Discipline, Report, Work, Composer, User
 from app.core.config import settings
 from app.api.api import api_router
+from app.api import deps
 
 app = FastAPI(title=settings.PROJECT_NAME)
 templates = Jinja2Templates(directory="app/templates")
@@ -19,17 +20,30 @@ from fastapi.staticfiles import StaticFiles
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def root(
+    request: Request,
+    current_user: User | None = Depends(deps.get_current_user_optional)
+):
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "user": current_user
+    })
+
+@app.get("/logout")
+async def logout():
+    response = Response(status_code=307, headers={"Location": "/"})
+    response.delete_cookie(key="access_token")
+    return response
 
 @app.get("/exams/{region_slug}/{discipline_slug}", response_class=HTMLResponse)
 async def discipline_page(
     request: Request,
     region_slug: str,
     discipline_slug: str,
-    cursor: int | None = None, # The year to start *after* (e.g. if cursor=2020, we start at 2019). Or we can treat cursor as "start from this year". Let's say cursor is the *last shown* year, so we start from cursor-1.
+    cursor: int | None = None,
     partial: bool = False,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional)
 ):
     # Verify Region and Discipline exist
     region = (await db.execute(select(Region).filter(Region.slug == region_slug))).scalar_one_or_none()
@@ -122,7 +136,8 @@ async def discipline_page(
         "discipline": discipline,
         "years": years_data,
         "show_more": show_more,
-        "last_year": last_year_in_batch
+        "last_year": last_year_in_batch,
+        "user": current_user
     }
 
     if partial:
@@ -136,7 +151,8 @@ async def exam_page(
     region_slug: str,
     discipline_slug: str,
     year: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional)
 ):
     stmt = (
         select(ExamEvent)
@@ -227,7 +243,8 @@ async def exam_page(
         "year": year,
         "works": works_list,
         "total_votes": total_votes,
-        "event_status": event_status
+        "event_status": event_status,
+        "user": current_user
     })
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}/contribute", response_class=HTMLResponse)
@@ -236,7 +253,8 @@ async def contribute_page(
     region_slug: str,
     discipline_slug: str,
     year: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional)
 ):
     # 1. Check if event exists
     stmt = select(ExamEvent).join(Region).join(Discipline).filter(
@@ -275,7 +293,8 @@ async def contribute_page(
         "region_slug": region_slug,
         "discipline_slug": discipline_slug,
         "year": year,
-        "turnstile_site_key": settings.TURNSTILE_SITE_KEY
+        "turnstile_site_key": settings.TURNSTILE_SITE_KEY,
+        "user": current_user
     })
 
 @app.get("/health")
