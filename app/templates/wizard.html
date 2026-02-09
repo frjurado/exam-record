@@ -456,10 +456,16 @@
                     turnstileToken: '',
 
                     async init() {
-                        this.restoreState();
-                        await this.checkAuth();
+                        // 1. Define Global Callback IMMEDIATELY (to handle Turnstile even if auth check is slow)
+                        window.onTurnstileSuccess = (token) => {
+                            this.turnstileToken = token;
+                            this.submitStatus = ""; // Clear errors
+                        };
 
-                        // Watch for changes to persist state
+                        // 2. Restore State (Sync)
+                        this.restoreState();
+
+                        // 3. Register Watchers (Sync)
                         this.$watch('step', () => this.saveState());
                         this.$watch('selectedComposer', () => this.saveState());
                         this.$watch('selectedWork', () => this.saveState());
@@ -475,11 +481,9 @@
                         this.$watch('isExcerpt', () => this.saveState());
                         this.$watch('excerptDetails', () => this.saveState());
 
-                        // Global callback for Turnstile
-                        window.onTurnstileSuccess = (token) => {
-                            this.turnstileToken = token;
-                            this.submitStatus = ""; // Clear errors
-                        };
+
+                        // 4. Trigger Async Auth Check (Blocking only the magic link logic below)
+                        await this.checkAuth();
 
                         // Handle return from Magic Link
                         if (this.isAuthenticated && this.pendingSubmission && this.step === 3) {
