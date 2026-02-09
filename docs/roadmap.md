@@ -61,5 +61,5 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
 
 ## Phase 7: Expansion (v0.4.0+)
 **Goal:** Grow the dataset and scope.
-*   **7.1 New Disciplines/Regions:** Add 1-2 more disciplines (e.g., Violin, Guitar).
-*   **7.2 Advanced features:** Comparative analytics between years/regions.
+*   **7.1 New Disciplines:** Add some more disciplines (e.g., Violin, Clarinet, Guitar).
+*   **7.2 PDF link:** Research (& implement, if feasible) a way to link to the PDF of the exam.

@@ -122,13 +122,31 @@ async def create_report(
     else:
          raise HTTPException(status_code=400, detail="Identificación de obra requerida")
 
+    # 5. Strict Participation Check (One Vote/Contribution per Event)
+    # Check for ANY existing report by this user in this event
+    existing_event_report = await db.execute(
+        select(Report).filter(Report.event_id == event.id, Report.user_id == current_user.id)
+    )
+    if existing_event_report.scalars().first():
+       raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria (una sola contribución/voto permitida).")
+
+    # Check for ANY existing vote by this user in this event
+    # Join Vote -> Report -> Event
+    existing_event_vote = await db.execute(
+        select(Vote)
+        .join(Report)
+        .filter(Report.event_id == event.id, Vote.user_id == current_user.id)
+    )
+    if existing_event_vote.scalars().first():
+         raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
+
     # 4. Get or Create Report (Candidate)
     full_details = report_in.movement_details
     if report_in.scope != ScopeEnum.WHOLE_WORK:
         prefix = f"[{report_in.scope.value}] "
         full_details = f"{prefix}{full_details}" if full_details else prefix
 
-    # Check for existing candidate
+    # Check for existing candidate (Target Report)
     query = select(Report).filter(Report.event_id == event.id, Report.work_id == work.id)
     existing_report = (await db.execute(query)).scalar_one_or_none()
 
@@ -223,8 +241,25 @@ async def vote_report(
     # Check if user already voted? Unique constraint usually handles this or we ignore.
     # Assuming simple insert for now.
     # 2. Authenticated Case
+    # Strict Participation Check: One Vote/Contribution per Event
+    
+    # Check if user has reported anything in this event
+    existing_event_report = await db.execute(
+        select(Report).filter(Report.event_id == report.event_id, Report.user_id == current_user.id)
+    )
+    if existing_event_report.scalars().first():
+         raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
+
+    # Check if user has voted anything in this event
+    existing_event_vote = await db.execute(
+        select(Vote)
+        .join(Report)
+        .filter(Report.event_id == report.event_id, Vote.user_id == current_user.id)
+    )
+    if existing_event_vote.scalars().first():
+         raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
+
     # Add vote
-    # Unlimited voting allowed for now
     vote = Vote(user_id=current_user.id, report_id=report.id)
     db.add(vote)
     await db.commit()
@@ -252,7 +287,9 @@ async def vote_report(
         "request": request,
         "item": target_item,
         "other_items": other_items,
-        "event_status": event_status
+        "event_status": event_status,
+        "user_has_participated": True,
+        "user_participation_report_id": report.id
     })
 
 @router.post("/{report_id}/flag", response_class=HTMLResponse)
@@ -330,9 +367,31 @@ async def flag_report(
     
     event_status = ConsensusService.aggregate_event_reports(report.event.reports)["event_status"]
     
+    # Calculate Participation for correct rendering
+    user_has_participated = False
+    user_participation_report_id = None
+    
+    # Check Report
+    existing_report = await db.execute(
+        select(Report).filter(Report.event_id == report.event_id, Report.user_id == current_user.id)
+    )
+    if existing_event_report := existing_report.scalars().first():
+        user_has_participated = True
+        user_participation_report_id = existing_event_report.id
+    else:
+        # Check Vote
+        existing_vote_result = await db.execute(
+            select(Vote).join(Report).filter(Report.event_id == report.event_id, Vote.user_id == current_user.id)
+        )
+        if existing_vote := existing_vote_result.scalars().first():
+             user_has_participated = True
+             user_participation_report_id = existing_vote.report_id
+    
     return templates.TemplateResponse("partials/vote_updates.html", {
         "request": request,
         "item": target_item,
         "other_items": other_items,
-        "event_status": event_status
+        "event_status": event_status,
+        "user_has_participated": user_has_participated,
+        "user_participation_report_id": user_participation_report_id
     })

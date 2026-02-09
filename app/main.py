@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 from app.db.session import get_db
-from app.models import ExamEvent, Region, Discipline, Report, Work, Composer, User
+from app.models import ExamEvent, Region, Discipline, Report, Work, Composer, User, Vote
 from app.core.config import settings
 from app.api.api import api_router
 from app.api import deps
@@ -235,6 +235,27 @@ async def exam_page(
     else:
         event_status = "disputed"
 
+    # Check User Participation
+    user_has_participated = False
+    user_participation_report_id = None
+    
+    if current_user:
+        # Check Report
+        existing_report = await db.execute(
+            select(Report).filter(Report.event_id == event.id, Report.user_id == current_user.id)
+        )
+        if existing_event_report := existing_report.scalars().first():
+            user_has_participated = True
+            user_participation_report_id = existing_event_report.id
+        else:
+            # Check Vote
+            existing_vote_result = await db.execute(
+                select(Vote).join(Report).filter(Report.event_id == event.id, Vote.user_id == current_user.id)
+            )
+            if existing_vote := existing_vote_result.scalars().first():
+                user_has_participated = True
+                user_participation_report_id = existing_vote.report_id
+
     return templates.TemplateResponse("event.html", {
         "request": request,
         "event": event,
@@ -244,7 +265,9 @@ async def exam_page(
         "works": works_list,
         "total_votes": total_votes,
         "event_status": event_status,
-        "user": current_user
+        "user": current_user,
+        "user_has_participated": user_has_participated,
+        "user_participation_report_id": user_participation_report_id
     })
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}/contribute", response_class=HTMLResponse)

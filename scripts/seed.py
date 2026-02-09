@@ -17,6 +17,7 @@ INITIAL_DISCIPLINES = [
     {"name": "Piano", "slug": "piano"},
     {"name": "Violín", "slug": "violin"},
     {"name": "Clarinete", "slug": "clarinete"},
+    {"name": "Guitarra", "slug": "guitarra"},
 ]
 
 async def seed():
