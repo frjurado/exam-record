@@ -71,6 +71,25 @@ class Work(Base):
     composer = relationship("Composer", back_populates="works")
     reports = relationship("Report", back_populates="work")
 
+    imslp_url = Column(String, nullable=True)
+
+    @property
+    def best_score_url(self):
+        if self.imslp_url:
+            return self.imslp_url
+        
+        # Fallback to DuckDuckGo "I'm Feeling Ducky" (First Result)
+        # Query format: \ site:imslp.org <Composer> <Title>
+        # The backslash triggers the "I'm Feeling Lucky" behavior
+        composer_name = self.composer.name if self.composer else ""
+        query_str = f"\\ site:imslp.org {composer_name} {self.title}"
+        
+        # We generally want to encode the query
+        import urllib.parse
+        encoded_query = urllib.parse.quote(query_str)
+        
+        return f"https://duckduckgo.com/?q={encoded_query}"
+
 
 class Report(Base):
     __tablename__ = "reports"
