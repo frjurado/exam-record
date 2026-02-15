@@ -63,3 +63,20 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
 **Goal:** Grow the dataset and scope.
 *   **7.1 New Disciplines:** Add some more disciplines (e.g., Violin, Clarinet, Guitar).
 *   **7.2 PDF link:** Research (& implement, if feasible) a way to link to the PDF of the exam.
+
+## Phase 8: Tweaks & Fixes (v0.5.0+)
+**Goal:** Fix issues and improve the project.
+*   **8.1 Infrastructure:** 
+    *   Set proper domain at wikianalisis.org.
+    *   Magic link from any email address?
+    *   Two machines on Fly.io? (load is too slow).
+    *   Change the DB to PostgreSQL? (necesary if more than one machine).
+*   **8.2 UI improvements & more disciplines:** 
+    *   Group links under "Andalucía" to avoid text clutter.
+    *   Discipline page: event boxes could show status badge/work if validated.
+    *   Consider opening more disciplines (that implies reorganizing the structure).
+*   **8.3 Text revision:** 
+    *   Revise the whole text of the site.
+    *   Add a small "About" note at the bottom of index page.
+*   **8.4 Bugs & issues:** 
+    *   Revise wizard_buglist.md and fix the most important issues.
