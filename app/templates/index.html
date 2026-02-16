@@ -12,29 +12,80 @@
         Democratizando el acceso a los datos históricos para estudiantes y profesores.
     </p>
 
-    <div class="bg-blue-50 border border-blue-100 rounded-xl p-8 mb-12">
-        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Acceso a la Beta</h2>
-        <p class="text-gray-600 mb-6">
-            Actualmente estamos en fase beta restringida. El acceso está limitado a regiones y especialidades
-            específicas.
-        </p>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="/exams/andalucia/piano"
-                class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
-                Andalucía Piano
-            </a>
-            <a href="/exams/andalucia/violin"
-                class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
-                Andalucía Violín
-            </a>
-            <a href="/exams/andalucia/clarinete"
-                class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
-                Andalucía Clarinete
-            </a>
-            <a href="/exams/andalucia/guitarra"
-                class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
-                Andalucía Guitarra
-            </a>
+    <div class="mb-12 space-y-8">
+        <!-- Region: Andalucía -->
+        <div class="bg-white border border-blue-100 rounded-xl overflow-hidden shadow-sm">
+            <div class="bg-blue-50 px-8 py-4 border-b border-blue-100 flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    Andalucía
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Beta Access
+                    </span>
+                </h2>
+            </div>
+
+            <div class="p-8 grid gap-8">
+                <!-- Group: Cuerda Pulsada y Tecla -->
+                <div>
+                    <h3
+                        class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        Cuerda Pulsada y Tecla
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <a href="/exams/andalucia/piano"
+                            class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+                            Piano
+                        </a>
+                        <a href="/exams/andalucia/guitarra"
+                            class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+                            Guitarra
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Group: Cuerda -->
+                <div>
+                    <h3
+                        class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        Cuerda
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <a href="/exams/andalucia/violin"
+                            class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+                            Violín
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Group: Viento Madera -->
+                <div>
+                    <h3
+                        class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        Viento Madera
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <a href="/exams/andalucia/clarinete"
+                            class="flex items-center justify-center px-6 py-4 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+                            Clarinete
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Group: Metal y Percusión -->
+                <div>
+                    <h3
+                        class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        Metal y Percusión
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div
+                            class="flex items-center justify-center px-6 py-4 text-base font-medium text-gray-400 bg-gray-50 rounded-lg border border-gray-200 border-dashed cursor-not-allowed">
+                            Próximamente
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
