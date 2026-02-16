@@ -24,6 +24,7 @@ primary_region = 'lhr'
 [env]
   DATABASE_URL = "sqlite+aiosqlite:////data/exam_record.db"
   PORT = "8080"
+  FROM_EMAIL = "noreply@wikianalisis.org"
 
 [mounts]
   source = "exam_data"
