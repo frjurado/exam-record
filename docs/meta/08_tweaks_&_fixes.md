@@ -8,11 +8,15 @@ Some thins to improve & fix in the project after phase 7.2.
 - Change the DB to PostgreSQL? (necesary if more than one machine)
 
 ## UI improvements
-- Group links under "Andalucía" to avoid text clutter.
-- Discipline page: event boxes could show status badge/work if validated.
+- Group links on index under "Andalucía" tag to avoid text clutter:
+    - Thus, links would be "Piano", "Guitar", etc. instead of "Andalucía - Piano", etc.
+- Discipline page: event boxes could show status badge (verified...):
+    - If validated, show work title/composer/IMSLP link?
 
 ## Features
-- Consider opening more disciplines for the exam record (that implies reorganizing the structure).
+- Consider opening more disciplines for the exam record:
+    - That implies reorganizing the structure in index: grouping them by family (keyboard & guitar, strings, wind).
+    - [NOT SURE] For mitigating, the "empty DB" feeling, could we show only the years for which there is data? (and add a button for expanding to every year).
 
 ## Text revision
 - Index page: revise text.

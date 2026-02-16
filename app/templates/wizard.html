@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contribute - Exam Record</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -128,8 +129,7 @@
                 <p class="text-gray-500 text-sm mb-2" x-show="composerResults.length === 0">No se encontraron resultados
                     locales.</p>
                 <div class="flex gap-4 items-center">
-                    <button @click="searchWikidata" class="text-blue-600 underline text-sm">Buscar en Base Global
-                        (Wikidata)</button>
+                    <button @click="searchWikidata" class="text-blue-600 underline text-sm">Buscar en Wikidata</button>
                     <span class="text-gray-300">|</span>
                     <button @click="createUnverifiedComposer" class="text-gray-600 underline text-sm">Usar "<span
                             x-text="searchComposerQuery"></span>" (Sin Verificar)</button>
@@ -315,8 +315,8 @@
                         </div>
                         <div class="ml-3 text-sm">
                             <label class="font-bold text-gray-700 block">Es un fragmento / selección</label>
-                            <span class="text-gray-500 text-xs">Marcar si solo se interpretó una parte (compases,
-                                cadenza, etc.)</span>
+                            <span class="text-gray-500 text-xs">Marcar si solo se analizó una parte (compases,
+                                sección, etc.)</span>
                         </div>
                     </label>
 

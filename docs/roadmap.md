@@ -74,7 +74,7 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
 *   **8.2 UI improvements & more disciplines:** 
     *   Group links under "Andalucía" to avoid text clutter.
     *   Discipline page: event boxes could show status badge/work if validated.
-    *   Consider opening more disciplines (that implies reorganizing the structure).
+    *   Consider opening more disciplines (see meta/08_tweaks_&_fixes.md).
 *   **8.3 Text revision:** 
     *   Revise the whole text of the site.
     *   Add a small "About" note at the bottom of index page.
