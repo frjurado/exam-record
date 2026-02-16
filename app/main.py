@@ -68,9 +68,11 @@ async def discipline_page(
     # 1. Mandatory Years: The last 5 academic years (always shown)
     mandatory_years = set(range(base_anchor_year, base_anchor_year - 5, -1))
 
-    # 2. Available Years: Years that actually have data in the DB
+    # 2. Available Years: Years that actually have data (Reports) in the DB
+    # We join with Report to ensure we only get years that resulted in contributions
     stmt_years = (
         select(ExamEvent.year)
+        .join(ExamEvent.reports) # Inner join ensures only events with reports are selected
         .filter(
             ExamEvent.region_id == region.id,
             ExamEvent.discipline_id == discipline.id
@@ -87,6 +89,10 @@ async def discipline_page(
         min_db_year = min(db_years) if db_years else base_anchor_year
         real_end = min(min_year_limit, min_db_year)
         all_relevant_years = sorted(list(range(base_anchor_year, real_end - 1, -1)), reverse=True)
+
+    # Filter out future years (e.g. 2026 ghost event from seed)
+    # This acts as a global ceiling for safety
+    all_relevant_years = [y for y in all_relevant_years if y <= base_anchor_year]
 
     # 4. Apply Cursor/Pagination
     # If cursor is provided, we want years < cursor
