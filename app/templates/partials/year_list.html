@@ -2,49 +2,91 @@
 {% if item.has_event %}
 <a href="/exams/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}" class="block group" id="year-{{ item.year }}">
     <div
-        class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
-        <div>
-            <h2 class="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                {{ item.year }}
-            </h2>
+        class="bg-white border rounded-lg p-6 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row items-center justify-between
+        {% if item.badge_status == 'verified' %}border-green-200 bg-green-50/30{% elif item.badge_status == 'disputed' %}border-orange-200 bg-orange-50/30{% else %}border-gray-200{% endif %}">
+
+        <div class="flex-1 mb-4 md:mb-0 w-full">
+            <div class="flex items-center gap-3 mb-1">
+                <h2 class="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    {{ item.year }}
+                </h2>
+                <!-- Badges -->
+                {% if item.badge_status == 'verified' %}
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                    <svg class="mr-1.5 h-3 w-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Verificado
+                </span>
+                {% elif item.badge_status == 'disputed' %}
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                    <svg class="mr-1.5 h-3 w-3 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    En disputa
+                </span>
+                {% else %}
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                    {{ item.status }}
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Content Preview -->
+            {% if item.best_work %}
+            <div class="mt-2 text-sm text-gray-600">
+                <span class="font-semibold text-gray-800">{{ item.best_work.title }}</span>
+                <span class="text-gray-400 mx-1">•</span>
+                <span>{{ item.best_work.composer }}</span>
+            </div>
+            {% else %}
             <p class="text-sm text-gray-500 mt-1">Convocatoria de Acceso</p>
+            {% endif %}
         </div>
 
-        <div class="flex items-center">
-            {% if item.status == "vacío" %}
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-                Sin Datos
-            </span>
-            {% else %}
-            <span
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                {{ item.status }}
-                <svg class="ml-1.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </span>
+        <div class="flex items-center gap-4">
+            <!-- IMSLP Button (only if verified and existing) -->
+            {% if item.best_work and item.best_work.is_verified and item.best_work.imslp_url %}
+            <object class="z-10 relative"> <!-- object tag prevents link nesting -->
+                <a href="{{ item.best_work.imslp_url }}" target="_blank" rel="noopener noreferrer"
+                    class="flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors"
+                    title="Ver partitura en IMSLP" onclick="event.stopPropagation();">
+                    <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    IMSLP
+                </a>
+            </object>
             {% endif %}
 
-            <svg class="w-5 h-5 ml-4 text-gray-400 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+            <div class="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
+                <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </div>
         </div>
     </div>
 </a>
 {% else %}
 <!-- Empty Year State -->
 <div id="year-{{ item.year }}"
-    class="bg-gray-50 border border-gray-200 border-dashed rounded-lg p-6 flex items-center justify-between opacity-75 hover:opacity-100 transition-opacity">
-    <div>
+    class="bg-gray-50 border border-gray-200 border-dashed rounded-lg p-6 flex flex-col sm:flex-row items-center justify-between opacity-75 hover:opacity-100 transition-opacity">
+    <div class="mb-4 sm:mb-0">
         <h2 class="text-2xl font-bold text-gray-400">
             {{ item.year }}
         </h2>
         <p class="text-sm text-gray-400 mt-1">Sin información registrada</p>
     </div>
     <a href="/exams/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}/contribute"
-        class="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm">
+        class="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">
         Contribuir
     </a>
 </div>

@@ -42,6 +42,7 @@ async def discipline_page(
     discipline_slug: str,
     cursor: int | None = None,
     partial: bool = False,
+    sparse_mode: bool = True, # Default to True (Sparse Mode)
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional)
 ):
@@ -61,74 +62,159 @@ async def discipline_page(
     
     # Pagination Logic
     batch_size = 10
-    min_year_limit = 2000
-    
-    # If cursor is provided, we start from cursor - 1 (the next year in descending order)
-    # If no cursor, we start from base_anchor_year
-    if cursor:
-        start_year = cursor - 1
+    min_year_limit = 2000 # Hard limit for now
+
+    # --- Sparse Mode Logic ---
+    # 1. Mandatory Years: The last 5 academic years (always shown)
+    mandatory_years = set(range(base_anchor_year, base_anchor_year - 5, -1))
+
+    # 2. Available Years: Years that actually have data in the DB
+    stmt_years = (
+        select(ExamEvent.year)
+        .filter(
+            ExamEvent.region_id == region.id,
+            ExamEvent.discipline_id == discipline.id
+        )
+    )
+    result_years = await db.execute(stmt_years)
+    db_years = set(result_years.scalars().all())
+
+    # 3. Combine
+    if sparse_mode:
+        all_relevant_years = sorted(list(mandatory_years.union(db_years)), reverse=True)
     else:
-        start_year = base_anchor_year
-        
-    # Validation
-    if start_year < min_year_limit:
-         # Nothing more to show
-         if partial:
-             return HTMLResponse("")
+        # Full Mode: All years from base_anchor until end of DB data or 2000
+        min_db_year = min(db_years) if db_years else base_anchor_year
+        real_end = min(min_year_limit, min_db_year)
+        all_relevant_years = sorted(list(range(base_anchor_year, real_end - 1, -1)), reverse=True)
+
+    # 4. Apply Cursor/Pagination
+    # If cursor is provided, we want years < cursor
+    if cursor:
+        filtered_years = [y for y in all_relevant_years if y < cursor]
+    else:
+        filtered_years = all_relevant_years
+
+    # Slice for batch
+    batch_years = filtered_years[:batch_size]
     
-    target_stop = start_year - batch_size
-    real_stop = max(min_year_limit - 1, target_stop)
-    years_range = range(start_year, real_stop, -1)
-    
-    # Fetch events for this range
+    # If empty batch and partial, return empty
+    if not batch_years:
+        if partial:
+            return HTMLResponse("")
+        # If not partial, we still render the page (empty list) with headers
+
+    # Fetch events for the batch
+    # We need rich data now for the badges/preview
     stmt = (
         select(ExamEvent)
-        .options(joinedload(ExamEvent.reports))
+        .options(
+            joinedload(ExamEvent.reports).joinedload(Report.work).joinedload(Work.composer),
+            joinedload(ExamEvent.reports).selectinload(Report.votes),
+             # We might need to eager load more if we want to be super efficient, 
+             # but this should cover the "Best Work" logic
+        )
         .filter(
             ExamEvent.region_id == region.id,
             ExamEvent.discipline_id == discipline.id,
-            ExamEvent.year <= start_year, 
-            ExamEvent.year > real_stop 
+            ExamEvent.year.in_(batch_years)
         )
     )
     result = await db.execute(stmt)
-    existing_events = result.scalars().unique().all()
-    events_map = {e.year: e for e in existing_events}
+    events_map = {e.year: e for e in result.unique().scalars().all()}
 
     # Process events to get status for display
     years_data = []
-    for year in years_range:
+    for year in batch_years:
         event = events_map.get(year)
-        if event and len(event.reports) > 0:
-            report_count = len(event.reports)
-            if report_count == 1:
-                status = f"{report_count} Aportación"
-            else:
-                status = f"{report_count} Aportaciones"
-            
-            years_data.append({
-                "year": year,
-                "status": status,
-                "report_count": report_count,
-                "has_event": True,
-                "event_status": "neutral",
-                "region": region, # Pass to template
-                "discipline": discipline
-            })
-        else:
-            years_data.append({
-                "year": year,
-                "status": "Sin datos",
-                "report_count": 0,
-                "has_event": False,
-                "region": region, 
-                "discipline": discipline
-            })
+        
+        item = {
+            "year": year,
+            "has_event": False,
+            "status": "Sin datos",
+            "report_count": 0,
+            "region": region,
+            "discipline": discipline,
+            "best_work": None,
+            "badge_status": "empty" # empty, verified, disputed, neutral
+        }
 
-    # Determine if "Show More" should be visible (only for initial load really, but logic holds)
-    # Actually, JS will handle visibility based on result, but we need to know if there ARE more.
-    last_year_in_batch = years_data[-1]["year"] if years_data else start_year
-    show_more = last_year_in_batch > min_year_limit
+        if event and len(event.reports) > 0:
+            item["has_event"] = True
+            report_count = len(event.reports)
+            item["report_count"] = report_count
+            
+            if report_count == 1:
+                item["status"] = f"{report_count} Aportación"
+            else:
+                item["status"] = f"{report_count} Aportaciones"
+
+            # logic to find "Best Work" for preview
+            # Reusing the logic from exam_page basically
+            best_work_candidate = None
+            max_votes = -1
+            
+            # We want to know if there is AT LEAST ONE verified work
+            has_verified = False
+            
+            # Temporary list to sort
+            work_stats = []
+
+            total_event_votes = 0
+
+            for report in event.reports:
+                vote_count = len(report.votes)
+                total_event_votes += vote_count
+
+            for report in event.reports:
+                vote_count = len(report.votes)
+                # Consensus Check
+                consensus_rate = vote_count / total_event_votes if total_event_votes > 0 else 0
+                
+                is_verified = False
+                if vote_count >= 2 and consensus_rate >= 0.75:
+                    is_verified = True
+                    has_verified = True
+                
+                work_stats.append({
+                    "report": report,
+                    "votes": vote_count,
+                    "is_verified": is_verified
+                })
+            
+            # Sort by votes desc
+            work_stats.sort(key=lambda x: x["votes"], reverse=True)
+            
+            if work_stats:
+                top_item = work_stats[0]
+                item["best_work"] = {
+                    "title": top_item["report"].work.title,
+                    "composer": top_item["report"].work.composer.name,
+                    "imslp_url": top_item["report"].work.imslp_url or top_item["report"].work.best_score_url, # Fallback to ducky?
+                    "is_verified": top_item["is_verified"]
+                }
+            
+            # Badge Status
+            if has_verified:
+                item["badge_status"] = "verified"
+            elif total_event_votes > 0: # Has votes but no consensus
+                 item["badge_status"] = "disputed"
+            else:
+                 item["badge_status"] = "neutral" # Just reports, no votes
+
+        years_data.append(item)
+
+    # Determine next cursor logic
+    if len(filtered_years) > batch_size:
+        next_cursor = batch_years[-1] # The last displayed year
+        show_more = True
+    else:
+        next_cursor = None
+        show_more = False
+
+    # IMPORTANT: The loadMore JS expects the last item's ID to parse the year.
+    # Our logic uses `cursor` which is treated as "Start AFTER this year" (descending).
+    # so `loadMore` passing the last year displayed is correct for `cursor`.
 
     context = {
         "request": request,
@@ -136,8 +222,9 @@ async def discipline_page(
         "discipline": discipline,
         "years": years_data,
         "show_more": show_more,
-        "last_year": last_year_in_batch,
-        "user": current_user
+        "user": current_user,
+        "sparse_mode": sparse_mode,
+        "all_empty": len(db_years) == 0 # Flag to show "No Data At All" encouragement
     }
 
     if partial:
