@@ -1,3 +1,5 @@
+import logging
+import jwt
 from typing import Optional
 from fastapi import Request, Depends, HTTPException, status
 from sqlalchemy.future import select
@@ -5,6 +7,8 @@ from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import verify_token
 from app.models import User
+
+logger = logging.getLogger("uvicorn")
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:
     token = request.cookies.get("access_token")
@@ -69,5 +73,6 @@ async def get_current_user_optional(request: Request, db: AsyncSession = Depends
         result = await db.execute(select(User).filter(User.email == user_email))
         user = result.scalar_one_or_none()
         return user
-    except:
+    except jwt.PyJWTError as e:
+        logger.warning("Invalid JWT token: %s", e)
         return None
