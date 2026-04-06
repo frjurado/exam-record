@@ -12,8 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Create and activate virtual environment
-python -m venv venv
-source venv/Scripts/activate  # Windows (bash)
+python -m venv .venv
+source .venv/Scripts/activate  # Windows (bash)
 
 # Install dependencies
 pip install -r requirements.txt
