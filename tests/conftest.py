@@ -38,7 +38,8 @@ from sqlalchemy import text
 async def db(prepare_database): # Renamed to db for clarity
     async with TestingSessionLocal() as session:
         yield session
-        # Clean up tables
+        # Clean up tables (votes first — references reports and users)
+        await session.execute(text("DELETE FROM votes"))
         await session.execute(text("DELETE FROM reports"))
         await session.execute(text("DELETE FROM works"))
         await session.execute(text("DELETE FROM composers"))

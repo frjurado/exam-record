@@ -17,6 +17,21 @@ templates = Jinja2Templates(directory="app/templates")
 
 router = APIRouter()
 
+
+def build_item_dict(r, total_vs):
+    vs_count = len(r.votes)
+    m = ConsensusService.calculate_work_status(vs_count, total_vs)
+    return {
+        "report_id": r.id,
+        "work": r.work,
+        "composer": r.work.composer,
+        "votes": vs_count,
+        "percentage": m["percentage"],
+        "status": m["status"],
+        "is_flagged": r.is_flagged,
+    }
+
+
 @router.post("/", response_model=ReportResponse)
 async def create_report(
     report_in: ReportCreate,
@@ -201,20 +216,6 @@ async def vote_report(
     
     if not report:
         raise HTTPException(status_code=404, detail="Reporte no encontrado")
-        
-    # Helper to build item dict
-    def build_item_dict(r, total_vs):
-        vs_count = len(r.votes)
-        m = ConsensusService.calculate_work_status(vs_count, total_vs)
-        return {
-            "report_id": r.id,
-            "work": r.work,
-            "composer": r.work.composer,
-            "votes": vs_count,
-            "percentage": m["percentage"],
-            "status": m["status"],
-            "is_flagged": r.is_flagged,
-        }
 
     # 1. Unauthenticated Case
     if not current_user:
@@ -318,20 +319,6 @@ async def flag_report(
     
     if not report:
         raise HTTPException(status_code=404, detail="Reporte no encontrado")
-
-    # Helper (duplicated but safe)
-    def build_item_dict(r, total_vs):
-        vs_count = len(r.votes)
-        m = ConsensusService.calculate_work_status(vs_count, total_vs)
-        return {
-            "report_id": r.id,
-            "work": r.work,
-            "composer": r.work.composer,
-            "votes": vs_count,
-            "percentage": m["percentage"],
-            "status": m["status"],
-            "is_flagged": r.is_flagged,
-        }
 
     # 1. Unauthenticated Case
     if not current_user:
