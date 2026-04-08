@@ -18,8 +18,9 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.models import Base
 from app.core.config import settings
+from app.models import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -29,6 +30,7 @@ target_metadata = Base.metadata
 
 # Overwrite sqlalchemy.url with the value from settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

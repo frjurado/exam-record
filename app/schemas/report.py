@@ -1,33 +1,38 @@
-from typing import Optional
-from pydantic import BaseModel
-from enum import Enum
+from enum import StrEnum
 
-class ScopeEnum(str, Enum):
+from pydantic import BaseModel
+
+
+class ScopeEnum(StrEnum):
     WHOLE_WORK = "Whole Work"
     MOVEMENT = "Movement"
     EXCERPT = "Excerpt"
 
+
 class ComposerInput(BaseModel):
-    id: Optional[int] = None
-    wikidata_id: Optional[str] = None
-    name: Optional[str] = None
+    id: int | None = None
+    wikidata_id: str | None = None
+    name: str | None = None
+
 
 class WorkInput(BaseModel):
-    id: Optional[int] = None
-    openopus_id: Optional[str] = None
-    title: Optional[str] = None
-    genre: Optional[str] = None
-    key: Optional[str] = None
-    opus: Optional[str] = None
-    number: Optional[str] = None
+    id: int | None = None
+    openopus_id: str | None = None
+    title: str | None = None
+    genre: str | None = None
+    key: str | None = None
+    opus: str | None = None
+    number: str | None = None
+
 
 class ReportCreate(BaseModel):
     event_id: int
     composer: ComposerInput
     work: WorkInput
     scope: ScopeEnum
-    movement_details: Optional[str] = None
-    turnstile_token: Optional[str] = None # Optional for backend compat, but frontend sends it
+    movement_details: str | None = None
+    turnstile_token: str | None = None  # Optional for backend compat, but frontend sends it
+
 
 class ReportResponse(BaseModel):
     id: int

@@ -1,7 +1,10 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, UniqueConstraint
+from datetime import UTC, datetime
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
+
 from app.db.base import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -9,9 +12,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     role = Column(String, default="Visitor", nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     reports = relationship("Report", back_populates="user")
+
 
 class Region(Base):
     __tablename__ = "regions"
@@ -22,6 +26,7 @@ class Region(Base):
 
     events = relationship("ExamEvent", back_populates="region")
 
+
 class Discipline(Base):
     __tablename__ = "disciplines"
 
@@ -30,6 +35,7 @@ class Discipline(Base):
     slug = Column(String, unique=True, index=True, nullable=False)
 
     events = relationship("ExamEvent", back_populates="discipline")
+
 
 class ExamEvent(Base):
     __tablename__ = "exam_events"
@@ -44,8 +50,9 @@ class ExamEvent(Base):
     reports = relationship("Report", back_populates="event")
 
     __table_args__ = (
-        UniqueConstraint('year', 'region_id', 'discipline_id', name='uix_year_region_discipline'),
+        UniqueConstraint("year", "region_id", "discipline_id", name="uix_year_region_discipline"),
     )
+
 
 class Composer(Base):
     __tablename__ = "composers"
@@ -57,6 +64,7 @@ class Composer(Base):
     is_verified = Column(Boolean, default=False)
 
     works = relationship("Work", back_populates="composer")
+
 
 class Work(Base):
     __tablename__ = "works"
@@ -77,17 +85,18 @@ class Work(Base):
     def best_score_url(self):
         if self.imslp_url:
             return self.imslp_url
-        
+
         # Fallback to DuckDuckGo "I'm Feeling Ducky" (First Result)
         # Query format: \ site:imslp.org <Composer> <Title>
         # The backslash triggers the "I'm Feeling Lucky" behavior
         composer_name = self.composer.name if self.composer else ""
         query_str = f"\\ site:imslp.org {composer_name} {self.title}"
-        
+
         # We generally want to encode the query
         import urllib.parse
+
         encoded_query = urllib.parse.quote(query_str)
-        
+
         return f"https://duckduckgo.com/?q={encoded_query}"
 
 
@@ -99,7 +108,7 @@ class Report(Base):
     event_id = Column(Integer, ForeignKey("exam_events.id"), nullable=False)
     work_id = Column(Integer, ForeignKey("works.id"), nullable=False)
     movement_details = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     is_flagged = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="reports")
@@ -107,9 +116,8 @@ class Report(Base):
     work = relationship("Work", back_populates="reports")
     votes = relationship("Vote", back_populates="report", cascade="all, delete-orphan")
 
-    __table_args__ = (
-        UniqueConstraint('event_id', 'work_id', name='uix_event_work_report'),
-    )
+    __table_args__ = (UniqueConstraint("event_id", "work_id", name="uix_event_work_report"),)
+
 
 class Vote(Base):
     __tablename__ = "votes"
@@ -117,7 +125,7 @@ class Vote(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     report_id = Column(Integer, ForeignKey("reports.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     user = relationship("User")
     report = relationship("Report", back_populates="votes")

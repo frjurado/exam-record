@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.db.session import get_db
+from sqlalchemy.orm import joinedload, selectinload
+
 from app.api import deps
-from fastapi.responses import HTMLResponse
-from app.models import User, Report, ExamEvent, Composer, Work, Vote
+from app.core.config import settings
+from app.db.session import get_db
+from app.models import Composer, ExamEvent, Report, User, Vote, Work
 from app.schemas.report import ReportCreate, ReportResponse, ScopeEnum
 from app.services import wikidata
 from app.services.consensus import ConsensusService
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import selectinload, joinedload
-import httpx
-from app.core.config import settings
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -36,22 +37,22 @@ def build_item_dict(r, total_vs):
 async def create_report(
     report_in: ReportCreate,
     current_user: User = Depends(deps.get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     # 0. Verify Turnstile (Anti-Spam)
     if settings.TURNSTILE_SECRET_KEY:
         if not report_in.turnstile_token:
-             # Make it optional for dev/backward compat if needed, or strict. 
-             # Let's be strict if key is configured.
-             raise HTTPException(status_code=400, detail="Falta validación Anti-Spam (Turnstile)")
-             
+            # Make it optional for dev/backward compat if needed, or strict.
+            # Let's be strict if key is configured.
+            raise HTTPException(status_code=400, detail="Falta validación Anti-Spam (Turnstile)")
+
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 "https://challenges.cloudflare.com/turnstile/v0/siteverify",
                 data={
                     "secret": settings.TURNSTILE_SECRET_KEY,
-                    "response": report_in.turnstile_token
-                }
+                    "response": report_in.turnstile_token,
+                },
             )
             data = resp.json()
             if not data.get("success"):
@@ -73,7 +74,9 @@ async def create_report(
             raise HTTPException(status_code=404, detail="Compositor no encontrado")
     elif report_in.composer.wikidata_id:
         # Check if exists by wikidata_id
-        result = await db.execute(select(Composer).filter(Composer.wikidata_id == report_in.composer.wikidata_id))
+        result = await db.execute(
+            select(Composer).filter(Composer.wikidata_id == report_in.composer.wikidata_id)
+        )
         composer = result.scalar_one_or_none()
         if not composer:
             # Import from Wikidata
@@ -81,20 +84,17 @@ async def create_report(
                 wd_data = await wikidata.get_composer_by_id(report_in.composer.wikidata_id)
                 name = wd_data.get("name") or report_in.composer.name or "Compositor Desconocido"
                 composer = Composer(
-                    name=name,
-                    wikidata_id=report_in.composer.wikidata_id,
-                    is_verified=True
+                    name=name, wikidata_id=report_in.composer.wikidata_id, is_verified=True
                 )
                 db.add(composer)
                 await db.flush()
             except Exception as e:
-                 raise HTTPException(status_code=400, detail=f"Error verificando ID de Wikidata: {str(e)}")
+                raise HTTPException(
+                    status_code=400, detail=f"Error verificando ID de Wikidata: {str(e)}"
+                ) from e
     elif report_in.composer.name:
         # Unverified creation
-        composer = Composer(
-            name=report_in.composer.name,
-            is_verified=False
-        )
+        composer = Composer(name=report_in.composer.name, is_verified=False)
         db.add(composer)
         await db.flush()
     else:
@@ -107,35 +107,35 @@ async def create_report(
         result = await db.execute(select(Work).filter(Work.id == report_in.work.id))
         work = result.scalar_one_or_none()
         if not work:
-             raise HTTPException(status_code=404, detail="Obra no encontrada")
+            raise HTTPException(status_code=404, detail="Obra no encontrada")
     elif report_in.work.openopus_id:
-         # Check if exists
-        result = await db.execute(select(Work).filter(Work.openopus_id == report_in.work.openopus_id))
+        # Check if exists
+        result = await db.execute(
+            select(Work).filter(Work.openopus_id == report_in.work.openopus_id)
+        )
         work = result.scalar_one_or_none()
         if not work:
             # Create verified work
             if not report_in.work.title:
-                 raise HTTPException(status_code=400, detail="Título de obra requerido para nueva obra OpenOpus")
-            
+                raise HTTPException(
+                    status_code=400, detail="Título de obra requerido para nueva obra OpenOpus"
+                )
+
             work = Work(
                 title=report_in.work.title,
                 openopus_id=report_in.work.openopus_id,
                 composer_id=composer.id,
-                is_verified=True
+                is_verified=True,
             )
             db.add(work)
             await db.flush()
-    elif report_in.work.title: 
-         # Lazy Builder or raw title - Unverified
-         work = Work(
-             title=report_in.work.title,
-             composer_id=composer.id,
-             is_verified=False
-         )
-         db.add(work)
-         await db.flush()
+    elif report_in.work.title:
+        # Lazy Builder or raw title - Unverified
+        work = Work(title=report_in.work.title, composer_id=composer.id, is_verified=False)
+        db.add(work)
+        await db.flush()
     else:
-         raise HTTPException(status_code=400, detail="Identificación de obra requerida")
+        raise HTTPException(status_code=400, detail="Identificación de obra requerida")
 
     # 5. Strict Participation Check (One Vote/Contribution per Event)
     # Check for ANY existing report by this user in this event
@@ -143,7 +143,10 @@ async def create_report(
         select(Report).filter(Report.event_id == event.id, Report.user_id == current_user.id)
     )
     if existing_event_report.scalars().first():
-       raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria (una sola contribución/voto permitida).")
+        raise HTTPException(
+            status_code=400,
+            detail="Ya has participado en esta convocatoria (una sola contribución/voto permitida).",
+        )
 
     # Check for ANY existing vote by this user in this event
     # Join Vote -> Report -> Event
@@ -153,7 +156,7 @@ async def create_report(
         .filter(Report.event_id == event.id, Vote.user_id == current_user.id)
     )
     if existing_event_vote.scalars().first():
-         raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
+        raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
 
     # 4. Get or Create Report (Candidate)
     full_details = report_in.movement_details
@@ -173,47 +176,44 @@ async def create_report(
             event_id=event.id,
             work_id=work.id,
             movement_details=full_details,
-            is_flagged=False
+            is_flagged=False,
         )
         db.add(report)
-        await db.flush() # Get ID
+        await db.flush()  # Get ID
 
     # 5. Create Vote
-    vote = Vote(
-        user_id=current_user.id,
-        report_id=report.id
-    )
+    vote = Vote(user_id=current_user.id, report_id=report.id)
     db.add(vote)
-    
+
     await db.commit()
     await db.refresh(report)
-    
+
     return report
+
 
 @router.post("/{report_id}/vote", response_class=HTMLResponse)
 async def vote_report(
     request: Request,
     report_id: int,
     current_user: User | None = Depends(deps.get_current_user_optional),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     # Fetch report with event relation to count totals
     query = (
         select(Report)
         .options(
-             selectinload(Report.votes),
-             joinedload(Report.work).joinedload(Work.composer),
-             # Deep load for aggregation: Event -> Reports -> (Votes, Work -> Composer)
-             joinedload(Report.event).selectinload(ExamEvent.reports).options(
-                 selectinload(Report.votes),
-                 joinedload(Report.work).joinedload(Work.composer)
-             )
+            selectinload(Report.votes),
+            joinedload(Report.work).joinedload(Work.composer),
+            # Deep load for aggregation: Event -> Reports -> (Votes, Work -> Composer)
+            joinedload(Report.event)
+            .selectinload(ExamEvent.reports)
+            .options(selectinload(Report.votes), joinedload(Report.work).joinedload(Work.composer)),
         )
         .filter(Report.id == report_id)
     )
     result = await db.execute(query)
     report = result.unique().scalar_one_or_none()
-    
+
     if not report:
         raise HTTPException(status_code=404, detail="Reporte no encontrado")
 
@@ -222,20 +222,23 @@ async def vote_report(
         # Calculate context just to re-render the card exactly as is
         total_votes = sum(len(r.votes) for r in report.event.reports)
         item = build_item_dict(report, total_votes)
-        
+
         # Preserve voting intent
         next_url = request.headers.get("referer", "/")
         if "?" in next_url:
             next_url += f"&action=vote&report_id={report_id}"
         else:
             next_url += f"?action=vote&report_id={report_id}"
-        
-        return templates.TemplateResponse("partials/vote_updates.html", {
-            "request": request,
-            "item": item, # Restore the card
-            "show_auth_modal": True, # Show modal OOB
-            "next_url": next_url
-        })
+
+        return templates.TemplateResponse(
+            "partials/vote_updates.html",
+            {
+                "request": request,
+                "item": item,  # Restore the card
+                "show_auth_modal": True,  # Show modal OOB
+                "next_url": next_url,
+            },
+        )
 
     # 2. Authenticated Case
     # Add vote
@@ -243,13 +246,13 @@ async def vote_report(
     # Assuming simple insert for now.
     # 2. Authenticated Case
     # Strict Participation Check: One Vote/Contribution per Event
-    
+
     # Check if user has reported anything in this event
     existing_event_report = await db.execute(
         select(Report).filter(Report.event_id == report.event_id, Report.user_id == current_user.id)
     )
     if existing_event_report.scalars().first():
-         raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
+        raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
 
     # Check if user has voted anything in this event
     existing_event_vote = await db.execute(
@@ -258,7 +261,7 @@ async def vote_report(
         .filter(Report.event_id == report.event_id, Vote.user_id == current_user.id)
     )
     if existing_event_vote.scalars().first():
-         raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
+        raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
 
     # Add vote
     vote = Vote(user_id=current_user.id, report_id=report.id)
@@ -266,57 +269,60 @@ async def vote_report(
     await db.commit()
 
     # Refresh data
-    db.expire_all() 
+    db.expire_all()
     result = await db.execute(query)
     report = result.unique().scalar_one_or_none()
-    
+
     # Recalculate context for ALL items
     total_votes = sum(len(r.votes) for r in report.event.reports)
-    
+
     # Target Item
     target_item = build_item_dict(report, total_votes)
-    
+
     # Other Items
     other_items = []
     for r in report.event.reports:
         if r.id != report.id:
             other_items.append(build_item_dict(r, total_votes))
-    
+
     event_status = ConsensusService.aggregate_event_reports(report.event.reports)["event_status"]
-    
-    return templates.TemplateResponse("partials/vote_updates.html", {
-        "request": request,
-        "item": target_item,
-        "other_items": other_items,
-        "event_status": event_status,
-        "user_has_participated": True,
-        "user_participation_report_id": report.id
-    })
+
+    return templates.TemplateResponse(
+        "partials/vote_updates.html",
+        {
+            "request": request,
+            "item": target_item,
+            "other_items": other_items,
+            "event_status": event_status,
+            "user_has_participated": True,
+            "user_participation_report_id": report.id,
+        },
+    )
+
 
 @router.post("/{report_id}/flag", response_class=HTMLResponse)
 async def flag_report(
     request: Request,
     report_id: int,
     current_user: User | None = Depends(deps.get_current_user_optional),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     # Fetch report with event relation
     query = (
         select(Report)
         .options(
-             selectinload(Report.votes),
-             joinedload(Report.work).joinedload(Work.composer),
-             # Deep load for aggregation
-             joinedload(Report.event).selectinload(ExamEvent.reports).options(
-                 selectinload(Report.votes),
-                 joinedload(Report.work).joinedload(Work.composer)
-             )
+            selectinload(Report.votes),
+            joinedload(Report.work).joinedload(Work.composer),
+            # Deep load for aggregation
+            joinedload(Report.event)
+            .selectinload(ExamEvent.reports)
+            .options(selectinload(Report.votes), joinedload(Report.work).joinedload(Work.composer)),
         )
         .filter(Report.id == report_id)
     )
     result = await db.execute(query)
     report = result.unique().scalar_one_or_none()
-    
+
     if not report:
         raise HTTPException(status_code=404, detail="Reporte no encontrado")
 
@@ -324,14 +330,17 @@ async def flag_report(
     if not current_user:
         total_votes = sum(len(r.votes) for r in report.event.reports)
         item = build_item_dict(report, total_votes)
-        
-        return templates.TemplateResponse("partials/vote_updates.html", {
-            "request": request,
-            "item": item, 
-            "show_auth_modal": True, 
-            "next_url": request.headers.get("referer", "/")
-        })
-        
+
+        return templates.TemplateResponse(
+            "partials/vote_updates.html",
+            {
+                "request": request,
+                "item": item,
+                "show_auth_modal": True,
+                "next_url": request.headers.get("referer", "/"),
+            },
+        )
+
     # 2. Authenticated Case
     report.is_flagged = True
     await db.commit()
@@ -339,25 +348,25 @@ async def flag_report(
     db.expire_all()
     result = await db.execute(query)
     report = result.unique().scalar_one_or_none()
-    
+
     # Recalculate context for ALL items
     total_votes = sum(len(r.votes) for r in report.event.reports)
-    
+
     target_item = build_item_dict(report, total_votes)
     # Ensure flag status is True locally just in case db commit didn't propagate fast enough (it should have)
-    target_item["is_flagged"] = True 
-    
+    target_item["is_flagged"] = True
+
     other_items = []
     for r in report.event.reports:
         if r.id != report.id:
             other_items.append(build_item_dict(r, total_votes))
-    
+
     event_status = ConsensusService.aggregate_event_reports(report.event.reports)["event_status"]
-    
+
     # Calculate Participation for correct rendering
     user_has_participated = False
     user_participation_report_id = None
-    
+
     # Check Report
     existing_report = await db.execute(
         select(Report).filter(Report.event_id == report.event_id, Report.user_id == current_user.id)
@@ -368,17 +377,22 @@ async def flag_report(
     else:
         # Check Vote
         existing_vote_result = await db.execute(
-            select(Vote).join(Report).filter(Report.event_id == report.event_id, Vote.user_id == current_user.id)
+            select(Vote)
+            .join(Report)
+            .filter(Report.event_id == report.event_id, Vote.user_id == current_user.id)
         )
         if existing_vote := existing_vote_result.scalars().first():
-             user_has_participated = True
-             user_participation_report_id = existing_vote.report_id
-    
-    return templates.TemplateResponse("partials/vote_updates.html", {
-        "request": request,
-        "item": target_item,
-        "other_items": other_items,
-        "event_status": event_status,
-        "user_has_participated": user_has_participated,
-        "user_participation_report_id": user_participation_report_id
-    })
+            user_has_participated = True
+            user_participation_report_id = existing_vote.report_id
+
+    return templates.TemplateResponse(
+        "partials/vote_updates.html",
+        {
+            "request": request,
+            "item": target_item,
+            "other_items": other_items,
+            "event_status": event_status,
+            "user_has_participated": user_has_participated,
+            "user_participation_report_id": user_participation_report_id,
+        },
+    )

@@ -1,5 +1,6 @@
 import pytest
-from app.models import Region, Discipline, ExamEvent, User, Composer, Work, Report, Vote
+
+from app.models import Composer, Discipline, ExamEvent, Region, Report, User, Vote, Work
 
 
 @pytest.mark.asyncio
@@ -48,11 +49,13 @@ async def test_consensus_logic(client, db):
     await db.refresh(report_a)
     await db.refresh(report_b)
 
-    db.add_all([
-        Vote(user_id=user1.id, report_id=report_a.id),
-        Vote(user_id=user2.id, report_id=report_a.id),
-        Vote(user_id=user3.id, report_id=report_b.id),
-    ])
+    db.add_all(
+        [
+            Vote(user_id=user1.id, report_id=report_a.id),
+            Vote(user_id=user2.id, report_id=report_a.id),
+            Vote(user_id=user3.id, report_id=report_b.id),
+        ]
+    )
     await db.commit()
 
     response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2026")
@@ -75,10 +78,12 @@ async def test_consensus_logic(client, db):
     await db.commit()
     await db.refresh(report_a2)
 
-    db.add_all([
-        Vote(user_id=user1.id, report_id=report_a2.id),
-        Vote(user_id=user2.id, report_id=report_a2.id),
-    ])
+    db.add_all(
+        [
+            Vote(user_id=user1.id, report_id=report_a2.id),
+            Vote(user_id=user2.id, report_id=report_a2.id),
+        ]
+    )
     await db.commit()
 
     response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2027")

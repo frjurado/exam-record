@@ -1,13 +1,13 @@
 import asyncio
-import sys
 import os
-import httpx
+import sys
 
 # Ensure project root is in path
 sys.path.append(os.getcwd())
 
-from app.services.wikidata import search_composer, get_composer_by_id
 from app.services.openopus import get_popular_composers, search_work
+from app.services.wikidata import get_composer_by_id, search_composer
+
 
 async def main():
     print("--- Testing Wikidata ---")
@@ -17,9 +17,9 @@ async def main():
         if composers:
             first = composers[0]
             print(f"First result: {first}")
-            if first.get('wikidata_id'):
+            if first.get("wikidata_id"):
                 try:
-                    details = await get_composer_by_id(first['wikidata_id'])
+                    details = await get_composer_by_id(first["wikidata_id"])
                     print(f"Details for {first['wikidata_id']}: Name={details.get('name')}")
                 except Exception as e:
                     print(f"Get details failed: {e}")
@@ -44,6 +44,7 @@ async def main():
             print(f"First work: {works[0]}")
     except Exception as e:
         print(f"Search work failed: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

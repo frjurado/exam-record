@@ -1,8 +1,9 @@
-
 import asyncio
+
 import httpx
 
 OPENOPUS_API_URL = "https://api.openopus.org"
+
 
 async def test_openopus():
     print("Fetching popular composers...")
@@ -18,6 +19,7 @@ async def test_openopus():
         else:
             print("Failed to fetch composers")
 
+
 async def search_work_test(composer_id):
     print(f"Fetching works for composer {composer_id}...")
     url = f"{OPENOPUS_API_URL}/work/list/composer/{composer_id}/genre/all.json"
@@ -31,6 +33,7 @@ async def search_work_test(composer_id):
                 print("First work sample:", works[0])
         else:
             print(f"Failed to fetch works for {composer_id}: {response.status_code}")
+
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()

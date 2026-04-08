@@ -1,14 +1,16 @@
 import logging
+
 import jwt
-from typing import Optional
-from fastapi import Request, Depends, HTTPException, status
-from sqlalchemy.future import select
-from app.db.session import get_db
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
 from app.core.security import verify_token
+from app.db.session import get_db
 from app.models import User
 
 logger = logging.getLogger("uvicorn")
+
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:
     token = request.cookies.get("access_token")
@@ -17,59 +19,61 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
-    
+
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
-    
+
     payload = verify_token(token)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
         )
-    
+
     user_email = payload.get("sub")
     if not user_email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
         )
-        
+
     result = await db.execute(select(User).filter(User.email == user_email))
     user = result.scalar_one_or_none()
-    
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
-        
+
     return user
 
-async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[User]:
+
+async def get_current_user_optional(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> User | None:
     token = request.cookies.get("access_token")
     if not token:
         # Check header
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
-            
+
     if not token:
         return None
-        
+
     try:
         payload = verify_token(token)
         if not payload:
             return None
-            
+
         user_email = payload.get("sub")
         if not user_email:
             return None
-            
+
         result = await db.execute(select(User).filter(User.email == user_email))
         user = result.scalar_one_or_none()
         return user

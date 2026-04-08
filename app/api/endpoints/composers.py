@@ -1,19 +1,21 @@
-from typing import List, Any, Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
-from sqlalchemy.future import select
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
 from app.db.session import get_db
 from app.models import Composer
-
 from app.services import wikidata
 
 router = APIRouter()
 
-@router.get("/search", response_model=List[Any])
+
+@router.get("/search", response_model=list[Any])
 async def search_composers(
     q: str = Query(..., min_length=2, description="Name of the composer to search for"),
     source: str = Query("local", description="Source to search: 'local' or 'wikidata'"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Search for a composer by name.
@@ -35,9 +37,9 @@ async def search_composers(
                     "name": c.name,
                     "wikidata_id": c.wikidata_id,
                     "openopus_id": c.openopus_id,
-                    "is_verified": c.is_verified
+                    "is_verified": c.is_verified,
                 }
                 for c in composers
             ]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

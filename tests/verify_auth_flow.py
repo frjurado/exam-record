@@ -1,17 +1,20 @@
-import httpx
-import sys
 import os
+import sys
+
+import httpx
+
 sys.path.append(os.getcwd())
 
 BASE_URL = "http://127.0.0.1:8000"
 USER_EMAIL = "test@example.com"
+
 
 def get_auth_cookie():
     # 1. Request Magic Link
     print(f"Requesting Magic Link for {USER_EMAIL}...")
     r = httpx.post(f"{BASE_URL}/api/auth/magic-link", json={"email": USER_EMAIL})
     print(r.json())
-    
+
     # 2. Get the link from the server logs (simulated here since we know the secret)
     # Actually, simpler: just generate a valid token manually if possible, or parse the log?
     # Parsing logs is hard.
@@ -23,13 +26,14 @@ def get_auth_cookie():
     # It imported `app.core.security`! So it generated a token locally. I should do that.
     return generate_local_cookie()
 
+
 def generate_local_cookie():
-    from app.core import security, config
     from datetime import timedelta
-    
+
+    from app.core import security
+
     access_token = security.create_access_token(
-        data={"sub": USER_EMAIL, "role": "Visitor"},
-        expires_delta=timedelta(minutes=15)
+        data={"sub": USER_EMAIL, "role": "Visitor"}, expires_delta=timedelta(minutes=15)
     )
     return {"access_token": access_token}
 
@@ -42,7 +46,7 @@ def verify():
     except Exception as e:
         print(f"Connection failed: {e}")
         sys.exit(1)
-        
+
     print(f"Status: {r.status_code}")
     if "auth-modal" in r.text:
         print("SUCCESS: Returned Auth Modal")
@@ -55,16 +59,19 @@ def verify():
     print("\n--- Testing Authenticated Vote ---")
     cookies = generate_local_cookie()
     r = httpx.post(f"{BASE_URL}/api/reports/1/vote", cookies=cookies, timeout=5.0)
-    
+
     print(f"Status: {r.status_code}")
     if "consensus-banner" in r.text and "work-card" in r.text:
         print("SUCCESS: Returned Banner (OOB) and Work Card")
     else:
         print("FAILURE: Validation failed")
-        if "consensus-banner" not in r.text: print("- Missing Banner")
-        if "work-card" not in r.text: print("- Missing Work Card")
+        if "consensus-banner" not in r.text:
+            print("- Missing Banner")
+        if "work-card" not in r.text:
+            print("- Missing Work Card")
         print(r.text[:500])
         sys.exit(1)
+
 
 if __name__ == "__main__":
     verify()
