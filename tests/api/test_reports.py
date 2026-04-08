@@ -1,7 +1,10 @@
+from unittest.mock import patch
+
 import pytest
 from sqlalchemy.future import select
 
 from app.api import deps
+from app.core import config as app_config
 from app.main import app as fastapi_app
 from app.models import Composer, Discipline, ExamEvent, Region, Report, User, Work
 
@@ -57,7 +60,8 @@ async def test_create_report_simple(client, db, user, event):
     }
 
     try:
-        response = await client.post("/api/reports/", json=payload)
+        with patch.object(app_config.settings, "TURNSTILE_SECRET_KEY", None):
+            response = await client.post("/api/reports/", json=payload)
     finally:
         fastapi_app.dependency_overrides.pop(deps.get_current_user, None)
 
@@ -84,7 +88,8 @@ async def test_create_report_unverified_composer_and_work(client, db, user, even
     }
 
     try:
-        response = await client.post("/api/reports/", json=payload)
+        with patch.object(app_config.settings, "TURNSTILE_SECRET_KEY", None):
+            response = await client.post("/api/reports/", json=payload)
     finally:
         fastapi_app.dependency_overrides.pop(deps.get_current_user, None)
 

@@ -62,8 +62,7 @@ async def test_consensus_logic(client, db):
     assert response.status_code == 200
     html = response.text
     assert "Prelude A" in html
-    assert "Conflicting reports" in html
-    assert "Disputed" in html
+    assert "Reportes conflictivos" in html
     assert "66%" in html
     assert "Prelude B" in html
 
@@ -89,7 +88,7 @@ async def test_consensus_logic(client, db):
     response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2027")
     html2 = response.text
     assert "Prelude A" in html2
-    assert "Verified by students" in html2
+    assert "Verificado por estudiantes" in html2
 
     # --- Case 3: Neutral (single vote for B) ---
     event3 = ExamEvent(year=2028, region_id=region.id, discipline_id=discipline.id)
@@ -108,4 +107,4 @@ async def test_consensus_logic(client, db):
     response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2028")
     html3 = response.text
     assert "Prelude B" in html3
-    assert "Single source for this exam" in html3
+    assert "Reporte único para este examen" in html3

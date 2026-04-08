@@ -27,12 +27,12 @@ async def test_wizard_page_load(client, db, event):
         f"/exams/{region.slug}/{discipline.slug}/{event_obj.year}/contribute"
     )
     assert response.status_code == 200
-    assert "Exam Report Wizard" in response.text
-    assert f"eventId: {event_obj.id}" in response.text
+    assert "Contribute - Exam Record" in response.text
+    assert f"wizard({event_obj.id})" in response.text
 
 
 @pytest.mark.asyncio
 async def test_wizard_page_404(client, db):
     response = await client.get("/exams/mars/theremin/3000/contribute")
     assert response.status_code == 404
-    assert "Event not found" in response.text
+    assert "Región o Especialidad no encontrada" in response.text
