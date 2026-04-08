@@ -9,7 +9,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "C4", "UP"]
-ignore = ["E501", "B008"]  # B008: Depends() in defaults is standard FastAPI pattern
+ignore = ["E501", "B008", "UP017"]  # B008: Depends() in defaults is standard FastAPI pattern; UP017: prefer timezone.utc over datetime.UTC for portability
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
