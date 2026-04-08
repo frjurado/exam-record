@@ -82,9 +82,9 @@ class Work(Base):
     imslp_url = Column(String, nullable=True)
 
     @property
-    def best_score_url(self):
+    def best_score_url(self) -> str:
         if self.imslp_url:
-            return self.imslp_url
+            return self.imslp_url  # type: ignore[return-value]
 
         # Fallback to DuckDuckGo "I'm Feeling Ducky" (First Result)
         # Query format: \ site:imslp.org <Composer> <Title>

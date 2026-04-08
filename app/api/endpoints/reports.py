@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -19,7 +21,7 @@ templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
 
 
-def build_item_dict(r, total_vs):
+def build_item_dict(r: Report, total_vs: int) -> dict[str, Any]:
     vs_count = len(r.votes)
     m = ConsensusService.calculate_work_status(vs_count, total_vs)
     return {
@@ -38,7 +40,7 @@ async def create_report(
     report_in: ReportCreate,
     current_user: User = Depends(deps.get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> Report:
     # 0. Verify Turnstile (Anti-Spam)
     if settings.TURNSTILE_SECRET_KEY:
         if not report_in.turnstile_token:
@@ -65,11 +67,11 @@ async def create_report(
         raise HTTPException(status_code=404, detail="Convocatoria no encontrada")
 
     # 2. Process Composer
-    composer = None
+    composer: Composer | None = None
     if report_in.composer.id:
         # Local lookup
         result = await db.execute(select(Composer).filter(Composer.id == report_in.composer.id))
-        composer = result.scalar_one_or_none()
+        composer = result.scalar_one_or_none()  # type: ignore[assignment]
         if not composer:
             raise HTTPException(status_code=404, detail="Compositor no encontrado")
     elif report_in.composer.wikidata_id:
@@ -77,7 +79,7 @@ async def create_report(
         result = await db.execute(
             select(Composer).filter(Composer.wikidata_id == report_in.composer.wikidata_id)
         )
-        composer = result.scalar_one_or_none()
+        composer = result.scalar_one_or_none()  # type: ignore[assignment]
         if not composer:
             # Import from Wikidata
             try:
@@ -101,11 +103,11 @@ async def create_report(
         raise HTTPException(status_code=400, detail="Identificación de compositor requerida")
 
     # 3. Process Work
-    work = None
+    work: Work | None = None
     if report_in.work.id:
         # Local
         result = await db.execute(select(Work).filter(Work.id == report_in.work.id))
-        work = result.scalar_one_or_none()
+        work = result.scalar_one_or_none()  # type: ignore[assignment]
         if not work:
             raise HTTPException(status_code=404, detail="Obra no encontrada")
     elif report_in.work.openopus_id:
@@ -113,7 +115,7 @@ async def create_report(
         result = await db.execute(
             select(Work).filter(Work.openopus_id == report_in.work.openopus_id)
         )
-        work = result.scalar_one_or_none()
+        work = result.scalar_one_or_none()  # type: ignore[assignment]
         if not work:
             # Create verified work
             if not report_in.work.title:
@@ -197,7 +199,7 @@ async def vote_report(
     report_id: int,
     current_user: User | None = Depends(deps.get_current_user_optional),
     db: AsyncSession = Depends(get_db),
-):
+) -> HTMLResponse:
     # Fetch report with event relation to count totals
     query = (
         select(Report)
@@ -272,6 +274,7 @@ async def vote_report(
     db.expire_all()
     result = await db.execute(query)
     report = result.unique().scalar_one_or_none()
+    assert report is not None
 
     # Recalculate context for ALL items
     total_votes = sum(len(r.votes) for r in report.event.reports)
@@ -306,7 +309,7 @@ async def flag_report(
     report_id: int,
     current_user: User | None = Depends(deps.get_current_user_optional),
     db: AsyncSession = Depends(get_db),
-):
+) -> HTMLResponse:
     # Fetch report with event relation
     query = (
         select(Report)
@@ -342,12 +345,13 @@ async def flag_report(
         )
 
     # 2. Authenticated Case
-    report.is_flagged = True
+    report.is_flagged = True  # type: ignore[assignment]
     await db.commit()
     # Refresh logic similar to vote
     db.expire_all()
     result = await db.execute(query)
     report = result.unique().scalar_one_or_none()
+    assert report is not None
 
     # Recalculate context for ALL items
     total_votes = sum(len(r.votes) for r in report.event.reports)

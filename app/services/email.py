@@ -8,7 +8,7 @@ logger = logging.getLogger("uvicorn")
 
 
 class EmailService:
-    def __init__(self):
+    def __init__(self) -> None:
         if settings.RESEND_API_KEY:
             resend.api_key = settings.RESEND_API_KEY
         else:
@@ -16,7 +16,7 @@ class EmailService:
                 "RESEND_API_KEY not found. Email sending will be disabled (logged only)."
             )
 
-    async def send_magic_link(self, email: str, link: str):
+    async def send_magic_link(self, email: str, link: str) -> None:
         """
         Send a magic link email to the user.
         """

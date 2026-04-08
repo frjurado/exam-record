@@ -16,7 +16,7 @@ async def search_composers(
     q: str = Query(..., min_length=2, description="Name of the composer to search for"),
     source: str = Query("local", description="Source to search: 'local' or 'wikidata'"),
     db: AsyncSession = Depends(get_db),
-):
+) -> list[Any]:
     """
     Search for a composer by name.
     Default: Local DB.

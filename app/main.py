@@ -24,12 +24,12 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def root(
     request: Request, current_user: User | None = Depends(deps.get_current_user_optional)
-):
+) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request, "user": current_user})
 
 
 @app.get("/logout")
-async def logout():
+async def logout() -> Response:
     response = Response(status_code=307, headers={"Location": "/"})
     response.delete_cookie(key="access_token")
     return response
@@ -45,7 +45,7 @@ async def discipline_page(
     sparse_mode: bool = True,  # Default to True (Sparse Mode)
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
-):
+) -> HTMLResponse:
     # Verify Region and Discipline exist
     region = (
         await db.execute(select(Region).filter(Region.slug == region_slug))
@@ -133,7 +133,7 @@ async def discipline_page(
     # Process events to get status for display
     years_data = []
     for year in batch_years:
-        event = events_map.get(year)
+        event = events_map.get(year)  # type: ignore[call-overload]
 
         item = {
             "year": year,
@@ -240,7 +240,7 @@ async def exam_page(
     year: int,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
-):
+) -> HTMLResponse:
     stmt = (
         select(ExamEvent)
         .options(
@@ -369,7 +369,7 @@ async def contribute_page(
     year: int,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
-):
+) -> HTMLResponse:
     # 1. Check if event exists
     stmt = (
         select(ExamEvent)
@@ -421,12 +421,12 @@ async def contribute_page(
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     return {"status": "ok", "app": settings.PROJECT_NAME, "environment": settings.ENVIRONMENT}
 
 
 @app.get("/robots.txt", response_class=HTMLResponse)
-async def robots_txt():
+async def robots_txt() -> Response:
     content = """User-agent: *
 Allow: /
 Sitemap: https://exam-record.com/sitemap.xml
@@ -435,7 +435,7 @@ Sitemap: https://exam-record.com/sitemap.xml
 
 
 @app.get("/sitemap.xml", response_class=HTMLResponse)
-async def sitemap_xml(request: Request, db: AsyncSession = Depends(get_db)):
+async def sitemap_xml(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
     stmt = select(ExamEvent).options(joinedload(ExamEvent.region), joinedload(ExamEvent.discipline))
     result = await db.execute(stmt)
     events = result.scalars().all()

@@ -17,7 +17,7 @@ async def search_composer(query: str) -> list[dict]:
         # P106 is "occupation", Q36834 is "composer".
         # Wikidata search is broad, filtering might be needed client-side or we rely on description.
         # For simple text search, we just pass the query.
-        "limit": 10,
+        "limit": "10",
     }
 
     headers = {"User-Agent": "ExamRecordbot/1.0 (exam-record-project; contact@example.com)"}

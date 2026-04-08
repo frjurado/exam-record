@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
@@ -23,7 +24,7 @@ class MagicLinkRequest(BaseModel):
 @router.post("/magic-link")
 async def request_magic_link(
     request: Request, request_data: MagicLinkRequest, db: AsyncSession = Depends(get_db)
-):
+) -> dict[str, str]:
     """
     Generate a magic link and 'send' it (log to console).
     Auto-registers user if they don't explicitly exist (simplified flow).
@@ -71,7 +72,7 @@ async def request_magic_link(
 
 
 @router.get("/verify")
-async def verify_magic_link(token: str = Query(...), next: str | None = Query(None)):
+async def verify_magic_link(token: str = Query(...), next: str | None = Query(None)) -> RedirectResponse:
     """
     Verify token and set session cookie.
     """
@@ -94,7 +95,7 @@ async def verify_magic_link(token: str = Query(...), next: str | None = Query(No
 
 
 @router.get("/me")
-async def read_users_me(current_user: User = Depends(deps.get_current_user)):
+async def read_users_me(current_user: User = Depends(deps.get_current_user)) -> dict[str, Any]:
     """
     Test endpoint to verify authentication.
     """

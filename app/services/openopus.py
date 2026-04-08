@@ -1,4 +1,6 @@
 
+from typing import cast
+
 import httpx
 
 OPENOPUS_API_URL = "https://api.openopus.org"
@@ -19,10 +21,10 @@ async def get_popular_composers() -> list[dict]:
         data = response.json()
 
     # OpenOpus structure: { "status": ..., "composers": [ ... ] }
-    return data.get("composers", [])
+    return cast(list[dict], data.get("composers", []))
 
 
-async def search_work(query: str, composer_id: str = None) -> list[dict]:
+async def search_work(query: str, composer_id: str | None = None) -> list[dict]:
     """
     Search for works in OpenOpus.
     Since the global search endpoint seems deprecated/broken, we use the strategy:
@@ -76,4 +78,4 @@ async def search_composer_by_name(name: str) -> list[dict]:
         response.raise_for_status()
         res_data = response.json()
 
-    return res_data.get("composers", [])
+    return cast(list[dict], res_data.get("composers", []))

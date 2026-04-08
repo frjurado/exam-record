@@ -19,7 +19,7 @@ async def search_works(
         None, description="Composer ID (Local ID for local search, OpenOpus ID for remote)"
     ),
     db: AsyncSession = Depends(get_db),
-):
+) -> list[Any]:
     """
     Search for works.
     Default: Local DB.
