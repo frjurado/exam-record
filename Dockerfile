@@ -1,5 +1,5 @@
 # Base image matching user's python version closely
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
