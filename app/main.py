@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from app.api import deps
 from app.api.api import api_router
 from app.core.config import settings
+from app.core.constants import Calendar, Consensus, Pagination
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User, Vote, Work
 
@@ -59,18 +60,18 @@ async def discipline_page(
 
     # Determine Anchor Year (Academic Year Logic)
     now = datetime.now()
-    if now.month >= 6:
+    if now.month >= Calendar.ACADEMIC_YEAR_CUTOFF_MONTH:
         base_anchor_year = now.year
     else:
         base_anchor_year = now.year - 1
 
     # Pagination Logic
-    batch_size = 10
-    min_year_limit = 2000  # Hard limit for now
+    batch_size = Pagination.DEFAULT_BATCH_SIZE
+    min_year_limit = Calendar.MIN_YEAR
 
     # --- Sparse Mode Logic ---
-    # 1. Mandatory Years: The last 5 academic years (always shown)
-    mandatory_years = set(range(base_anchor_year, base_anchor_year - 5, -1))
+    # 1. Mandatory Years: The last N academic years (always shown)
+    mandatory_years = set(range(base_anchor_year, base_anchor_year - Calendar.MANDATORY_YEARS_WINDOW, -1))
 
     # 2. Available Years: Years that actually have data (Reports) in the DB
     # We join with Report to ensure we only get years that resulted in contributions
@@ -174,7 +175,7 @@ async def discipline_page(
                 consensus_rate = vote_count / total_event_votes if total_event_votes > 0 else 0
 
                 is_verified = False
-                if vote_count >= 2 and consensus_rate >= 0.75:
+                if vote_count >= Consensus.MIN_VOTES_FOR_VERIFICATION and consensus_rate >= Consensus.VERIFICATION_THRESHOLD:
                     is_verified = True
                     has_verified = True
 
@@ -285,8 +286,8 @@ async def exam_page(
 
         # Trust State Logic (Per Work)
         status = "neutral"
-        if votes_count >= 2:
-            if consensus_rate >= 0.75:
+        if votes_count >= Consensus.MIN_VOTES_FOR_VERIFICATION:
+            if consensus_rate >= Consensus.VERIFICATION_THRESHOLD:
                 status = "verified"
             else:
                 status = "disputed"

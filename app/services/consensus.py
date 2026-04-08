@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.core.constants import Consensus
 from app.models import Report
 
 
@@ -13,8 +14,8 @@ class ConsensusService:
         percentage = int(consensus_rate * 100)
 
         status = "neutral"
-        if votes_count >= 2:
-            if consensus_rate >= 0.75:
+        if votes_count >= Consensus.MIN_VOTES_FOR_VERIFICATION:
+            if consensus_rate >= Consensus.VERIFICATION_THRESHOLD:
                 status = "verified"
             else:
                 status = "disputed"
