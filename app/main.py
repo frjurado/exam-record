@@ -13,7 +13,7 @@ from app.api.api import api_router
 from app.core.config import settings
 from app.core.constants import Calendar, Consensus, Pagination
 from app.db.session import get_db
-from app.models import Discipline, ExamEvent, Region, Report, User, Vote, Work
+from app.models import Discipline, ExamEvent, Region, Report, User, Work
 
 app = FastAPI(title=settings.PROJECT_NAME)
 templates = Jinja2Templates(directory="app/templates")
@@ -326,23 +326,9 @@ async def exam_page(
     user_participation_report_id = None
 
     if current_user:
-        # Check Report
-        existing_report = await db.execute(
-            select(Report).filter(Report.event_id == event.id, Report.user_id == current_user.id)
+        user_has_participated, user_participation_report_id = (
+            await deps.check_user_event_participation(db, current_user.id, event.id)
         )
-        if existing_event_report := existing_report.scalars().first():
-            user_has_participated = True
-            user_participation_report_id = existing_event_report.id
-        else:
-            # Check Vote
-            existing_vote_result = await db.execute(
-                select(Vote)
-                .join(Report)
-                .filter(Report.event_id == event.id, Vote.user_id == current_user.id)
-            )
-            if existing_vote := existing_vote_result.scalars().first():
-                user_has_participated = True
-                user_participation_report_id = existing_vote.report_id
 
     return templates.TemplateResponse(
         "event.html",

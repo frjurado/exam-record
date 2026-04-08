@@ -140,25 +140,9 @@ async def create_report(
         raise HTTPException(status_code=400, detail="Identificación de obra requerida")
 
     # 5. Strict Participation Check (One Vote/Contribution per Event)
-    # Check for ANY existing report by this user in this event
-    existing_event_report = await db.execute(
-        select(Report).filter(Report.event_id == event.id, Report.user_id == current_user.id)
-    )
-    if existing_event_report.scalars().first():
-        raise HTTPException(
-            status_code=400,
-            detail="Ya has participado en esta convocatoria (una sola contribución/voto permitida).",
-        )
-
-    # Check for ANY existing vote by this user in this event
-    # Join Vote -> Report -> Event
-    existing_event_vote = await db.execute(
-        select(Vote)
-        .join(Report)
-        .filter(Report.event_id == event.id, Vote.user_id == current_user.id)
-    )
-    if existing_event_vote.scalars().first():
-        raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
+    has_participated, _ = await deps.check_user_event_participation(db, current_user.id, event.id)
+    if has_participated:
+        raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
 
     # 4. Get or Create Report (Candidate)
     full_details = report_in.movement_details
@@ -249,21 +233,11 @@ async def vote_report(
     # 2. Authenticated Case
     # Strict Participation Check: One Vote/Contribution per Event
 
-    # Check if user has reported anything in this event
-    existing_event_report = await db.execute(
-        select(Report).filter(Report.event_id == report.event_id, Report.user_id == current_user.id)
+    has_participated, _ = await deps.check_user_event_participation(
+        db, current_user.id, report.event_id
     )
-    if existing_event_report.scalars().first():
+    if has_participated:
         raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
-
-    # Check if user has voted anything in this event
-    existing_event_vote = await db.execute(
-        select(Vote)
-        .join(Report)
-        .filter(Report.event_id == report.event_id, Vote.user_id == current_user.id)
-    )
-    if existing_event_vote.scalars().first():
-        raise HTTPException(status_code=400, detail="Ya has votado en esta convocatoria.")
 
     # Add vote
     vote = Vote(user_id=current_user.id, report_id=report.id)
@@ -368,26 +342,9 @@ async def flag_report(
     event_status = ConsensusService.aggregate_event_reports(report.event.reports)["event_status"]
 
     # Calculate Participation for correct rendering
-    user_has_participated = False
-    user_participation_report_id = None
-
-    # Check Report
-    existing_report = await db.execute(
-        select(Report).filter(Report.event_id == report.event_id, Report.user_id == current_user.id)
+    user_has_participated, user_participation_report_id = (
+        await deps.check_user_event_participation(db, current_user.id, report.event_id)
     )
-    if existing_event_report := existing_report.scalars().first():
-        user_has_participated = True
-        user_participation_report_id = existing_event_report.id
-    else:
-        # Check Vote
-        existing_vote_result = await db.execute(
-            select(Vote)
-            .join(Report)
-            .filter(Report.event_id == report.event_id, Vote.user_id == current_user.id)
-        )
-        if existing_vote := existing_vote_result.scalars().first():
-            user_has_participated = True
-            user_participation_report_id = existing_vote.report_id
 
     return templates.TemplateResponse(
         "partials/vote_updates.html",
