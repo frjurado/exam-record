@@ -24,7 +24,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 async def root(
     request: Request, current_user: User | None = Depends(deps.get_current_user_optional)
 ) -> HTMLResponse:
-    return templates.TemplateResponse("index.html", {"request": request, "user": current_user})
+    return templates.TemplateResponse(request, "index.html", {"user": current_user})
 
 
 @app.get("/logout")
@@ -53,7 +53,7 @@ async def discipline_page(
     if partial and not context["years"]:
         return HTMLResponse("")
     template = "partials/year_list.html" if partial else "discipline.html"
-    return templates.TemplateResponse(template, {"request": request, **context})
+    return templates.TemplateResponse(request, template, context)
 
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}", response_class=HTMLResponse)
@@ -68,7 +68,7 @@ async def exam_page(
     context = await ExamService.get_exam_context(db, region_slug, discipline_slug, year, current_user)
     if context is None:
         return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
-    return templates.TemplateResponse("event.html", {"request": request, **context})
+    return templates.TemplateResponse(request, "event.html", context)
 
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}/contribute", response_class=HTMLResponse)
@@ -117,9 +117,9 @@ async def contribute_page(
         await db.refresh(event)
 
     return templates.TemplateResponse(
+        request,
         "wizard.html",
         {
-            "request": request,
             "event_id": event.id,
             "region_slug": region_slug,
             "discipline_slug": discipline_slug,

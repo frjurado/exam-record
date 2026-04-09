@@ -45,9 +45,9 @@ async def vote_report(
         else:
             next_url += f"?action=vote&report_id={report_id}"
         return templates.TemplateResponse(
+            request,
             "partials/vote_updates.html",
             {
-                "request": request,
                 "item": item,
                 "show_auth_modal": True,
                 "next_url": next_url,
@@ -76,9 +76,9 @@ async def vote_report(
     event_status = ConsensusService.aggregate_event_reports(report.event.reports)["event_status"]
 
     return templates.TemplateResponse(
+        request,
         "partials/vote_updates.html",
         {
-            "request": request,
             "item": target_item,
             "other_items": other_items,
             "event_status": event_status,
@@ -104,9 +104,9 @@ async def flag_report(
     if not current_user:
         item = ReportService.build_item_dict(report, total_votes)
         return templates.TemplateResponse(
+            request,
             "partials/vote_updates.html",
             {
-                "request": request,
                 "item": item,
                 "show_auth_modal": True,
                 "next_url": request.headers.get("referer", "/"),
@@ -134,9 +134,9 @@ async def flag_report(
     )
 
     return templates.TemplateResponse(
+        request,
         "partials/vote_updates.html",
         {
-            "request": request,
             "item": target_item,
             "other_items": other_items,
             "event_status": event_status,
