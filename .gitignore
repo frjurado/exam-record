@@ -20,6 +20,10 @@ env/
 *.sqlite
 *.db
 
+# Coverage
+.coverage
+htmlcov/
+
 # Distribution
 build/
 dist/
