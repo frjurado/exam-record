@@ -9,6 +9,7 @@ from app.api import deps
 from app.core.constants import Calendar, Consensus, Pagination
 from app.models import Discipline, ExamEvent, Region, Report, User, Work
 from app.services.consensus import ConsensusService
+from app.services.work_service import WorkService
 
 
 class ExamService:
@@ -176,7 +177,7 @@ class ExamService:
                     item["best_work"] = {
                         "title": top["report"].work.title,
                         "composer": top["report"].work.composer.name,
-                        "imslp_url": top["report"].work.imslp_url or top["report"].work.best_score_url,
+                        "imslp_url": WorkService.get_score_url(top["report"].work),
                         "is_verified": top["is_verified"],
                     }
 

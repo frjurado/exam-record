@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from app.api import deps
 from app.core.config import settings
+from app.services.work_service import WorkService
 from app.models import Composer, ExamEvent, Report, User, Vote, Work
 from app.schemas.report import ComposerInput, ReportCreate, ScopeEnum, WorkInput
 from app.services import wikidata
@@ -187,6 +188,7 @@ class ReportService:
             "percentage": m["percentage"],
             "status": m["status"],
             "is_flagged": report.is_flagged,
+            "score_url": WorkService.get_score_url(report.work),
         }
 
     @staticmethod
