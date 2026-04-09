@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -11,9 +9,9 @@ from sqlalchemy.orm import joinedload
 from app.api import deps
 from app.api.api import api_router
 from app.core.config import settings
-from app.core.constants import Calendar, Consensus, Pagination
 from app.db.session import get_db
-from app.models import Discipline, ExamEvent, Region, Report, User, Work
+from app.models import Discipline, ExamEvent, Region, User
+from app.services.exam_service import ExamService
 
 app = FastAPI(title=settings.PROJECT_NAME)
 templates = Jinja2Templates(directory="app/templates")
@@ -43,194 +41,19 @@ async def discipline_page(
     discipline_slug: str,
     cursor: int | None = None,
     partial: bool = False,
-    sparse_mode: bool = True,  # Default to True (Sparse Mode)
+    sparse_mode: bool = True,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
 ) -> HTMLResponse:
-    # Verify Region and Discipline exist
-    region = (
-        await db.execute(select(Region).filter(Region.slug == region_slug))
-    ).scalar_one_or_none()
-    discipline = (
-        await db.execute(select(Discipline).filter(Discipline.slug == discipline_slug))
-    ).scalar_one_or_none()
-
-    if not region or not discipline:
+    context = await ExamService.get_discipline_context(
+        db, region_slug, discipline_slug, cursor, sparse_mode, current_user
+    )
+    if context is None:
         return HTMLResponse(content="<h1>Región o Especialidad no encontrada</h1>", status_code=404)
-
-    # Determine Anchor Year (Academic Year Logic)
-    now = datetime.now()
-    if now.month >= Calendar.ACADEMIC_YEAR_CUTOFF_MONTH:
-        base_anchor_year = now.year
-    else:
-        base_anchor_year = now.year - 1
-
-    # Pagination Logic
-    batch_size = Pagination.DEFAULT_BATCH_SIZE
-    min_year_limit = Calendar.MIN_YEAR
-
-    # --- Sparse Mode Logic ---
-    # 1. Mandatory Years: The last N academic years (always shown)
-    mandatory_years = set(range(base_anchor_year, base_anchor_year - Calendar.MANDATORY_YEARS_WINDOW, -1))
-
-    # 2. Available Years: Years that actually have data (Reports) in the DB
-    # We join with Report to ensure we only get years that resulted in contributions
-    stmt_years = (
-        select(ExamEvent.year)
-        .join(ExamEvent.reports)  # Inner join ensures only events with reports are selected
-        .filter(ExamEvent.region_id == region.id, ExamEvent.discipline_id == discipline.id)
-    )
-    result_years = await db.execute(stmt_years)
-    db_years = set(result_years.scalars().all())
-
-    # 3. Combine
-    if sparse_mode:
-        all_relevant_years = sorted(mandatory_years.union(db_years), reverse=True)
-    else:
-        # Full Mode: All years from base_anchor until end of DB data or 2000
-        min_db_year = min(db_years) if db_years else base_anchor_year
-        real_end = min(min_year_limit, min_db_year)
-        all_relevant_years = sorted(range(base_anchor_year, real_end - 1, -1), reverse=True)
-
-    # Filter out future years (e.g. 2026 ghost event from seed)
-    # This acts as a global ceiling for safety
-    all_relevant_years = [y for y in all_relevant_years if y <= base_anchor_year]
-
-    # 4. Apply Cursor/Pagination
-    # If cursor is provided, we want years < cursor
-    if cursor:
-        filtered_years = [y for y in all_relevant_years if y < cursor]
-    else:
-        filtered_years = all_relevant_years
-
-    # Slice for batch
-    batch_years = filtered_years[:batch_size]
-
-    # If empty batch and partial, return empty
-    if not batch_years:
-        if partial:
-            return HTMLResponse("")
-        # If not partial, we still render the page (empty list) with headers
-
-    # Fetch events for the batch
-    # We need rich data now for the badges/preview
-    stmt = (
-        select(ExamEvent)
-        .options(
-            joinedload(ExamEvent.reports).joinedload(Report.work).joinedload(Work.composer),
-            joinedload(ExamEvent.reports).selectinload(Report.votes),
-            # We might need to eager load more if we want to be super efficient,
-            # but this should cover the "Best Work" logic
-        )
-        .filter(
-            ExamEvent.region_id == region.id,
-            ExamEvent.discipline_id == discipline.id,
-            ExamEvent.year.in_(batch_years),
-        )
-    )
-    result = await db.execute(stmt)
-    events_map = {e.year: e for e in result.unique().scalars().all()}
-
-    # Process events to get status for display
-    years_data = []
-    for year in batch_years:
-        event = events_map.get(year)  # type: ignore[call-overload]
-
-        item = {
-            "year": year,
-            "has_event": False,
-            "status": "Sin datos",
-            "report_count": 0,
-            "region": region,
-            "discipline": discipline,
-            "best_work": None,
-            "badge_status": "empty",  # empty, verified, disputed, neutral
-        }
-
-        if event and len(event.reports) > 0:
-            item["has_event"] = True
-            report_count = len(event.reports)
-            item["report_count"] = report_count
-
-            if report_count == 1:
-                item["status"] = f"{report_count} Aportación"
-            else:
-                item["status"] = f"{report_count} Aportaciones"
-
-            # We want to know if there is AT LEAST ONE verified work
-            has_verified = False
-
-            # Temporary list to sort
-            work_stats = []
-
-            total_event_votes = 0
-
-            for report in event.reports:
-                vote_count = len(report.votes)
-                total_event_votes += vote_count
-
-            for report in event.reports:
-                vote_count = len(report.votes)
-                # Consensus Check
-                consensus_rate = vote_count / total_event_votes if total_event_votes > 0 else 0
-
-                is_verified = False
-                if vote_count >= Consensus.MIN_VOTES_FOR_VERIFICATION and consensus_rate >= Consensus.VERIFICATION_THRESHOLD:
-                    is_verified = True
-                    has_verified = True
-
-                work_stats.append(
-                    {"report": report, "votes": vote_count, "is_verified": is_verified}
-                )
-
-            # Sort by votes desc
-            work_stats.sort(key=lambda x: x["votes"], reverse=True)
-
-            if work_stats:
-                top_item = work_stats[0]
-                item["best_work"] = {
-                    "title": top_item["report"].work.title,
-                    "composer": top_item["report"].work.composer.name,
-                    "imslp_url": top_item["report"].work.imslp_url
-                    or top_item["report"].work.best_score_url,  # Fallback to ducky?
-                    "is_verified": top_item["is_verified"],
-                }
-
-            # Badge Status
-            if has_verified:
-                item["badge_status"] = "verified"
-            elif total_event_votes > 0:  # Has votes but no consensus
-                item["badge_status"] = "disputed"
-            else:
-                item["badge_status"] = "neutral"  # Just reports, no votes
-
-        years_data.append(item)
-
-    # Determine next cursor logic
-    if len(filtered_years) > batch_size:
-        show_more = True
-    else:
-        show_more = False
-
-    # IMPORTANT: The loadMore JS expects the last item's ID to parse the year.
-    # Our logic uses `cursor` which is treated as "Start AFTER this year" (descending).
-    # so `loadMore` passing the last year displayed is correct for `cursor`.
-
-    context = {
-        "request": request,
-        "region": region,
-        "discipline": discipline,
-        "years": years_data,
-        "show_more": show_more,
-        "user": current_user,
-        "sparse_mode": sparse_mode,
-        "all_empty": len(db_years) == 0,  # Flag to show "No Data At All" encouragement
-    }
-
-    if partial:
-        return templates.TemplateResponse("partials/year_list.html", context)
-
-    return templates.TemplateResponse("discipline.html", context)
+    if partial and not context["years"]:
+        return HTMLResponse("")
+    template = "partials/year_list.html" if partial else "discipline.html"
+    return templates.TemplateResponse(template, {"request": request, **context})
 
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}", response_class=HTMLResponse)
@@ -242,110 +65,10 @@ async def exam_page(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
 ) -> HTMLResponse:
-    stmt = (
-        select(ExamEvent)
-        .options(
-            joinedload(ExamEvent.reports).joinedload(Report.work).joinedload(Work.composer),
-            joinedload(ExamEvent.reports).selectinload(Report.votes),
-            joinedload(ExamEvent.region),
-            joinedload(ExamEvent.discipline),
-        )
-        .join(Region)
-        .join(Discipline)
-        .filter(
-            Region.slug == region_slug, Discipline.slug == discipline_slug, ExamEvent.year == year
-        )
-    )
-    result = await db.execute(stmt)
-    event = result.unique().scalar_one_or_none()
-
-    if not event:
-        # Check if year is valid? For now, just 404.
-        # But maybe we should redirect to contribute if it's a valid past year?
-        # User requirement says: "if a year doesn't have any data, just say so, and give a button directly to contribute".
-        # This page logic handles EXISTING events. If event doesn't exist, it 404s.
-        # We should probably handle non-existent event here too?
-        # Let's keep 404 for now, relying on discipline list to guide users.
+    context = await ExamService.get_exam_context(db, region_slug, discipline_slug, year, current_user)
+    if context is None:
         return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
-
-    # Aggregation Logic
-    total_votes = 0
-    works_list = []
-
-    # First pass: Count total votes
-    for report in event.reports:
-        total_votes += len(report.votes)
-
-    # Second pass: Build list
-    for report in event.reports:
-        votes_count = len(report.votes)
-
-        # Calculate percentage based on TOTAL votes for the EVENT
-        consensus_rate = votes_count / total_votes if total_votes > 0 else 0
-        percentage = int(consensus_rate * 100)
-
-        # Trust State Logic (Per Work)
-        status = "neutral"
-        if votes_count >= Consensus.MIN_VOTES_FOR_VERIFICATION:
-            if consensus_rate >= Consensus.VERIFICATION_THRESHOLD:
-                status = "verified"
-            else:
-                status = "disputed"
-        elif votes_count == 1:
-            status = "neutral"
-
-        works_list.append(
-            {
-                "report_id": report.id,
-                "work": report.work,
-                "composer": report.work.composer,
-                "votes": votes_count,
-                "percentage": percentage,
-                "status": status,
-                "is_flagged": report.is_flagged,
-            }
-        )
-
-    # Sort by votes descending
-    works_list.sort(key=lambda x: x["votes"], reverse=True)
-
-    # Event Level Consensus
-    has_verified_work = any(item["status"] == "verified" for item in works_list)
-    event_status = "neutral"
-    if total_votes == 0:
-        event_status = "empty"
-    elif total_votes == 1:
-        event_status = "neutral"
-    elif has_verified_work:
-        event_status = "resolved"
-    else:
-        event_status = "disputed"
-
-    # Check User Participation
-    user_has_participated = False
-    user_participation_report_id = None
-
-    if current_user:
-        user_has_participated, user_participation_report_id = (
-            await deps.check_user_event_participation(db, current_user.id, event.id)
-        )
-
-    return templates.TemplateResponse(
-        "event.html",
-        {
-            "request": request,
-            "event": event,
-            "region_slug": region_slug,
-            "discipline_slug": discipline_slug,
-            "year": year,
-            "works": works_list,
-            "total_votes": total_votes,
-            "event_status": event_status,
-            "user": current_user,
-            "user_has_participated": user_has_participated,
-            "user_participation_report_id": user_participation_report_id,
-        },
-    )
+    return templates.TemplateResponse("event.html", {"request": request, **context})
 
 
 @app.get("/exams/{region_slug}/{discipline_slug}/{year}/contribute", response_class=HTMLResponse)
