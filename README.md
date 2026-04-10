@@ -13,5 +13,15 @@ The complete documentation is located in the `docs/` folder:
 *   **Database:** SQLite (Beta)
 *   **Frontend:** Server-Side Rendering (Jinja2) + HTMX + Alpine.js
 
+## Development Setup
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate  # Windows (bash) — use source .venv/bin/activate on Linux/macOS
+pip install -r requirements.txt
+pip install pre-commit
+pre-commit install            # install git hooks (run once per clone)
+```
+
 ## Contributing
 Please refer to [docs/meta/version_control.md](docs/meta/version_control.md) for our git workflow and commit standards.

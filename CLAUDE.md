@@ -18,6 +18,10 @@ source .venv/Scripts/activate  # Windows (bash)
 # Install dependencies
 pip install -r requirements.txt
 
+# Install pre-commit hooks (once per clone)
+pip install pre-commit
+pre-commit install
+
 # Run dev server (reload on change)
 uvicorn app.main:app --reload --port 8000
 
