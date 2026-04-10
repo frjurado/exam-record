@@ -51,7 +51,7 @@ class ExamService:
             (
                 user_has_participated,
                 user_participation_report_id,
-            ) = await deps.check_user_event_participation(db, current_user.id, event.id)
+            ) = await deps.check_user_event_participation(db, int(current_user.id), int(event.id))
 
         return {
             "event": event,

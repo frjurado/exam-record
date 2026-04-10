@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.db.session import get_db
-from app.models import User
+from app.models import Report, User
 from app.schemas.report import ReportCreate, ReportResponse
 from app.services.consensus import ConsensusService
 from app.services.report_service import ReportService
@@ -37,7 +37,7 @@ async def create_report(
     report_in: ReportCreate,
     current_user: User = Depends(deps.get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> User:
+) -> Report:
     """Create a report linking a work to an exam event, casting an implicit vote for the submitter."""
     return await ReportService.submit_report(db, current_user, report_in)
 
@@ -87,12 +87,12 @@ async def vote_report(
         )
 
     has_participated, _ = await deps.check_user_event_participation(
-        db, current_user.id, report.event_id
+        db, int(current_user.id), int(report.event_id)
     )
     if has_participated:
         raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
 
-    await ReportService.cast_vote(db, current_user.id, report)
+    await ReportService.cast_vote(db, int(current_user.id), report)
 
     db.expire_all()
     report = await ReportService.fetch_report_with_context(db, report_id)
@@ -175,7 +175,7 @@ async def flag_report(
     event_status = ConsensusService.aggregate_event_reports(report.event.reports)["event_status"]
 
     user_has_participated, user_participation_report_id = await deps.check_user_event_participation(
-        db, current_user.id, report.event_id
+        db, int(current_user.id), int(report.event_id)
     )
 
     return templates.TemplateResponse(

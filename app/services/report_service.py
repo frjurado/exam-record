@@ -3,6 +3,7 @@ from typing import Any
 import httpx
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import Select
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -128,11 +129,11 @@ class ReportService:
         composer = await ReportService.get_or_create_composer(db, report_in.composer)
 
         # 3. Resolve Work
-        work = await ReportService.get_or_create_work(db, report_in.work, composer.id)
+        work = await ReportService.get_or_create_work(db, report_in.work, int(composer.id))
 
         # 4. Strict Participation Check
         has_participated, _ = await deps.check_user_event_participation(
-            db, current_user.id, event.id
+            db, int(current_user.id), int(event.id)
         )
         if has_participated:
             raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
@@ -188,7 +189,7 @@ class ReportService:
         }
 
     @staticmethod
-    def _report_context_query(report_id: int):
+    def _report_context_query(report_id: int) -> Select[tuple[Report]]:
         """Eager-load Select for a report with all relations needed to render vote_updates.html."""
         return (
             select(Report)
