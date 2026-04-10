@@ -15,16 +15,46 @@ templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
 
 
-@router.post("/", response_model=ReportResponse)
+@router.post(
+    "/",
+    response_model=ReportResponse,
+    summary="Submit a new exam work report",
+    description=(
+        "Submit a work performed in a specific exam event. "
+        "The composer and work are resolved or created as needed. "
+        "A Turnstile CAPTCHA token is required from the frontend. "
+        "Each user may submit at most one report per exam event."
+    ),
+    responses={
+        200: {"description": "Report created (or an existing matching report returned)"},
+        400: {"description": "Turnstile validation failed, event not found, or duplicate submission"},
+        401: {"description": "Authentication required"},
+    },
+)
 async def create_report(
     report_in: ReportCreate,
     current_user: User = Depends(deps.get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    """Create a report linking a work to an exam event, casting an implicit vote for the submitter."""
     return await ReportService.submit_report(db, current_user, report_in)
 
 
-@router.post("/{report_id}/vote", response_class=HTMLResponse)
+@router.post(
+    "/{report_id}/vote",
+    response_class=HTMLResponse,
+    summary="Cast a vote on a report (HTMX)",
+    description=(
+        "Upvote an existing report. Returns an HTMX partial that updates the vote counts inline. "
+        "Unauthenticated requests receive a partial with an auth modal instead of casting a vote. "
+        "A user may not vote on an event they already participated in."
+    ),
+    responses={
+        200: {"description": "Updated vote-count partial (HTML)"},
+        400: {"description": "User already participated in this exam event"},
+        404: {"description": "Report not found"},
+    },
+)
 async def vote_report(
     request: Request,
     report_id: int,
@@ -88,7 +118,20 @@ async def vote_report(
     )
 
 
-@router.post("/{report_id}/flag", response_class=HTMLResponse)
+@router.post(
+    "/{report_id}/flag",
+    response_class=HTMLResponse,
+    summary="Flag a report as inaccurate (HTMX)",
+    description=(
+        "Mark a report as potentially inaccurate. Returns an HTMX partial reflecting the flagged state. "
+        "Unauthenticated requests receive a partial with an auth modal. "
+        "Flagged reports are still visible but shown with a warning indicator."
+    ),
+    responses={
+        200: {"description": "Updated report partial with flagged state (HTML)"},
+        404: {"description": "Report not found"},
+    },
+)
 async def flag_report(
     request: Request,
     report_id: int,

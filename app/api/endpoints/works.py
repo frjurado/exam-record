@@ -11,20 +11,30 @@ from app.services import openopus
 router = APIRouter()
 
 
-@router.get("/search", response_model=list[Any])
+@router.get(
+    "/search",
+    response_model=list[Any],
+    summary="Search for musical works by title",
+    description=(
+        "Search works by title (and optionally nickname) against the local database or the OpenOpus API. "
+        "Local results match any substring of title or nickname and are capped at 20. "
+        "OpenOpus results require `composer_id` (the OpenOpus composer ID) and are fetched live."
+    ),
+    responses={
+        200: {"description": "List of matching works"},
+        400: {"description": "`composer_id` is required when `source=openopus`"},
+        500: {"description": "Upstream search error (e.g. OpenOpus unavailable)"},
+    },
+)
 async def search_works(
     q: str = Query(..., min_length=2, description="Title of the work to search for"),
     source: str = Query("local", description="Source to search: 'local' or 'openopus'"),
     composer_id: str | None = Query(
-        None, description="Composer ID (Local ID for local search, OpenOpus ID for remote)"
+        None, description="Composer ID (local integer ID for local search, OpenOpus ID for remote)"
     ),
     db: AsyncSession = Depends(get_db),
 ) -> list[Any]:
-    """
-    Search for works.
-    Default: Local DB.
-    Optional: OpenOpus (source='openopus').
-    """
+    """Search musical works by title in the local DB or via the OpenOpus API."""
     try:
         if source == "openopus":
             if not composer_id:

@@ -21,14 +21,23 @@ class MagicLinkRequest(BaseModel):
     next_url: str | None = None
 
 
-@router.post("/magic-link")
+@router.post(
+    "/magic-link",
+    summary="Request a magic-link login email",
+    description=(
+        "Generate a time-limited JWT magic link and deliver it to the given email address. "
+        "If the email is not yet registered, a new Visitor account is created automatically. "
+        "In development the link is printed to the console instead of being emailed."
+    ),
+    responses={
+        200: {"description": "Magic link sent successfully"},
+        500: {"description": "Failed to deliver the magic-link email"},
+    },
+)
 async def request_magic_link(
     request: Request, request_data: MagicLinkRequest, db: AsyncSession = Depends(get_db)
 ) -> dict[str, str]:
-    """
-    Generate a magic link and 'send' it (log to console).
-    Auto-registers user if they don't explicitly exist (simplified flow).
-    """
+    """Generate a magic link and send it to the user's email. Auto-registers unknown addresses."""
     email = request_data.email
 
     # Check if user exists, if not create
@@ -71,11 +80,20 @@ async def request_magic_link(
     return {"message": "Magic link sent"}
 
 
-@router.get("/verify")
+@router.get(
+    "/verify",
+    summary="Verify magic-link token and open a session",
+    description=(
+        "Validate the JWT supplied in the magic link. On success, set an HTTP-only session cookie "
+        "and redirect to `next` (or `/health` if omitted). Returns 400 if the token is invalid or expired."
+    ),
+    responses={
+        307: {"description": "Token valid — redirecting with session cookie set"},
+        400: {"description": "Token is invalid or expired"},
+    },
+)
 async def verify_magic_link(token: str = Query(...), next: str | None = Query(None)) -> RedirectResponse:
-    """
-    Verify token and set session cookie.
-    """
+    """Verify the magic-link JWT, set the session cookie, and redirect."""
     payload = security.verify_token(token)
     if not payload:
         raise HTTPException(status_code=400, detail="Token inválido")
@@ -94,9 +112,15 @@ async def verify_magic_link(token: str = Query(...), next: str | None = Query(No
     return response
 
 
-@router.get("/me")
+@router.get(
+    "/me",
+    summary="Return the currently authenticated user",
+    description="Decode the session cookie and return basic profile info. Requires a valid session.",
+    responses={
+        200: {"description": "Authenticated user profile"},
+        401: {"description": "Missing or invalid session cookie"},
+    },
+)
 async def read_users_me(current_user: User = Depends(deps.get_current_user)) -> dict[str, Any]:
-    """
-    Test endpoint to verify authentication.
-    """
+    """Return the email, role, and ID of the currently authenticated user."""
     return {"email": current_user.email, "role": current_user.role, "id": current_user.id}

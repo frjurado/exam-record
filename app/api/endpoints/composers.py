@@ -11,17 +11,26 @@ from app.services import wikidata
 router = APIRouter()
 
 
-@router.get("/search", response_model=list[Any])
+@router.get(
+    "/search",
+    response_model=list[Any],
+    summary="Search for composers by name",
+    description=(
+        "Search composers by name against the local database or Wikidata. "
+        "Local results are limited to 10 entries and match any substring. "
+        "Wikidata results are fetched live via SPARQL and include the Wikidata entity ID."
+    ),
+    responses={
+        200: {"description": "List of matching composers"},
+        500: {"description": "Upstream search error (e.g. Wikidata unavailable)"},
+    },
+)
 async def search_composers(
     q: str = Query(..., min_length=2, description="Name of the composer to search for"),
     source: str = Query("local", description="Source to search: 'local' or 'wikidata'"),
     db: AsyncSession = Depends(get_db),
 ) -> list[Any]:
-    """
-    Search for a composer by name.
-    Default: Local DB.
-    Optional: Wikidata (source='wikidata').
-    """
+    """Search composers by name in the local DB or via the Wikidata SPARQL endpoint."""
     try:
         if source == "wikidata":
             results = await wikidata.search_composer(q)

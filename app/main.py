@@ -13,7 +13,17 @@ from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, User
 from app.services.exam_service import ExamService
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    description=(
+        "Community-driven database for crowdsourcing music conservatory entrance exam repertoire. "
+        "Users submit and vote on the works performed in past exams, building consensus around "
+        "what pieces appear most frequently."
+    ),
+    version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+)
 templates = Jinja2Templates(directory="app/templates")
 
 app.include_router(api_router)
