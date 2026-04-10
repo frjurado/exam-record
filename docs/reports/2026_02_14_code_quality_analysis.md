@@ -1,7 +1,7 @@
 # Code Quality & Consistency Analysis: Exam Record
 
-**Analysis Date:** February 13, 2026  
-**Repository:** exam-record  
+**Analysis Date:** February 13, 2026
+**Repository:** exam-record
 **Tech Stack:** FastAPI, SQLAlchemy (Async), SQLite, Jinja2, HTMX, Alpine.js
 
 ---
@@ -17,7 +17,7 @@ The codebase shows a functional FastAPI application with good architectural deci
 ## 1. Critical Issues 🚨
 
 ### 1.1 No Dependency Version Pinning
-**Severity: HIGH**  
+**Severity: HIGH**
 **File:** `requirements.txt`
 
 ```txt
@@ -26,7 +26,7 @@ uvicorn[standard]  # ❌ No version
 sqlalchemy       # ❌ No version
 ```
 
-**Impact:** 
+**Impact:**
 - Builds are not reproducible
 - Breaking changes in dependencies will cause production failures
 - Security vulnerabilities cannot be tracked
@@ -42,7 +42,7 @@ sqlalchemy==2.0.36
 Generate with: `pip freeze > requirements.txt`
 
 ### 1.2 Bare Exception Handling
-**Severity: HIGH**  
+**Severity: HIGH**
 **File:** `app/api/deps.py:72`
 
 ```python
@@ -67,7 +67,7 @@ except (jwt.PyJWTError, Exception) as e:
 ```
 
 ### 1.3 SQL Echo Mode in Production
-**Severity: MEDIUM-HIGH**  
+**Severity: MEDIUM-HIGH**
 **File:** `app/db/session.py:4`
 
 ```python
@@ -83,7 +83,7 @@ engine = create_async_engine(settings.DATABASE_URL, echo=True)  # ❌
 **Recommendation:**
 ```python
 engine = create_async_engine(
-    settings.DATABASE_URL, 
+    settings.DATABASE_URL,
     echo=settings.ENVIRONMENT == "development"
 )
 ```
@@ -167,8 +167,8 @@ Appears in 3 places:
 ```python
 # app/services/participation.py
 async def check_user_event_participation(
-    db: AsyncSession, 
-    user_id: int, 
+    db: AsyncSession,
+    user_id: int,
     event_id: int
 ) -> tuple[bool, int | None]:
     """Check if user participated. Returns (has_participated, report_id)."""
@@ -228,7 +228,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 def best_score_url(self):
     if self.imslp_url:
         return self.imslp_url
-    
+
     import urllib.parse  # ❌ Should be at top
     encoded_query = urllib.parse.quote(query_str)
 ```
@@ -342,9 +342,9 @@ async def exam_page(...):
 # app/services/exam_service.py
 class ExamService:
     async def get_exam_with_consensus(
-        self, 
-        region_slug: str, 
-        discipline_slug: str, 
+        self,
+        region_slug: str,
+        discipline_slug: str,
         year: int,
         user: User | None = None
     ) -> ExamViewModel:
@@ -405,12 +405,12 @@ app/
 # app/models.py:76-91
 class Work(Base):
     # ... database fields ...
-    
+
     @property
     def best_score_url(self):  # ❌ Business logic in model
         if self.imslp_url:
             return self.imslp_url
-        
+
         # URL construction logic...
         import urllib.parse
         encoded_query = urllib.parse.quote(query_str)
@@ -465,8 +465,8 @@ class TokenError(Enum):
 def verify_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(
-            token, 
-            settings.SECRET_KEY, 
+            token,
+            settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM]
         )
         return payload
@@ -548,9 +548,9 @@ if settings.ENVIRONMENT == "production":
 ## 6. Testing Quality 🧪
 
 ### 6.1 Strengths
-✅ Async tests with pytest-asyncio  
-✅ In-memory SQLite for fast tests  
-✅ Integration tests checking full flow  
+✅ Async tests with pytest-asyncio
+✅ In-memory SQLite for fast tests
+✅ Integration tests checking full flow
 ✅ HTML content validation
 
 ### 6.2 Weaknesses
@@ -617,7 +617,7 @@ from unittest.mock import AsyncMock, patch
 @pytest.mark.asyncio
 async def test_create_report_with_wikidata():
     mock_wikidata = AsyncMock(return_value={"name": "Bach"})
-    
+
     with patch('app.services.wikidata.get_composer_by_id', mock_wikidata):
         # Test code
         assert mock_wikidata.called
@@ -643,7 +643,7 @@ python_classes = Test*
 python_functions = test_*
 
 # Coverage
-addopts = 
+addopts =
     --cov=app
     --cov-report=html
     --cov-report=term-missing
@@ -660,9 +660,9 @@ filterwarnings =
 ## 7. Documentation 📚
 
 ### 7.1 Strengths
-✅ Comprehensive `docs/` directory  
-✅ Design documents exist  
-✅ Technical specifications documented  
+✅ Comprehensive `docs/` directory
+✅ Design documents exist
+✅ Technical specifications documented
 ✅ Roadmap present
 
 ### 7.2 Weaknesses
@@ -708,19 +708,19 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
 
 # Recommended
 async def get_current_user(
-    request: Request, 
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
     Retrieve the current authenticated user from request cookies or headers.
-    
+
     Args:
         request: FastAPI request object
         db: Database session
-        
+
     Returns:
         User: Authenticated user object
-        
+
     Raises:
         HTTPException(401): If token is missing, invalid, or user not found
     """
@@ -814,13 +814,13 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
-  
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.0
     hooks:
       - id: mypy
         additional_dependencies: [pydantic, sqlalchemy]
-  
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -927,7 +927,7 @@ async def get_regions_cached() -> list[Region]:
     cached = await cache.get("regions")
     if cached:
         return json.loads(cached)
-    
+
     regions = await fetch_regions()
     await cache.set("regions", json.dumps(regions), ex=3600)
     return regions
@@ -1130,7 +1130,7 @@ mypy app
 
 ## Summary
 
-The **Exam Record** project is a **functional application with good architectural foundations** but would **significantly benefit from establishing code quality standards and refactoring efforts**. 
+The **Exam Record** project is a **functional application with good architectural foundations** but would **significantly benefit from establishing code quality standards and refactoring efforts**.
 
 **Key Priorities:**
 1. Stabilize with dependency pinning
@@ -1144,6 +1144,6 @@ With these improvements, the codebase would move from a **C+ to an A-** in quali
 
 ---
 
-**Report Generated:** February 13, 2026  
-**Analyzer:** Code Quality Analysis Tool  
+**Report Generated:** February 13, 2026
+**Analyzer:** Code Quality Analysis Tool
 **Next Review:** Recommended in 3 months after improvements

@@ -28,15 +28,15 @@ event.year }} en
     existingParticipationModalOpen: false,
     voteSuccessBannerOpen: false,
     pendingReportId: null,
-    
+
     init() {
         const params = new URLSearchParams(window.location.search);
-        
+
         // 1. Check for Vote Success (Banner)
         if (params.get('vote_success') === 'true') {
             this.voteSuccessBannerOpen = true;
             setTimeout(() => { this.voteSuccessBannerOpen = false; }, 5000);
-            
+
             // Clean Query Params but keep path
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
@@ -45,7 +45,7 @@ event.year }} en
         // 2. Check for Pending Vote Action
         if (params.get('action') === 'vote' && params.get('report_id')) {
             const hasParticipated = {{ 'true' if user_has_participated else 'false' }};
-            
+
             if (hasParticipated) {
                 // User logged in but ALREADY participated
                 this.existingParticipationModalOpen = true;
@@ -54,7 +54,7 @@ event.year }} en
                 this.pendingReportId = params.get('report_id');
                 this.pendingVoteModalOpen = true;
             }
-            
+
             // Clean URL
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);

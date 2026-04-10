@@ -8,7 +8,7 @@
 
 ## 2. Flaws & Risks
 *   **The "Cold Start" Incentive Cliff**: The consensus model requires volume ($\ge$ 2 votes). Early users will see a lot of "Gray/Neutral" states, which might feel like "Empty/Untrusted" data, discouraging further use.
-*   **Normalization Complexity**: The system assumes "Event" uniqueness (Year + Region + Discipline), but in reality, naming conventions for simple things like "Region" or "Institution" can be messy (e.g., "Madrid" vs. "RCSMM"). 
+*   **Normalization Complexity**: The system assumes "Event" uniqueness (Year + Region + Discipline), but in reality, naming conventions for simple things like "Region" or "Institution" can be messy (e.g., "Madrid" vs. "RCSMM").
 *   **Teacher Verification**: "Steward" status seems to be reputation-gated but initially self-declared. A bad actor could game this to inject bias. Requires a "Report User" flow.
 
 ## 3. Doubts & Questions

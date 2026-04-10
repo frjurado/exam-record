@@ -1,9 +1,9 @@
 """Unit tests for ExamService."""
+
 import pytest
 
 from app.models import Composer, Discipline, ExamEvent, Region, Report, User, Vote, Work
 from app.services.exam_service import ExamService
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -296,7 +296,11 @@ async def test_get_discipline_context_badge_verified(
         u = User(email=f"verif{i}@test.com")
         db.add(u)
     await db.commit()
-    result = await db.execute(__import__("sqlalchemy.future", fromlist=["select"]).select(User).filter(User.email.like("verif%@test.com")))
+    result = await db.execute(
+        __import__("sqlalchemy.future", fromlist=["select"])
+        .select(User)
+        .filter(User.email.like("verif%@test.com"))
+    )
     users = result.scalars().all()
 
     report1 = Report(user_id=users[0].id, event_id=event.id, work_id=work.id, is_flagged=False)
@@ -330,9 +334,7 @@ async def test_get_discipline_context_badge_verified(
     assert year_entry["badge_status"] == "verified"
 
 
-async def test_get_discipline_context_cursor_pagination(
-    db, region, discipline
-):
+async def test_get_discipline_context_cursor_pagination(db, region, discipline):
     """cursor filters out years >= cursor value."""
     # Create two events
     ev1 = ExamEvent(year=2020, region_id=region.id, discipline_id=discipline.id)

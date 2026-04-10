@@ -66,17 +66,17 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
 
 ## Phase 8: Tweaks & Fixes (v0.5.0+)
 **Goal:** Fix issues and improve the project.
-*   **8.1 Infrastructure:** 
+*   **8.1 Infrastructure:**
     *   Set proper domain at wikianalisis.org.
     *   Magic link from any email address?
     *   Two machines on Fly.io? (load is too slow).
     *   Change the DB to PostgreSQL? (necesary if more than one machine).
-*   **8.2 UI improvements & more disciplines:** 
+*   **8.2 UI improvements & more disciplines:**
     *   Group links under "Andalucía" to avoid text clutter.
     *   Discipline page: event boxes could show status badge/work if validated.
     *   Consider opening more disciplines (see meta/08_tweaks_&_fixes.md).
-*   **8.3 Text revision:** 
+*   **8.3 Text revision:**
     *   Revise the whole text of the site.
     *   Add a small "About" note at the bottom of index page.
-*   **8.4 Bugs & issues:** 
+*   **8.4 Bugs & issues:**
     *   Revise wizard_buglist.md and fix the most important issues.

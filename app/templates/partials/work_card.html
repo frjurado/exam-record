@@ -79,7 +79,7 @@
 
 {% else %}
 <!-- Standard Style (Neutral/Disputed) -->
-<div class="work-card bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition flex justify-between items-center 
+<div class="work-card bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition flex justify-between items-center
      {% if event_status == 'disputed' or item.status == 'disputed' %}border-orange-300 bg-orange-50{% else %}border-gray-200{% endif %}"
     id="report-{{ item.report_id }}" {% if swap_oob %}hx-swap-oob="true" {% endif %}>
 

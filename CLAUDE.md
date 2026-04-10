@@ -15,11 +15,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 python -m venv .venv
 source .venv/Scripts/activate  # Windows (bash)
 
-# Install dependencies
+# Install dependencies (includes pre-commit)
 pip install -r requirements.txt
 
 # Install pre-commit hooks (once per clone)
-pip install pre-commit
 pre-commit install
 
 # Run dev server (reload on change)

@@ -1,7 +1,6 @@
 """Unit tests for WorkService — no DB required."""
-from types import SimpleNamespace
 
-import pytest
+from types import SimpleNamespace
 
 from app.services.work_service import WorkService
 

@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 
 from app.api import deps
 from app.core.constants import Calendar, Consensus, Pagination
@@ -48,9 +48,10 @@ class ExamService:
         user_has_participated = False
         user_participation_report_id = None
         if current_user:
-            user_has_participated, user_participation_report_id = (
-                await deps.check_user_event_participation(db, current_user.id, event.id)
-            )
+            (
+                user_has_participated,
+                user_participation_report_id,
+            ) = await deps.check_user_event_participation(db, current_user.id, event.id)
 
         return {
             "event": event,
@@ -87,7 +88,9 @@ class ExamService:
 
         # Determine anchor year using academic year logic
         now = datetime.now()
-        base_anchor_year = now.year if now.month >= Calendar.ACADEMIC_YEAR_CUTOFF_MONTH else now.year - 1
+        base_anchor_year = (
+            now.year if now.month >= Calendar.ACADEMIC_YEAR_CUTOFF_MONTH else now.year - 1
+        )
 
         batch_size = Pagination.DEFAULT_BATCH_SIZE
 
@@ -114,7 +117,9 @@ class ExamService:
         all_relevant_years = [y for y in all_relevant_years if y <= base_anchor_year]
 
         # Apply cursor (descending: show years before the cursor value)
-        filtered_years = [y for y in all_relevant_years if y < cursor] if cursor else all_relevant_years
+        filtered_years = (
+            [y for y in all_relevant_years if y < cursor] if cursor else all_relevant_years
+        )
         batch_years = filtered_years[:batch_size]
         show_more = len(filtered_years) > batch_size
 
@@ -153,7 +158,11 @@ class ExamService:
                 item["has_event"] = True
                 report_count = len(event.reports)
                 item["report_count"] = report_count
-                item["status"] = f"{report_count} Aportación" if report_count == 1 else f"{report_count} Aportaciones"
+                item["status"] = (
+                    f"{report_count} Aportación"
+                    if report_count == 1
+                    else f"{report_count} Aportaciones"
+                )
 
                 total_event_votes = sum(len(r.votes) for r in event.reports)
                 has_verified = False
@@ -168,7 +177,9 @@ class ExamService:
                     )
                     if is_verified:
                         has_verified = True
-                    work_stats.append({"report": report, "votes": vote_count, "is_verified": is_verified})
+                    work_stats.append(
+                        {"report": report, "votes": vote_count, "is_verified": is_verified}
+                    )
 
                 work_stats.sort(key=lambda x: x["votes"], reverse=True)
 

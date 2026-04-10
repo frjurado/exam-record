@@ -4,7 +4,7 @@
 Implement the core data loop services to fetch and verify Composers (Wikidata) and Works (OpenOpus).
 
 ## User Review Required
-- **Caching Strategy**: 
+- **Caching Strategy**:
   - **Composers**: We will fetch the "Popular/Essential" list from OpenOpus to seed our database. This allows for fast, local Level 1 autocomplete. Wikidata will be used as a Level 2 fallback for composers not in this initial list (long tail).
   - **Works**: We will query OpenOpus dynamically for work validation/alias matching.
 

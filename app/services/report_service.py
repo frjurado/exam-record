@@ -8,11 +8,11 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from app.api import deps
 from app.core.config import settings
-from app.services.work_service import WorkService
 from app.models import Composer, ExamEvent, Report, User, Vote, Work
 from app.schemas.report import ComposerInput, ReportCreate, ScopeEnum, WorkInput
 from app.services import wikidata
 from app.services.consensus import ConsensusService
+from app.services.work_service import WorkService
 
 
 class ReportService:
@@ -72,9 +72,7 @@ class ReportService:
         raise HTTPException(status_code=400, detail="Identificación de compositor requerida")
 
     @staticmethod
-    async def get_or_create_work(
-        db: AsyncSession, data: WorkInput, composer_id: int
-    ) -> Work:
+    async def get_or_create_work(db: AsyncSession, data: WorkInput, composer_id: int) -> Work:
         """Resolve a Work by local id, OpenOpus id, or title. Raises HTTPException on error."""
         if data.id:
             result = await db.execute(select(Work).filter(Work.id == data.id))
@@ -84,9 +82,7 @@ class ReportService:
             return work
 
         if data.openopus_id:
-            result = await db.execute(
-                select(Work).filter(Work.openopus_id == data.openopus_id)
-            )
+            result = await db.execute(select(Work).filter(Work.openopus_id == data.openopus_id))
             work = result.scalar_one_or_none()
             if work:
                 return work
@@ -210,9 +206,7 @@ class ReportService:
         )
 
     @staticmethod
-    async def fetch_report_with_context(
-        db: AsyncSession, report_id: int
-    ) -> Report | None:
+    async def fetch_report_with_context(db: AsyncSession, report_id: int) -> Report | None:
         """Fetch a report with all relations required for rendering vote/flag responses."""
         result = await db.execute(ReportService._report_context_query(report_id))
         return result.unique().scalar_one_or_none()

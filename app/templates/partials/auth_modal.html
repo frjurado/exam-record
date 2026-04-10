@@ -13,7 +13,7 @@
                 try {
                     // Use server-provided next_url (which includes action params) or fallback to current page
                     const nextUrl = '{{ next_url|default("") }}' || window.location.href;
-                    
+
                     const res = await fetch('/api/auth/magic-link', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

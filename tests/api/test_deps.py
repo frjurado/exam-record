@@ -1,4 +1,5 @@
 """Unit tests for check_user_event_participation in app.api.deps."""
+
 import pytest
 
 from app.api.deps import check_user_event_participation

@@ -5,7 +5,7 @@ The User Role system is designed to support the three pillars of the application
 1.  **Democratization:** Maximum access for anonymous users.
 2.  **Low Friction:** Passwordless/Token-based entry for one-time contributors.
 37.  **Sustainability:** Utility-based incentives for long-term power users (Teachers).
-    
+
     ## 1A. Privacy & Anonymity Policy
     *   **Public Display:** All Users are **Publicly Anonymous**. We do not display usernames. Contributions are attributed to generic labels (e.g., *"Verified Candidate"*, *"Steward"*).
     *   **Internal Accountability:** Emails are linked to a hidden `User_ID`. This allows Admins to ban bad actors without exposing users to public scrutiny.

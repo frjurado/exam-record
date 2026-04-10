@@ -92,7 +92,9 @@ async def request_magic_link(
         400: {"description": "Token is invalid or expired"},
     },
 )
-async def verify_magic_link(token: str = Query(...), next: str | None = Query(None)) -> RedirectResponse:
+async def verify_magic_link(
+    token: str = Query(...), next: str | None = Query(None)
+) -> RedirectResponse:
     """Verify the magic-link JWT, set the session cookie, and redirect."""
     payload = security.verify_token(token)
     if not payload:

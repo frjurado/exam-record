@@ -27,7 +27,9 @@ router = APIRouter()
     ),
     responses={
         200: {"description": "Report created (or an existing matching report returned)"},
-        400: {"description": "Turnstile validation failed, event not found, or duplicate submission"},
+        400: {
+            "description": "Turnstile validation failed, event not found, or duplicate submission"
+        },
         401: {"description": "Authentication required"},
     },
 )
@@ -172,8 +174,8 @@ async def flag_report(
     ]
     event_status = ConsensusService.aggregate_event_reports(report.event.reports)["event_status"]
 
-    user_has_participated, user_participation_report_id = (
-        await deps.check_user_event_participation(db, current_user.id, report.event_id)
+    user_has_participated, user_participation_report_id = await deps.check_user_event_participation(
+        db, current_user.id, report.event_id
     )
 
     return templates.TemplateResponse(

@@ -1,5 +1,5 @@
 """Unit tests for ReportService."""
-from types import SimpleNamespace
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -10,7 +10,6 @@ from app.core import config as app_config
 from app.models import Composer, Discipline, ExamEvent, Region, Report, User, Vote, Work
 from app.schemas.report import ComposerInput, ReportCreate, ScopeEnum, WorkInput
 from app.services.report_service import ReportService
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -320,7 +319,9 @@ async def test_cast_vote_creates_vote_record(db, user, event, composer, work):
 
     await ReportService.cast_vote(db, user.id, report)
 
-    result = await db.execute(select(Vote).filter(Vote.report_id == report.id, Vote.user_id == user.id))
+    result = await db.execute(
+        select(Vote).filter(Vote.report_id == report.id, Vote.user_id == user.id)
+    )
     vote = result.scalar_one_or_none()
     assert vote is not None
 

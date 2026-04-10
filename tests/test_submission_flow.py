@@ -56,9 +56,7 @@ async def test_submission_flow_full(client: AsyncClient, db):
     # Mock Email Service to avoid Resend API limits
     from unittest.mock import AsyncMock, patch
 
-    with patch(
-        "app.services.email.email_service.send_magic_link", new_callable=AsyncMock
-    ):
+    with patch("app.services.email.email_service.send_magic_link", new_callable=AsyncMock):
         response = await client.post(
             "/api/auth/magic-link", json={"email": email, "next_url": "http://test/wizard"}
         )

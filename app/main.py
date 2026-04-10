@@ -75,7 +75,9 @@ async def exam_page(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
 ) -> HTMLResponse:
-    context = await ExamService.get_exam_context(db, region_slug, discipline_slug, year, current_user)
+    context = await ExamService.get_exam_context(
+        db, region_slug, discipline_slug, year, current_user
+    )
     if context is None:
         return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
     return templates.TemplateResponse(request, "event.html", context)

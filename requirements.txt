@@ -14,3 +14,4 @@ email-validator==2.3.0
 resend==2.21.0
 gunicorn
 ruff
+pre-commit

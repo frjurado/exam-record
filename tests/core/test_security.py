@@ -1,8 +1,8 @@
 """Unit tests for app.core.security — no DB required."""
+
 from datetime import timedelta
 
 import jwt
-import pytest
 
 from app.core.security import create_access_token, verify_token
 

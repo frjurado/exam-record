@@ -24,6 +24,8 @@ async def test_search_works_endpoint():
 @pytest.mark.asyncio
 async def test_search_works_missing_composer_id():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.get("/api/works/search?q=Moonlight&source=openopus")  # composer_id required for openopus
+        response = await ac.get(
+            "/api/works/search?q=Moonlight&source=openopus"
+        )  # composer_id required for openopus
 
     assert response.status_code == 400

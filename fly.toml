@@ -29,4 +29,3 @@ primary_region = 'lhr'
 [mounts]
   source = "exam_data"
   destination = "/data"
-

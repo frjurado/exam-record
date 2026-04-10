@@ -104,9 +104,7 @@ async def check_user_event_participation(
         return True, existing_event_report.id
 
     existing_vote_result = await db.execute(
-        select(Vote)
-        .join(Report)
-        .filter(Report.event_id == event_id, Vote.user_id == user_id)
+        select(Vote).join(Report).filter(Report.event_id == event_id, Vote.user_id == user_id)
     )
     if existing_vote := existing_vote_result.scalars().first():
         return True, existing_vote.report_id
