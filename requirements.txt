@@ -15,3 +15,5 @@ resend==2.21.0
 gunicorn
 ruff
 pre-commit
+mypy==1.15.0
+pytest-cov==6.1.0
