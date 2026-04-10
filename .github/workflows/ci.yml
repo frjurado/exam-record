@@ -27,3 +27,6 @@ jobs:
 
       - name: Test with coverage
         run: pytest --cov=app --cov-report=xml
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./test.db
+          SECRET_KEY: ci-secret-key
