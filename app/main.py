@@ -10,7 +10,7 @@ from app.api import deps
 from app.api.api import api_router
 from app.core.config import settings
 from app.db.session import get_db
-from app.models import Discipline, ExamEvent, Region, User
+from app.models import Discipline, ExamEvent, Region, Report, User
 from app.services.exam_service import ExamService
 
 app = FastAPI(
@@ -32,9 +32,21 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def root(
-    request: Request, current_user: User | None = Depends(deps.get_current_user_optional)
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional),
 ) -> HTMLResponse:
-    return templates.TemplateResponse(request, "index.html", {"user": current_user})
+    result = await db.execute(
+        select(Region.slug, Discipline.slug)
+        .join(ExamEvent, ExamEvent.region_id == Region.id)
+        .join(Discipline, Discipline.id == ExamEvent.discipline_id)
+        .join(Report, Report.event_id == ExamEvent.id)
+        .distinct()
+    )
+    slugs_with_data = {f"{r}/{d}" for r, d in result.all()}
+    return templates.TemplateResponse(
+        request, "index.html", {"user": current_user, "slugs_with_data": slugs_with_data}
+    )
 
 
 @app.get("/logout")
