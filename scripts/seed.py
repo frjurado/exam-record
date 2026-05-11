@@ -1,5 +1,9 @@
 import asyncio
 import logging
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import select
 
@@ -17,9 +21,15 @@ INITIAL_REGIONS = [
 
 INITIAL_DISCIPLINES = [
     {"name": "Piano", "slug": "piano"},
-    {"name": "Violín", "slug": "violin"},
-    {"name": "Clarinete", "slug": "clarinete"},
     {"name": "Guitarra", "slug": "guitarra"},
+    {"name": "Violín", "slug": "violin"},
+    {"name": "Viola", "slug": "viola"},
+    {"name": "Violonchelo", "slug": "violonchelo"},
+    {"name": "Flauta", "slug": "flauta"},
+    {"name": "Oboe", "slug": "oboe"},
+    {"name": "Clarinete", "slug": "clarinete"},
+    {"name": "Trompeta", "slug": "trompeta"},
+    {"name": "Trombón", "slug": "trombon"},
 ]
 
 
