@@ -225,6 +225,39 @@ async def test_get_discipline_context_has_data(db, region, discipline, event, co
     assert year_entry["report_count"] == 1
 
 
+async def test_get_discipline_context_badge_neutral_single_source(
+    db, region, discipline, event, composer_and_work
+):
+    """Single report with 1 vote → neutral (single source, no conflict possible)."""
+    _, work = composer_and_work
+
+    user1 = User(email="neutral1@test.com")
+    db.add(user1)
+    await db.commit()
+    await db.refresh(user1)
+
+    report1 = Report(user_id=user1.id, event_id=event.id, work_id=work.id, is_flagged=False)
+    db.add(report1)
+    await db.commit()
+    await db.refresh(report1)
+
+    db.add(Vote(user_id=user1.id, report_id=report1.id))
+    await db.commit()
+
+    ctx = await ExamService.get_discipline_context(
+        db,
+        region_slug=region.slug,
+        discipline_slug=discipline.slug,
+        cursor=None,
+        sparse_mode=True,
+        current_user=None,
+    )
+    assert ctx is not None
+    year_entry = next((y for y in ctx["years"] if y["year"] == event.year), None)
+    assert year_entry is not None
+    assert year_entry["badge_status"] == "neutral"
+
+
 async def test_get_discipline_context_badge_disputed(
     db, region, discipline, event, composer_and_work
 ):

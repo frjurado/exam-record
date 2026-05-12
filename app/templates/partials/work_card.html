@@ -80,7 +80,7 @@
 {% else %}
 <!-- Standard Style (Neutral/Disputed) -->
 <div class="work-card bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition flex justify-between items-center
-     {% if event_status == 'disputed' or item.status == 'disputed' %}border-orange-300 bg-orange-50{% else %}border-gray-200{% endif %}"
+     {% if item.is_flagged %}border-red-200{% else %}border-gray-200{% endif %}"
     id="report-{{ item.report_id }}" {% if swap_oob %}hx-swap-oob="true" {% endif %}>
 
     <div class="flex-1">
@@ -106,7 +106,7 @@
         <div class="mt-2 text-sm">
             {% if event_status == 'disputed' or item.votes > 1 %}
             <span
-                class="font-medium {% if item.status == 'disputed' %}text-orange-800{% else %}text-gray-600{% endif %}">
+                class="font-medium text-gray-600">
                 {{ item.votes }} voto(s) ({{ item.percentage }}%)
             </span>
             {% else %}

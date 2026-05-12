@@ -192,12 +192,12 @@ class ExamService:
                         "is_verified": top["is_verified"],
                     }
 
-                if has_verified:
-                    item["badge_status"] = "verified"
-                elif total_event_votes > 0:
-                    item["badge_status"] = "disputed"
-                else:
+                if total_event_votes < Consensus.MIN_VOTES_FOR_VERIFICATION:
                     item["badge_status"] = "neutral"
+                elif has_verified:
+                    item["badge_status"] = "verified"
+                else:
+                    item["badge_status"] = "disputed"
 
             years_data.append(item)
 
