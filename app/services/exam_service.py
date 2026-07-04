@@ -166,7 +166,7 @@ class ExamService:
 
                 total_event_votes = sum(len(r.votes) for r in event.reports)
                 has_verified = False
-                work_stats = []
+                work_stats: list[dict[str, Any]] = []
 
                 for report in event.reports:
                     vote_count = len(report.votes)

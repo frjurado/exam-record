@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -9,45 +9,48 @@ from app.db.base import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    role = Column(String, default="Visitor", nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    role: Mapped[str] = mapped_column(String, default="Visitor")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True
+    )
 
-    reports = relationship("Report", back_populates="user")
+    reports: Mapped[list["Report"]] = relationship("Report", back_populates="user")
+    votes: Mapped[list["Vote"]] = relationship("Vote", back_populates="user")
 
 
 class Region(Base):
     __tablename__ = "regions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    slug = Column(String, unique=True, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String)
+    slug: Mapped[str] = mapped_column(String, unique=True, index=True)
 
-    events = relationship("ExamEvent", back_populates="region")
+    events: Mapped[list["ExamEvent"]] = relationship("ExamEvent", back_populates="region")
 
 
 class Discipline(Base):
     __tablename__ = "disciplines"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    slug = Column(String, unique=True, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String)
+    slug: Mapped[str] = mapped_column(String, unique=True, index=True)
 
-    events = relationship("ExamEvent", back_populates="discipline")
+    events: Mapped[list["ExamEvent"]] = relationship("ExamEvent", back_populates="discipline")
 
 
 class ExamEvent(Base):
     __tablename__ = "exam_events"
 
-    id = Column(Integer, primary_key=True, index=True)
-    year = Column(Integer, nullable=False)
-    region_id = Column(Integer, ForeignKey("regions.id"), nullable=False)
-    discipline_id = Column(Integer, ForeignKey("disciplines.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    year: Mapped[int] = mapped_column()
+    region_id: Mapped[int] = mapped_column(ForeignKey("regions.id"))
+    discipline_id: Mapped[int] = mapped_column(ForeignKey("disciplines.id"))
 
-    region = relationship("Region", back_populates="events")
-    discipline = relationship("Discipline", back_populates="events")
-    reports = relationship("Report", back_populates="event")
+    region: Mapped["Region"] = relationship("Region", back_populates="events")
+    discipline: Mapped["Discipline"] = relationship("Discipline", back_populates="events")
+    reports: Mapped[list["Report"]] = relationship("Report", back_populates="event")
 
     __table_args__ = (
         UniqueConstraint("year", "region_id", "discipline_id", name="uix_year_region_discipline"),
@@ -57,46 +60,50 @@ class ExamEvent(Base):
 class Composer(Base):
     __tablename__ = "composers"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    wikidata_id = Column(String, unique=True, index=True, nullable=True)
-    openopus_id = Column(String, unique=True, index=True, nullable=True)
-    is_verified = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String)
+    wikidata_id: Mapped[str | None] = mapped_column(String, unique=True, index=True)
+    openopus_id: Mapped[str | None] = mapped_column(String, unique=True, index=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
 
-    works = relationship("Work", back_populates="composer")
+    works: Mapped[list["Work"]] = relationship("Work", back_populates="composer")
 
 
 class Work(Base):
     __tablename__ = "works"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    nickname = Column(String, nullable=True)
-    openopus_id = Column(String, unique=True, index=True, nullable=True)
-    composer_id = Column(Integer, ForeignKey("composers.id"), nullable=False)
-    is_verified = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String)
+    nickname: Mapped[str | None] = mapped_column(String)
+    openopus_id: Mapped[str | None] = mapped_column(String, unique=True, index=True)
+    composer_id: Mapped[int] = mapped_column(ForeignKey("composers.id"))
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
 
-    composer = relationship("Composer", back_populates="works")
-    reports = relationship("Report", back_populates="work")
+    composer: Mapped["Composer"] = relationship("Composer", back_populates="works")
+    reports: Mapped[list["Report"]] = relationship("Report", back_populates="work")
 
-    imslp_url = Column(String, nullable=True)
+    imslp_url: Mapped[str | None] = mapped_column(String)
 
 
 class Report(Base):
     __tablename__ = "reports"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    event_id = Column(Integer, ForeignKey("exam_events.id"), nullable=False)
-    work_id = Column(Integer, ForeignKey("works.id"), nullable=False)
-    movement_details = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    is_flagged = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("exam_events.id"), index=True)
+    work_id: Mapped[int] = mapped_column(ForeignKey("works.id"))
+    movement_details: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True
+    )
+    is_flagged: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
 
-    user = relationship("User", back_populates="reports")
-    event = relationship("ExamEvent", back_populates="reports")
-    work = relationship("Work", back_populates="reports")
-    votes = relationship("Vote", back_populates="report", cascade="all, delete-orphan")
+    user: Mapped["User"] = relationship("User", back_populates="reports")
+    event: Mapped["ExamEvent"] = relationship("ExamEvent", back_populates="reports")
+    work: Mapped["Work"] = relationship("Work", back_populates="reports")
+    votes: Mapped[list["Vote"]] = relationship(
+        "Vote", back_populates="report", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (UniqueConstraint("event_id", "work_id", name="uix_event_work_report"),)
 
@@ -104,10 +111,12 @@ class Report(Base):
 class Vote(Base):
     __tablename__ = "votes"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    report_id = Column(Integer, ForeignKey("reports.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True
+    )
 
-    user = relationship("User")
-    report = relationship("Report", back_populates="votes")
+    user: Mapped["User"] = relationship("User", back_populates="votes")
+    report: Mapped["Report"] = relationship("Report", back_populates="votes")
