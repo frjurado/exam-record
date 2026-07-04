@@ -71,6 +71,8 @@ There's currently no protection against brute-forcing `/api/auth/login` (magic-l
 
 ## Step 3 — Caching Layer for Frequently Accessed Data
 
+**Status: ✅ COMPLETED (2026-07-04)** — implemented as `app/services/reference_data_service.py`, with one correction to the premise below: the landing page turned out to be static HTML with no "list all regions/disciplines" query anywhere. What actually repeats on every discipline/exam page view is a single-row Region/Discipline lookup *by slug* (in `ExamService.get_discipline_context` and `main.py`'s `contribute_page`), so those got cached instead — same static-data intent, matching what the code actually does. Cached values are plain `id`/`slug`/`name` dataclasses rather than live ORM instances, so a cached entry can never end up bound to a closed session. `get_exam_context`'s combined Region+Discipline+ExamEvent join query was left untouched (already one query, not a separate cacheable lookup), and lookup misses (`None`) are never cached, so a newly-added region is visible immediately. Verified end-to-end against the real dev DB: the SQL echo log confirmed the Region/Discipline `SELECT`s fire on the first request and are skipped entirely on a repeat request, while the `ExamEvent`/votes queries still run every time as intended.
+
 ### Why
 `Region` and `Discipline` lists are read on nearly every page load (they populate nav/dropdowns) and change essentially never. Querying them from SQLite on every request is wasted work, and this is the first genuinely low-risk performance win available — no query logic changes, just avoiding redundant reads of static reference data.
 
