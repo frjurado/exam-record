@@ -92,6 +92,8 @@ There's currently no protection against brute-forcing `/api/auth/login` (magic-l
 
 ## Step 4 — Coding Standards Document
 
+**Status: ✅ COMPLETED (2026-07-04)** — [docs/meta/coding_standards.md](../meta/coding_standards.md), kept separate from `version_control.md` per the recommendation below. Documents types, where business logic lives (and honestly flags that `main.py`'s `root`/`contribute_page`/`sitemap_xml` haven't been extracted yet — not the target shape), constants, docstring conventions, and test conventions (including the autouse-reset-fixture rule this phase's own Steps 2–3 established for process-global state).
+
 ### Why
 There's no single place documenting the conventions already established across the short-term work (ruff config choices, `X | None` over `Optional[X]`, service-layer pattern, when to write a docstring, commit message format). Without this, conventions drift as the codebase grows or as future sessions (human or Claude Code) make judgment calls without precedent to check against.
 
