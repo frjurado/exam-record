@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     TURNSTILE_SITE_KEY: str | None = None
     TURNSTILE_SECRET_KEY: str | None = None
 
+    # Monitoring
+    SENTRY_DSN: str | None = None
+
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True)
 
 

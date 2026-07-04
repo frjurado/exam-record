@@ -12,10 +12,13 @@ from app.api import deps
 from app.api.api import api_router
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.core.monitoring import init_sentry
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User
 from app.services.exam_service import ExamService
 from app.services.reference_data_service import ReferenceDataService
+
+init_sentry()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

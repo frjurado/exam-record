@@ -71,6 +71,7 @@ Key constraint: `(event_id, work_id)` is unique on `Report`, so each work can ap
 - **OpenOpus API** (`app/services/openopus.py`): Work search by composer
 - **Resend** (`app/services/email.py`): Magic link emails — falls back to console logging if `RESEND_API_KEY` is unset (dev mode)
 - **Cloudflare Turnstile**: CAPTCHA on report submission
+- **Sentry** (`app/core/monitoring.py`): Production error tracking — no-ops unless `ENVIRONMENT=production` and `SENTRY_DSN` is set
 
 ### Database
 
@@ -87,6 +88,7 @@ Optional (have dev defaults):
 - `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` — omit to skip CAPTCHA
 - `FROM_EMAIL` — defaults to `noreply@wikianalisis.org`
 - `ENVIRONMENT` — `development` or `production`
+- `SENTRY_DSN` — omit to disable error tracking; only takes effect when `ENVIRONMENT=production` (see `app/core/monitoring.py`)
 
 ### Tests
 

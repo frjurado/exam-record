@@ -112,6 +112,16 @@ There's no single place documenting the conventions already established across t
 
 ## Step 5 — Monitoring (Error Tracking)
 
+**Status: ✅ CODE COMPLETE, awaiting a Sentry account (2026-07-04)** — `app/core/monitoring.py`'s `init_sentry()` is wired into `app/main.py`, guarded by `ENVIRONMENT=production` and `SENTRY_DSN`, exactly the optional-integration pattern used for Resend/Turnstile. Verified: no-ops in dev (unit tests in `tests/core/test_monitoring.py`), and boots cleanly with a real `sentry_sdk.init()` call when given a syntactically-valid fake production DSN (client activates, no crash). What's still outstanding is account-side, not code-side — see the note below.
+
+**To finish this step:**
+1. Sign up for a free account at sentry.io (or self-host GlitchTip if you'd rather avoid a third-party account — see the decision below).
+2. Create a new project, platform "FastAPI" (or plain Python).
+3. Copy the DSN it gives you.
+4. Set it as a Fly.io secret: `fly secrets set SENTRY_DSN=<dsn>` (don't put it in `fly.toml` — secrets shouldn't be committed).
+5. Confirm `ENVIRONMENT=production` is already set on the Fly.io app (it should be, from existing deploy config).
+6. To verify it's actually receiving events: trigger a deliberate exception in production (or run locally with `ENVIRONMENT=production` and the real DSN in `.env`) and check the Sentry dashboard for the event.
+
 ### Why
 Right now, production errors are only visible via Fly.io logs (or `error.log`), which means issues surface only when a user reports them or someone happens to be watching logs. For a side project with unpredictable traffic, an error tracker (Sentry) that pages/emails on new exception types is a much lower-effort signal than log-watching.
 
