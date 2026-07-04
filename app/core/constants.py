@@ -16,3 +16,10 @@ class Consensus:
     MIN_VOTES_FOR_VERIFICATION = 2
     # Fraction of total event votes a single report must hold to be considered "verified".
     VERIFICATION_THRESHOLD = 0.75
+
+
+class RateLimit:
+    # slowapi limit strings, keyed by remote address (per-IP).
+    MAGIC_LINK_REQUEST = "5/minute"
+    REPORT_CREATION = "10/hour"
+    VOTE_CAST = "20/hour"

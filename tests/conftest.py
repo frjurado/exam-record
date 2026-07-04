@@ -3,9 +3,20 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from app.core.limiter import limiter
 from app.db.base import Base  # Ensure this import is correct based on checking file
 from app.db.session import get_db
 from app.main import app as fastapi_app
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    # The limiter's in-memory storage lives for the whole test process, so without
+    # a reset, rate-limit state from one test would leak into the next (all test
+    # requests share the same fake client IP from httpx's ASGITransport).
+    limiter.reset()
+    yield
+
 
 # Use in-memory SQLite for tests
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

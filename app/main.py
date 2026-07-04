@@ -2,6 +2,8 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -9,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from app.api import deps
 from app.api.api import api_router
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User
 from app.services.exam_service import ExamService
@@ -25,6 +28,9 @@ app = FastAPI(
     redoc_url="/api/redoc",
 )
 templates = Jinja2Templates(directory="app/templates")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 app.include_router(api_router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

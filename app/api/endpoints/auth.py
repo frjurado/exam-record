@@ -10,6 +10,8 @@ from sqlalchemy.future import select
 from app.api import deps
 from app.core import security
 from app.core.config import settings
+from app.core.constants import RateLimit
+from app.core.limiter import limiter
 from app.db.session import get_db
 from app.models import User
 
@@ -34,6 +36,7 @@ class MagicLinkRequest(BaseModel):
         500: {"description": "Failed to deliver the magic-link email"},
     },
 )
+@limiter.limit(RateLimit.MAGIC_LINK_REQUEST)
 async def request_magic_link(
     request: Request, request_data: MagicLinkRequest, db: AsyncSession = Depends(get_db)
 ) -> dict[str, str]:

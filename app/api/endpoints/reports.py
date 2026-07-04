@@ -4,6 +4,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
+from app.core.constants import RateLimit
+from app.core.limiter import limiter
 from app.db.session import get_db
 from app.models import Report, User
 from app.schemas.report import ReportCreate, ReportResponse
@@ -33,7 +35,9 @@ router = APIRouter()
         401: {"description": "Authentication required"},
     },
 )
+@limiter.limit(RateLimit.REPORT_CREATION)
 async def create_report(
+    request: Request,
     report_in: ReportCreate,
     current_user: User = Depends(deps.get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -57,6 +61,7 @@ async def create_report(
         404: {"description": "Report not found"},
     },
 )
+@limiter.limit(RateLimit.VOTE_CAST)
 async def vote_report(
     request: Request,
     report_id: int,

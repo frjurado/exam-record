@@ -13,6 +13,9 @@ filterwarnings = [
     "error::DeprecationWarning",
     "ignore::DeprecationWarning:httpx.*",
     "ignore::DeprecationWarning:sqlalchemy.*",
+    # slowapi (unmaintained, latest release 0.1.10) still calls the removed
+    # asyncio.iscoroutinefunction on Python 3.14+.
+    "ignore::DeprecationWarning:slowapi.*",
     "ignore::RuntimeWarning",
 ]
 
