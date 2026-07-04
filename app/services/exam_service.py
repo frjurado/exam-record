@@ -9,6 +9,7 @@ from app.api import deps
 from app.core.constants import Calendar, Consensus, Pagination
 from app.models import Discipline, ExamEvent, Region, Report, User, Work
 from app.services.consensus import ConsensusService
+from app.services.reference_data_service import ReferenceDataService
 from app.services.work_service import WorkService
 
 
@@ -76,12 +77,8 @@ class ExamService:
         current_user: User | None,
     ) -> dict[str, Any] | None:
         """Return template context for the discipline page, or None if region/discipline not found."""
-        region = (
-            await db.execute(select(Region).filter(Region.slug == region_slug))
-        ).scalar_one_or_none()
-        discipline = (
-            await db.execute(select(Discipline).filter(Discipline.slug == discipline_slug))
-        ).scalar_one_or_none()
+        region = await ReferenceDataService.get_region_by_slug(db, region_slug)
+        discipline = await ReferenceDataService.get_discipline_by_slug(db, discipline_slug)
 
         if not region or not discipline:
             return None

@@ -13,6 +13,7 @@ pyjwt==2.10.1
 email-validator==2.3.0
 resend==2.21.0
 slowapi==0.1.10
+cachetools==7.1.4
 gunicorn
 ruff
 pre-commit

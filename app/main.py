@@ -15,6 +15,7 @@ from app.core.limiter import limiter
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User
 from app.services.exam_service import ExamService
+from app.services.reference_data_service import ReferenceDataService
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -128,12 +129,8 @@ async def contribute_page(
         # For now, trust the user or the upstream link.
 
         # We need Region and Discipline objects to create the event
-        region = (
-            await db.execute(select(Region).filter(Region.slug == region_slug))
-        ).scalar_one_or_none()
-        discipline = (
-            await db.execute(select(Discipline).filter(Discipline.slug == discipline_slug))
-        ).scalar_one_or_none()
+        region = await ReferenceDataService.get_region_by_slug(db, region_slug)
+        discipline = await ReferenceDataService.get_discipline_by_slug(db, discipline_slug)
 
         if not region or not discipline:
             return HTMLResponse(

@@ -23,3 +23,11 @@ class RateLimit:
     MAGIC_LINK_REQUEST = "5/minute"
     REPORT_CREATION = "10/hour"
     VOTE_CAST = "20/hour"
+
+
+class Cache:
+    # Region/Discipline rows are effectively static reference data (seeded once,
+    # never edited by users), so a TTL just bounds how long a manual DB edit
+    # takes to show up rather than guarding against real staleness.
+    REFERENCE_DATA_TTL_SECONDS = 3600
+    REFERENCE_DATA_MAX_ENTRIES = 64

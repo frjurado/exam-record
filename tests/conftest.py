@@ -7,6 +7,7 @@ from app.core.limiter import limiter
 from app.db.base import Base  # Ensure this import is correct based on checking file
 from app.db.session import get_db
 from app.main import app as fastapi_app
+from app.services.reference_data_service import ReferenceDataService
 
 
 @pytest.fixture(autouse=True)
@@ -15,6 +16,16 @@ def _reset_rate_limiter():
     # a reset, rate-limit state from one test would leak into the next (all test
     # requests share the same fake client IP from httpx's ASGITransport).
     limiter.reset()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_reference_data_cache():
+    # Region/Discipline are cached by slug for the process lifetime, but tests reuse
+    # the same slugs across functions while wiping and recreating the rows (with new
+    # ids) each time — without a reset, a test would silently get another test's
+    # stale cached id.
+    ReferenceDataService.reset_cache()
     yield
 
 
