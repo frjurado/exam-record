@@ -65,6 +65,9 @@ async def test_consensus_logic(client, db):
     assert "Reportes conflictivos" in html
     assert "66%" in html
     assert "Prelude B" in html
+    # Regression: work cards must carry a real score URL (not an empty href
+    # that reloads the same page). See ConsensusService.aggregate_event_reports.
+    assert "duckduckgo.com" in html
 
     # --- Case 2: Verified (2 votes for A only → 100% ≥ 75%) ---
     event2 = ExamEvent(year=2027, region_id=region.id, discipline_id=discipline.id)

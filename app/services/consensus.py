@@ -2,6 +2,7 @@ from typing import Any
 
 from app.core.constants import Consensus
 from app.models import Report
+from app.services.work_service import WorkService
 
 
 class ConsensusService:
@@ -51,6 +52,7 @@ class ConsensusService:
                     "percentage": metrics["percentage"],
                     "status": metrics["status"],
                     "is_flagged": report.is_flagged,
+                    "score_url": WorkService.get_score_url(report.work),
                     "raw_report": report,  # Pass actual object just in case template needs properties not mapped
                 }
             )
