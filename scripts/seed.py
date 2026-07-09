@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import select
 
-from app.db.session import AsyncSessionLocal
+from app.db.session import AsyncSessionLocal, engine
 from app.models import Discipline, ExamEvent, Region
 
 logging.basicConfig(level=logging.INFO)
@@ -87,5 +87,14 @@ async def seed():
     logger.info("Seeding Complete.")
 
 
+async def main() -> None:
+    try:
+        await seed()
+    finally:
+        # Dispose the engine so the aiosqlite connection/background thread is
+        # closed cleanly and cannot linger and stall interpreter shutdown.
+        await engine.dispose()
+
+
 if __name__ == "__main__":
-    asyncio.run(seed())
+    asyncio.run(main())
