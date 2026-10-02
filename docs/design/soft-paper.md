@@ -1,6 +1,6 @@
 # Soft Paper — WikiAnálisis design system
 
-Palette: **Sage on Cream**. Applies to every page (`base.html`, `index.html`, `discipline.html`, `event.html`, `wizard.html`, partials).
+Palette: **Graphite & Moss**: cool grey-green paper, deep teal accent. Applies to every page (`base.html`, `index.html`, `discipline.html`, `event.html`, `wizard.html`, partials).
 
 Stylesheet: `app/static/css/wikianalisis.css`. It replaces the Tailwind 2 CDN link. All classes are prefixed `wa-`.
 
@@ -10,7 +10,7 @@ Reference markup: `docs/design/reference/*.html`. These are static pages that us
 
 ## 1. Principles
 
-- Warm paper background, white cards, one accent colour (sage). Nothing else is coloured unless it shows state.
+- Cool grey paper background, off-white cards, one accent colour (deep teal). Nothing else is coloured unless it shows state.
 - The serif (Fraunces) is for names: titles, years, work titles, nicknames. The sans (Inter) is for everything else.
 - Italic serif marks the "human" part of a title: *Análisis*, *vivo*, nicknames such as *«Patética»*.
 - Consensus state comes from a coloured dot plus text. Never colour alone.
@@ -22,22 +22,22 @@ Reference markup: `docs/design/reference/*.html`. These are static pages that us
 
 | Token | Value | Use |
 |---|---|---|
-| `--wa-bg` | `#F3EEE3` | Page background |
-| `--wa-bg-soft` | `#ECE6D8` | Breadcrumb bar, stats strip, toggle track, disabled |
-| `--wa-card` | `#FFFFFF` | Cards, rows, inputs |
-| `--wa-card-verified` | `#FCFAF2` | Verified work card |
-| `--wa-ink` | `#2A2722` | Primary text |
-| `--wa-ink-soft` | `#4A463E` | Lede, secondary body |
-| `--wa-muted` | `#6F685A` | Meta text, labels (4.9:1 on bg) |
-| `--wa-faint` | `#8A8373` | Arrows, separators, placeholders only. Not for text that must be read |
-| `--wa-rule` | `#DCD4C2` | Borders, dividers |
-| `--wa-accent` | `#4A6A4E` | Links, primary buttons, verified state |
-| `--wa-accent-hover` | `#3E5A42` | Primary button hover |
-| `--wa-accent-soft` | `#DCE3D4` | Pills, chips, resolved banner, hover fill |
-| `--wa-warn` / `--wa-warn-soft` | `#9A5A3A` / `#F1E1D6` | Disputed state |
+| `--wa-bg` | `#E9E8E2` | Page background |
+| `--wa-bg-soft` | `#DEDDD5` | Breadcrumb bar, stats strip, toggle track, disabled |
+| `--wa-card` | `#F7F7F2` | Cards, rows, inputs |
+| `--wa-card-verified` | `#EEF3F1` | Verified work card |
+| `--wa-ink` | `#1C201E` | Primary text |
+| `--wa-ink-soft` | `#3C4440` | Lede, secondary body |
+| `--wa-muted` | `#5D605A` | Meta text, labels (5.1:1 on bg) |
+| `--wa-faint` | `#7A7C76` | Arrows, separators, placeholders only. Not for text that must be read |
+| `--wa-rule` | `#C9CABF` | Borders, dividers |
+| `--wa-accent` | `#1F5A5E` | Links, primary buttons, verified state |
+| `--wa-accent-hover` | `#174649` | Primary button hover |
+| `--wa-accent-soft` | `#D3E0DF` | Pills, chips, resolved banner, hover fill |
+| `--wa-warn` / `--wa-warn-soft` | `#8A4A1F` / `#EEDFD3` | Disputed state |
 | `--wa-danger` | `#9A3A2E` | Flagged-for-review, form errors, flag hover |
 
-Note: `--wa-muted` is a little darker than the prototype (`#8A8373` → `#6F685A`) so small meta text passes WCAG AA. The old value is kept as `--wa-faint` for non-text decoration.
+Note: `--wa-muted` is darker than the prototype value (`#7A7C76` → `#5D605A`) so small meta text passes WCAG AA. The prototype value is kept as `--wa-faint` for non-text decoration. Cards are `#F7F7F2` rather than pure white so they sit with the cool paper.
 
 ### Type
 
