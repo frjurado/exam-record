@@ -80,7 +80,7 @@ a.wa-disc:hover .wa-disc__arrow{color:var(--wa-accent);transform:translateX(3px)
 .wa-features{display:grid;grid-template-columns:1fr;gap:10px;margin:var(--wa-s7) 0 var(--wa-s6)}
 .wa-feature{padding:18px;background:var(--wa-card);border:1px solid var(--wa-rule);border-radius:var(--wa-r-sm)}
 .wa-feature__icon{width:32px;height:32px;border-radius:50%;background:var(--wa-accent-soft);color:var(--wa-accent);display:flex;align-items:center;justify-content:center;font:italic 400 18px var(--wa-serif);margin-bottom:var(--wa-s4)}
-.wa-feature__title{font-size:16px;font-weight:600;margin:0 0 var(--wa-s2)}
+.wa-feature__title{font-size:16px;font-weight:600;margin:0 0 var(--wa-s2);text-wrap:balance}
 .wa-feature__title i{font-family:var(--wa-serif);font-style:italic;font-weight:400}
 .wa-feature__text{font-size:13px;line-height:1.55;color:var(--wa-muted);margin:0}
 @media (min-width:720px){.wa-features{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--wa-s5);margin:72px 0 var(--wa-s7)}.wa-feature{padding:var(--wa-s5)}.wa-feature__title{font-size:17px}.wa-feature__text{font-size:14px}}
