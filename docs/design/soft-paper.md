@@ -74,7 +74,7 @@ Inputs use 16px on mobile so iOS doesn't zoom on focus.
 | Breadcrumbs | `wa-crumbs`, `wa-crumbs__sep`, `[aria-current]` on the last item | `{% block breadcrumbs %}` nav |
 | Hero | `wa-hero`, `wa-hero__title`, `wa-hero__lede`, `wa-stats` | index intro |
 | Region | `wa-region`, `wa-region__head`, `wa-region__title`, `wa-pill` | blue region card |
-| Discipline grid | `wa-group`, `wa-group__label`, `wa-disc-grid`, `wa-disc`, `wa-disc__arrow`, `wa-disc--disabled` | blue buttons, "Próximamente" |
+| Discipline grid | `wa-group`, `wa-group__label`, `wa-disc-grid`, `wa-disc`, `wa-disc__hint`, `wa-disc__arrow`, `wa-disc--disabled` | blue buttons, "Próximamente" |
 | Features | `wa-features`, `wa-feature`, `wa-feature__icon`, `wa-feature__title`, `wa-feature__text` | three icon cards |
 | Footer | `wa-footer` | about section |
 | Page head | `wa-pagehead`, `wa-pagehead--event`, `wa-pagehead__title`, `wa-pagehead__sub` | h1 blocks |
@@ -106,7 +106,7 @@ Inputs use 16px on mobile so iOS doesn't zoom on focus.
 |---|---|---|
 | Header | Logo + version + Salir. Email hidden | Email shown |
 | Hero | Left-aligned. Stats stack vertically | Centred. Stats in one row |
-| Discipline grid | 1 column, full-width 44px rows | 4 columns |
+| Discipline grid | 1 column, full-width 44px rows. "sin datos" hint inline after the name | 5 columns, equal-height boxes. Hint on its own line under the name |
 | Features | Stacked | 3 columns |
 | Page head | Title above toggle | Title and toggle on one row |
 | Year row | `64px │ work + composer + status │ →`. Status sits under the composer. IMSLP chip wraps below | `100px │ work │ IMSLP │ status │ →` |

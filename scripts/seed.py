@@ -30,6 +30,7 @@ INITIAL_DISCIPLINES = [
     {"name": "Clarinete", "slug": "clarinete"},
     {"name": "Contrabajo", "slug": "contrabajo"},
     {"name": "Fagot", "slug": "fagot"},
+    {"name": "Saxofón", "slug": "saxofon"},
     {"name": "Trompa", "slug": "trompa"},
     {"name": "Trompeta", "slug": "trompeta"},
     {"name": "Trombón", "slug": "trombon"},
