@@ -3,94 +3,64 @@
 {% block title %}WikiAnálisis | {{ region.name }} {{ discipline.name }}{% endblock %}
 
 {% block breadcrumbs %}
-<nav class="flex items-center text-sm text-gray-500">
-    <a href="/" class="hover:text-blue-600 transition-colors">Inicio</a>
-    <svg class="h-4 w-4 mx-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-    </svg>
-    <span class="text-gray-900 font-medium">{{ region.name }} - {{ discipline.name }}</span>
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">{{ region.name }} — {{ discipline.name }}</span>
 </nav>
 {% endblock %}
 
 {% block content %}
-<div class="mb-8">
-
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">{{ region.name }} - {{ discipline.name }}</h1>
-
-        <!-- Toggle for Sparse Mode -->
-        <div class="flex items-center">
-            <label for="show-empty-toggle" class="flex items-center cursor-pointer">
-                <div class="relative">
-                    <input type="checkbox" id="show-empty-toggle" class="sr-only" onchange="toggleSparseMode(this)" {%
-                        if not sparse_mode %}checked{% endif %}>
-                    <div class="block bg-gray-200 w-10 h-6 rounded-full"></div>
-                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
-                </div>
-                <div class="ml-3 text-sm font-medium text-gray-700">
-                    Mostrar años sin datos
-                </div>
-            </label>
-        </div>
+<div class="wa-pagehead">
+    <div>
+        <h1 class="wa-pagehead__title">{{ discipline.name }} <i>— {{ region.name }}</i></h1>
+        <p class="wa-pagehead__sub">Explora obras de examen para esta región y especialidad.</p>
     </div>
 
-    <style>
-        input:checked~.dot {
-            transform: translateX(100%);
-        }
-
-        input:checked~.block {
-            background-color: #3b82f6;
-        }
-    </style>
-
-    <p class="mt-2 text-gray-600 mb-8">Explora obras de examen para esta región y especialidad.</p>
+    <!-- Toggle for Sparse Mode -->
+    <div>
+        <input type="checkbox" id="show-empty-toggle" class="wa-sr" aria-label="Mostrar años sin datos"
+            onchange="toggleSparseMode(this)" {% if not sparse_mode %}checked{% endif %}>
+        <div class="wa-toggle" role="group" aria-label="Años mostrados">
+            {% if sparse_mode %}
+            <span aria-current="true">Con datos</span>
+            <label for="show-empty-toggle">Mostrar todos</label>
+            {% else %}
+            <label for="show-empty-toggle">Con datos</label>
+            <span aria-current="true">Mostrar todos</span>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
 <!-- Years Grid -->
-<div id="exam-history-list" class="grid gap-6">
+<div id="exam-history-list" class="wa-years">
     {% include "partials/year_list.html" %}
 </div>
 
 <!-- Empty DB Encouragement -->
 {% if all_empty and sparse_mode %}
-<div class="text-center py-12 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-    </svg>
-    <h3 class="mt-2 text-sm font-medium text-gray-900">No hay datos todavía</h3>
-    <p class="mt-1 text-sm text-gray-500">Sé el primero en colaborar con información de años anteriores.</p>
-    <div class="mt-6">
-        <button onclick="document.getElementById('show-empty-toggle').click()"
-            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-            Mostrar años anteriores
-        </button>
-    </div>
+<div class="wa-empty" style="margin-top:48px">
+    <h3 class="wa-empty__title">No hay datos todavía</h3>
+    <p class="wa-empty__text">Sé el primero en colaborar con información de años anteriores.</p>
+    <button onclick="document.getElementById('show-empty-toggle').click()" class="wa-btn wa-btn--primary"
+        type="button">
+        Mostrar años anteriores
+    </button>
 </div>
 {% endif %}
 
 
 <!-- Load More Button -->
-<div id="load-more-container" class="mt-8 text-center" {% if not show_more %}style="display: none;" {% endif %}>
-    <button onclick="loadMoreYears()"
-        class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors bg-white px-4 py-2 rounded-full border border-blue-100 hover:border-blue-300 shadow-sm hover:shadow">
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
+<div id="load-more-container" class="wa-loadmore" {% if not show_more %}style="display: none;" {% endif %}>
+    <button onclick="loadMoreYears()" class="wa-btn wa-btn--ghost" type="button">
+        <span aria-hidden="true">↓</span>
         <span>Mostrar más años</span>
     </button>
-    <div id="loading-spinner" class="hidden inline-flex items-center text-sm text-gray-500">
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
-            viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-            </path>
-        </svg>
+    <div id="loading-spinner" class="hidden wa-loading" role="status">
+        <span class="wa-spinner"></span>
         Cargando...
     </div>
-</div>
 </div>
 
 <script>

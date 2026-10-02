@@ -1,415 +1,378 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contribute - Exam Record</title>
+    <link rel="icon" href="/static/favicon.png" type="image/png">
+    <link rel="stylesheet" href="/static/css/wikianalisis.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
-<body class="bg-gray-50 min-h-screen p-6" x-data="wizard({{ event_id }})">
+<body x-data="wizard({{ event_id }})">
     <!-- Loading Overlay -->
-    <div x-show="isVerifying"
-        class="fixed inset-0 bg-white bg-opacity-90 flex flex-col items-center justify-center z-50">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mb-4"></div>
-        <h2 class="text-xl font-bold text-gray-800">Verificando...</h2>
-        <p class="text-gray-500">Estamos validando tu enlace mágico y enviando la aportación.</p>
+    <div x-show="isVerifying" x-cloak class="wa-overlay" role="status">
+        <span class="wa-spinner"></span>
+        <h2 class="wa-modal__title">Verificando...</h2>
+        <p class="wa-modal__text">Estamos validando tu enlace mágico y enviando la aportación.</p>
     </div>
 
     <!-- Success Overlay -->
-    <div x-show="submitSuccess"
-        class="fixed inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center z-50">
-        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
-            <svg class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-        </div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Aportación Enviada!</h2>
-        <p class="text-gray-600 text-center mb-6 max-w-md">Gracias por contribuir al registro. Tu aportación ayuda a la
+    <div x-show="submitSuccess" x-cloak class="wa-overlay" role="status">
+        <div class="wa-feature__icon" aria-hidden="true">✓</div>
+        <h2 class="wa-modal__title">¡Aportación Enviada!</h2>
+        <p class="wa-modal__text">Gracias por contribuir al registro. Tu aportación ayuda a la
             comunidad.</p>
-        <p class="text-sm text-gray-400">Redirigiendo en <span x-text="countdown"></span>...</p>
+        <p class="wa-hint">Redirigiendo en <span x-text="countdown"></span>...</p>
     </div>
 
-    <div class="max-w-2xl mx-auto bg-white shadow rounded p-6">
+    <div class="wa-shell">
+        <header class="wa-header">
+            <a href="/" class="wa-logo"><span class="wa-logo__dot"></span><span>Wiki<i>Análisis</i></span></a>
+            <div class="wa-meta"><span>Beta v0.3.1</span></div>
+        </header>
+
         <!-- Breadcrumbs -->
-        <nav class="flex items-center text-xs text-gray-500 mb-6">
-            <a href="/" class="hover:text-blue-600 transition-colors">Inicio</a>
-            <span class="mx-2">/</span>
-            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}" class="hover:text-blue-600 transition-colors">
-                Región - Especialidad
-            </a>
-            <span class="mx-2">/</span>
-            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}"
-                class="hover:text-blue-600 transition-colors">
-                {{ year }}
-            </a>
-            <span class="mx-2">/</span>
-            <span class="font-bold text-gray-700">Contribuir</span>
+        <nav class="wa-crumbs" aria-label="Ruta">
+            <a href="/">Inicio</a>
+            <span class="wa-crumbs__sep">›</span>
+            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}">Región - Especialidad</a>
+            <span class="wa-crumbs__sep">›</span>
+            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}">{{ year }}</a>
+            <span class="wa-crumbs__sep">›</span>
+            <span aria-current="page">Contribuir</span>
         </nav>
 
-        <h1 class="text-2xl font-bold mb-4">Asistente de Aportación</h1>
+        <main class="wa-main">
+            <div class="wa-pagehead">
+                <h1 class="wa-pagehead__title">Asistente de Aportación</h1>
+            </div>
 
-        <!-- Email Verified Banner (Post-Magic Link) -->
-        <div x-show="isAuthenticated && pendingSubmission" class="mb-6 bg-green-50 border-l-4 border-green-400 p-4">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path count="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-green-700 font-bold">
-                        ¡Email verificado correctamente!
-                    </p>
-                    <p class="text-sm text-green-600 mt-1">
+            <!-- Email Verified Banner (Post-Magic Link) -->
+            <div x-show="isAuthenticated && pendingSubmission" x-cloak class="wa-banner wa-banner--resolved">
+                <span class="wa-banner__icon" aria-hidden="true">✓</span>
+                <div>
+                    <p class="wa-banner__title">¡Email verificado correctamente!</p>
+                    <p class="wa-banner__text">
                         Por favor, valida el captcha abajo y pulsa "Enviar Aportación" para terminar.
                     </p>
                 </div>
             </div>
-        </div>
 
-        <!-- Blocking Overlay for Pending Verification -->
-        <div x-show="pendingSubmission && !isAuthenticated && !showAuthModal"
-            class="fixed inset-0 bg-gray-50 bg-opacity-80 z-40 flex flex-col items-center justify-center text-center p-4">
-            <div class="bg-white p-6 rounded-lg shadow-xl border border-yellow-200 max-w-md">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
-                    <svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+            <!-- Blocking Overlay for Pending Verification -->
+            <div x-show="pendingSubmission && !isAuthenticated && !showAuthModal" x-cloak class="wa-modal"
+                role="dialog" aria-modal="true" aria-labelledby="pending-verification-title">
+                <div class="wa-modal__backdrop" aria-hidden="true"></div>
+                <div class="wa-modal__panel">
+                    <h3 class="wa-modal__title" id="pending-verification-title">Esperando Verificación</h3>
+                    <p class="wa-modal__text">
+                        Hemos enviado un enlace a tu correo. Por favor, haz clic en él para confirmar tu aportación.
+                    </p>
+                    <div class="wa-split" style="margin-top:16px">
+                        <button @click="showAuthModal = true" type="button" class="wa-link">
+                            ¿No recibiste el correo?
+                        </button>
+                        <button @click="pendingSubmission = false; saveState()" type="button"
+                            class="wa-link wa-link--muted">
+                            Cancelar y volver a editar
+                        </button>
+                    </div>
                 </div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Esperando Verificación</h3>
-                <p class="text-gray-600 mb-4">
-                    Hemos enviado un enlace a tu correo. Por favor, haz clic en él para confirmar tu aportación.
+            </div>
+
+            <!-- Waiting for Verification Banner (Small) - Removed/Replaced by Overlay -->
+
+            <div class="wa-panel">
+                <!-- Step Indicator -->
+                <ol class="wa-steps">
+                    <li class="wa-steps__item" :class="{'wa-steps__item--current': step===1}">1. Compositor</li>
+                    <li class="wa-steps__item" :class="{'wa-steps__item--current': step===2}">2. Obra</li>
+                    <li class="wa-steps__item" :class="{'wa-steps__item--current': step===3}">3. Detalles</li>
+                </ol>
+
+                <!-- Step 1: Composer -->
+                <div x-show="step === 1">
+                    <h2 class="wa-section-title">¿Quién es el compositor?</h2>
+                    <input type="text" x-model="searchComposerQuery" @input.debounce.300ms="searchComposer"
+                        class="wa-input" placeholder="Buscar compositor (ej. Bach)" aria-label="Buscar compositor">
+
+                    <div class="wa-results">
+                        <template x-for="c in composerResults" :key="c.id || c.wikidata_id">
+                            <div @click="selectComposer(c)" class="wa-result">
+                                <span x-text="c.name"></span>
+                                <span x-show="c.is_verified" class="wa-status--verified">✓</span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div x-show="searchComposerQuery.length > 2" class="wa-inset">
+                        <p class="wa-hint" style="margin:0 0 4px" x-show="composerResults.length === 0">No se
+                            encontraron resultados locales.</p>
+                        <div class="wa-split">
+                            <button @click="searchWikidata" type="button" class="wa-link">Buscar en Wikidata</button>
+                            <button @click="createUnverifiedComposer" type="button" class="wa-link wa-link--muted">Usar
+                                "<span x-text="searchComposerQuery"></span>" (Sin Verificar)</button>
+                        </div>
+
+                        <div x-show="wikidataResults.length > 0" style="margin-top:16px">
+                            <h3 class="wa-label" style="margin:0">¿Quizás quisiste decir...?</h3>
+                            <div class="wa-results">
+                                <template x-for="c in wikidataResults" :key="c.wikidata_id">
+                                    <div @click="selectComposer(c)" class="wa-result">
+                                        <div>
+                                            <div x-text="c.name"></div>
+                                            <div class="wa-hint" x-text="c.description"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <p x-show="searchComposerQuery.length > 2 && wikidataResults.length === 0 && wikidataSearched"
+                            class="wa-hint" style="margin:12px 0 0">
+                            No se encontraron resultados en la base global.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Work -->
+                <div x-show="step === 2">
+                    <h2 class="wa-section-title">¿Qué obra?</h2>
+                    <p class="wa-hint" style="margin:0 0 12px">Compositor: <b
+                            x-text="selectedComposer ? selectedComposer.name : ''"></b></p>
+
+                    <input type="text" x-model="searchWorkQuery" @input.debounce.300ms="searchWork"
+                        class="wa-input" placeholder="Buscar obra (ej. Preludio)" aria-label="Buscar obra">
+
+                    <div class="wa-results wa-results--scroll">
+                        <template x-for="w in workResults" :key="w.id || w.openopus_id">
+                            <div @click="selectWork(w)" class="wa-result">
+                                <span>
+                                    <span x-text="w.title"></span>
+                                    <span x-show="w.nickname" x-text="`(${w.nickname})`" class="wa-hint"></span>
+                                </span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Lazy Builder Fallback -->
+                    <div x-show="searchWorkQuery.length > 2" class="wa-inset">
+                        <h3 class="wa-label" style="margin:0 0 12px">¿No la encuentras? Crea una nueva entrada.</h3>
+                        <!-- Row 1: Genre & Nickname -->
+                        <div class="wa-row">
+                            <label class="wa-field">
+                                <span class="wa-label">Género <span class="wa-error">*</span></span>
+                                <input type="text" x-model="lazyGenre" @input.debounce.500ms="updateLazySearch"
+                                    placeholder="ej. Sonata" class="wa-input"
+                                    :class="{'wa-input--invalid': !lazyGenre && searchWorkQuery.length > 2}">
+                            </label>
+                            <label class="wa-field">
+                                <span class="wa-label">Título/Apodo (Opcional)</span>
+                                <input type="text" x-model="lazyNickname" @input.debounce.500ms="updateLazySearch"
+                                    placeholder='ej. "Pathetique"' class="wa-input">
+                            </label>
+                        </div>
+
+                        <!-- Row 2: Key (Split) -->
+                        <div class="wa-row">
+                            <label class="wa-field">
+                                <span class="wa-label">Tonalidad</span>
+                                <select x-model="lazyKeyNote" @change="updateLazySearch" class="wa-input">
+                                    <option value="">- Nota -</option>
+                                    <option value="Do">Do</option>
+                                    <option value="Do sostenido">Do#</option>
+                                    <option value="Re">Re</option>
+                                    <option value="Mi bemol">Mib</option>
+                                    <option value="Mi">Mi</option>
+                                    <option value="Fa">Fa</option>
+                                    <option value="Fa sostenido">Fa#</option>
+                                    <option value="Sol">Sol</option>
+                                    <option value="La bemol">Lab</option>
+                                    <option value="La">La</option>
+                                    <option value="Si bemol">Sib</option>
+                                    <option value="Si">Si</option>
+                                </select>
+                            </label>
+                            <label class="wa-field">
+                                <span class="wa-label">Modo</span>
+                                <select x-model="lazyKeyMode" @change="updateLazySearch" class="wa-input">
+                                    <option value="">- Modo -</option>
+                                    <option value="Mayor">Mayor</option>
+                                    <option value="Menor">Menor</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <!-- Row 3: Identifiers (Numeric) -->
+                        <div class="wa-row">
+                            <label class="wa-field">
+                                <span class="wa-label">Opus/BWV/KV</span>
+                                <input type="number" x-model="lazyOpus" @input.debounce.500ms="updateLazySearch"
+                                    placeholder="ej. 57" class="wa-input">
+                            </label>
+                            <label class="wa-field">
+                                <span class="wa-label">Número</span>
+                                <input type="number" x-model="lazyNumber" @input.debounce.500ms="updateLazySearch"
+                                    placeholder="ej. 23" class="wa-input">
+                            </label>
+                        </div>
+                        <button @click="createUnverifiedWork" :disabled="!lazyGenre" type="button"
+                            class="wa-btn wa-btn--primary wa-btn--block">
+                            Crear y Continuar
+                        </button>
+                    </div>
+
+                    <button @click="step=1; searchComposerQuery=''; composerResults=[]; wikidataResults=[]"
+                        type="button" class="wa-link wa-link--muted" style="margin-top:16px">Volver a
+                        Compositor</button>
+                </div>
+
+                <!-- Step 3: Scope -->
+                <div x-show="step === 3">
+                    <h2 class="wa-section-title">Detalles Finales</h2>
+                    <dl class="wa-summary">
+                        <dt>Compositor:</dt>
+                        <dd x-text="selectedComposer ? selectedComposer.name : ''"></dd>
+                        <dt>Obra:</dt>
+                        <dd x-text="selectedWork ? selectedWork.title : ''"></dd>
+                    </dl>
+
+                    <!-- Scope Selection -->
+                    <p class="wa-label" style="margin:0 0 8px">Alcance de la Aportación</p>
+
+                    <!-- Main Selector: Whole Work vs Movement -->
+                    <div class="wa-row">
+                        <label class="wa-option" :class="{'wa-option--selected': scopeType === 'Whole Work'}">
+                            <input type="radio" x-model="scopeType" value="Whole Work">
+                            <span>Obra Completa</span>
+                        </label>
+                        <label class="wa-option" :class="{'wa-option--selected': scopeType === 'Movement'}">
+                            <input type="radio" x-model="scopeType" value="Movement">
+                            <span>Movimiento</span>
+                        </label>
+                    </div>
+
+                    <!-- Movement Details (Conditional) -->
+                    <div x-show="scopeType === 'Movement'" class="wa-inset">
+                        <div class="wa-row wa-row--1-2">
+                            <label class="wa-field" style="margin:0">
+                                <span class="wa-label">Nº</span>
+                                <select x-model="movementNumber" class="wa-input">
+                                    <option value="">-</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </label>
+                            <label class="wa-field" style="margin:0">
+                                <span class="wa-label">Nombre (Opcional)</span>
+                                <input type="text" x-model="movementName" placeholder="ej. Allegro ma non troppo"
+                                    class="wa-input">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Excerpt Toggle (Orthogonal) -->
+                    <div style="margin-top:16px">
+                        <label class="wa-check">
+                            <input type="checkbox" x-model="isExcerpt">
+                            <span class="wa-check__text">
+                                <span class="wa-label">Es un fragmento / selección</span>
+                                <span class="wa-hint">Marcar si solo se analizó una parte (compases,
+                                    sección, etc.)</span>
+                            </span>
+                        </label>
+
+                        <!-- Excerpt Details -->
+                        <label x-show="isExcerpt" class="wa-field" style="margin-top:8px">
+                            <span class="wa-label">Detalles del fragmento</span>
+                            <input type="text" x-model="excerptDetails" placeholder="ej. Compases 1-50, solo Cadenza"
+                                class="wa-input">
+                        </label>
+                    </div>
+
+                    <!-- Turnstile Widget -->
+                    <div class="wa-turnstile">
+                        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-callback="onTurnstileSuccess">
+                        </div>
+                    </div>
+
+                    <button @click="submitReport" :disabled="!turnstileToken" type="button"
+                        class="wa-btn wa-btn--primary wa-btn--block">Enviar
+                        Aportación</button>
+                    <div x-show="submitStatus" class="wa-banner" style="margin:16px 0 0"
+                        :class="submitSuccess ? 'wa-banner--resolved' : 'wa-banner--disputed'">
+                        <p class="wa-banner__title" x-text="submitStatus"></p>
+                    </div>
+
+                    <div class="wa-split" style="margin-top:16px">
+                        <button @click="step=2" type="button" class="wa-link wa-link--muted">Volver a
+                            Obra</button>
+                        <button @click="hardReset" type="button" class="wa-link wa-link--danger">Reiniciar
+                            Formulario</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Auth Modal -->
+    <div x-show="showAuthModal" x-cloak class="wa-modal" role="dialog" aria-modal="true"
+        aria-labelledby="wizard-auth-title">
+        <div class="wa-modal__backdrop" aria-hidden="true"></div>
+        <div class="wa-modal__panel">
+
+            <!-- Initial State: Ask for Email -->
+            <div x-show="!magicLinkSent">
+                <h3 class="wa-modal__title" id="wizard-auth-title">Verificación de Email Requerida</h3>
+                <p class="wa-modal__text">
+                    Para mantener la calidad de los datos, por favor verifica tu email. Te enviaremos un enlace
+                    mágico.
                 </p>
-                <button @click="showAuthModal = true" class="text-blue-600 underline text-sm hover:text-blue-800">
-                    ¿No recibiste el correo?
-                </button>
-                <div class="mt-4 pt-4 border-t">
-                    <button @click="pendingSubmission = false; saveState()"
-                        class="text-gray-400 underline text-xs hover:text-gray-600">
-                        Cancelar y volver a editar
+                <label class="wa-field" style="margin-top:24px">
+                    <span class="wa-label">Email</span>
+                    <input type="email" x-model="authEmail" class="wa-input" placeholder="pianista@ejemplo.com">
+                </label>
+                <div class="wa-modal__actions">
+                    <button @click="showAuthModal = false" type="button" class="wa-btn wa-btn--ghost">Cancelar</button>
+                    <button @click="requestMagicLink" :disabled="!authEmail" type="button"
+                        class="wa-btn wa-btn--primary">
+                        Enviar Enlace Mágico
                     </button>
                 </div>
             </div>
+
+            <!-- Sent State: Instructions -->
+            <div x-show="magicLinkSent">
+                <h3 class="wa-modal__title">¡Enlace Mágico Enviado!</h3>
+                <p class="wa-modal__text">
+                    Por favor revisa tu email <strong><span x-text="authEmail"></span></strong>.
+                </p>
+                <p class="wa-modal__text" style="margin-top:8px">
+                    Haz clic en el enlace del email para volver aquí y enviar tu reporte.
+                </p>
+                <p class="wa-note" style="margin:16px 0 0">
+                    <b>Siguiente:</b> Haz clic en el enlace de tu email. Te traerá de vuelta aquí para
+                    que puedas
+                    <b>confirmar el captcha y enviar tu reporte</b>.
+                </p>
+                <div class="wa-modal__actions">
+                    <button @click="showAuthModal = false" type="button" class="wa-btn wa-btn--ghost">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+
         </div>
-
-        <!-- Waiting for Verification Banner (Small) - Removed/Replaced by Overlay -->
-
-        <!-- Step Indicator -->
-        <div class="mb-6 flex space-x-4 text-sm">
-            <span :class="{'font-bold text-blue-600': step===1}">1. Compositor</span>
-            <span :class="{'font-bold text-blue-600': step===2}">2. Obra</span>
-            <span :class="{'font-bold text-blue-600': step===3}">3. Detalles</span>
-        </div>
-
-        <!-- Step 1: Composer -->
-        <div x-show="step === 1">
-            <h2 class="text-xl mb-4">¿Quién es el compositor?</h2>
-            <input type="text" x-model="searchComposerQuery" @input.debounce.300ms="searchComposer"
-                class="w-full border p-2 rounded" placeholder="Buscar compositor (ej. Bach)">
-
-            <div class="mt-4 space-y-2">
-                <template x-for="c in composerResults" :key="c.id || c.wikidata_id">
-                    <div @click="selectComposer(c)"
-                        class="p-2 border rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center bg-gray-50">
-                        <span x-text="c.name"></span>
-                        <span x-show="c.is_verified" class="text-green-500 font-bold">✓</span>
-                    </div>
-                </template>
-            </div>
-
-            <div x-show="searchComposerQuery.length > 2" class="mt-4 pt-4 border-t">
-                <p class="text-gray-500 text-sm mb-2" x-show="composerResults.length === 0">No se encontraron resultados
-                    locales.</p>
-                <div class="flex gap-4 items-center">
-                    <button @click="searchWikidata" class="text-blue-600 underline text-sm">Buscar en Wikidata</button>
-                    <span class="text-gray-300">|</span>
-                    <button @click="createUnverifiedComposer" class="text-gray-600 underline text-sm">Usar "<span
-                            x-text="searchComposerQuery"></span>" (Sin Verificar)</button>
-                </div>
-
-                <div x-show="wikidataResults.length > 0" class="mt-4 bg-blue-50 p-4 rounded">
-                    <h3 class="font-bold text-sm text-blue-800 mb-2">¿Quizás quisiste decir...?</h3>
-                    <template x-for="c in wikidataResults" :key="c.wikidata_id">
-                        <div @click="selectComposer(c)"
-                            class="p-2 border border-blue-100 rounded bg-white hover:bg-blue-100 cursor-pointer mb-1">
-                            <div class="font-bold" x-text="c.name"></div>
-                            <div class="text-xs text-gray-600" x-text="c.description"></div>
-                        </div>
-                    </template>
-                </div>
-                <div x-show="searchComposerQuery.length > 2 && wikidataResults.length === 0 && wikidataSearched"
-                    class="mt-4 text-gray-500 text-sm">
-                    No se encontraron resultados en la base global.
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 2: Work -->
-        <div x-show="step === 2">
-            <h2 class="text-xl mb-4">¿Qué obra?</h2>
-            <p class="text-sm text-gray-500 mb-4">Compositor: <span class="font-bold text-gray-800"
-                    x-text="selectedComposer ? selectedComposer.name : ''"></span></p>
-
-            <input type="text" x-model="searchWorkQuery" @input.debounce.300ms="searchWork"
-                class="w-full border p-2 rounded" placeholder="Buscar obra (ej. Preludio)">
-
-            <div class="mt-4 space-y-2 max-h-60 overflow-y-auto">
-                <template x-for="w in workResults" :key="w.id || w.openopus_id">
-                    <div @click="selectWork(w)" class="p-2 border rounded hover:bg-gray-100 cursor-pointer bg-gray-50">
-                        <span x-text="w.title"></span>
-                        <span x-show="w.nickname" x-text="`(${w.nickname})`" class="text-xs text-gray-500 ml-1"></span>
-                    </div>
-                </template>
-            </div>
-
-            <!-- Lazy Builder Fallback -->
-            <div x-show="searchWorkQuery.length > 2" class="mt-4 border p-4 rounded bg-gray-50">
-                <h3 class="font-bold text-sm mb-2">¿No la encuentras? Crea una nueva entrada.</h3>
-                <div class="space-y-3 mt-2">
-                    <!-- Row 1: Genre & Nickname -->
-                    <div class="flex gap-2">
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Género <span
-                                    class="text-red-500">*</span></label>
-                            <input type="text" x-model="lazyGenre" @input.debounce.500ms="updateLazySearch"
-                                placeholder="ej. Sonata" class="w-full border p-2 rounded text-sm"
-                                :class="{'border-red-300 bg-red-50': !lazyGenre && searchWorkQuery.length > 2}">
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Título/Apodo
-                                (Opcional)</label>
-                            <input type="text" x-model="lazyNickname" @input.debounce.500ms="updateLazySearch"
-                                placeholder='ej. "Pathetique"' class="w-full border p-2 rounded text-sm">
-                        </div>
-                    </div>
-
-                    <!-- Row 2: Key (Split) -->
-                    <div class="flex gap-2">
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Tonalidad</label>
-                            <select x-model="lazyKeyNote" @change="updateLazySearch"
-                                class="w-full border p-2 rounded text-sm bg-white">
-                                <option value="">- Nota -</option>
-                                <option value="Do">Do</option>
-                                <option value="Do sostenido">Do#</option>
-                                <option value="Re">Re</option>
-                                <option value="Mi bemol">Mib</option>
-                                <option value="Mi">Mi</option>
-                                <option value="Fa">Fa</option>
-                                <option value="Fa sostenido">Fa#</option>
-                                <option value="Sol">Sol</option>
-                                <option value="La bemol">Lab</option>
-                                <option value="La">La</option>
-                                <option value="Si bemol">Sib</option>
-                                <option value="Si">Si</option>
-                            </select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Modo</label>
-                            <select x-model="lazyKeyMode" @change="updateLazySearch"
-                                class="w-full border p-2 rounded text-sm bg-white">
-                                <option value="">- Modo -</option>
-                                <option value="Mayor">Mayor</option>
-                                <option value="Menor">Menor</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Row 3: Identifiers (Numeric) -->
-                    <div class="flex gap-2">
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Opus/BWV/KV</label>
-                            <input type="number" x-model="lazyOpus" @input.debounce.500ms="updateLazySearch"
-                                placeholder="ej. 57" class="w-full border p-2 rounded text-sm">
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Número</label>
-                            <input type="number" x-model="lazyNumber" @input.debounce.500ms="updateLazySearch"
-                                placeholder="ej. 23" class="w-full border p-2 rounded text-sm">
-                        </div>
-                    </div>
-                </div>
-                <button @click="createUnverifiedWork" :disabled="!lazyGenre"
-                    :class="{'opacity-50 cursor-not-allowed': !lazyGenre}"
-                    class="mt-4 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 w-full transition">
-                    Crear y Continuar
-                </button>
-            </div>
-
-            <button @click="step=1; searchComposerQuery=''; composerResults=[]; wikidataResults=[]"
-                class="mt-6 text-sm text-gray-500 underline">Volver a Compositor</button>
-        </div>
-
-        <!-- Step 3: Scope -->
-        <div x-show="step === 3">
-            <h2 class="text-xl mb-4">Detalles Finales</h2>
-            <div class="mb-6 p-4 bg-blue-50 rounded border border-blue-100">
-                <p class="mb-1"><span class="font-bold text-gray-600 w-24 inline-block">Compositor:</span> <span
-                        x-text="selectedComposer ? selectedComposer.name : ''"></span></p>
-                <p><span class="font-bold text-gray-600 w-24 inline-block">Obra:</span> <span
-                        x-text="selectedWork ? selectedWork.title : ''"></span></p>
-            </div>
-
-            <!-- Scope Selection -->
-            <label class="block mb-3 font-bold text-sm text-gray-700">Alcance de la Aportación</label>
-
-            <div class="space-y-4 mb-6">
-                <!-- Main Selector: Whole Work vs Movement -->
-                <div class="flex gap-4">
-                    <label
-                        class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition flex-1"
-                        :class="{'border-blue-500 bg-blue-50 ring-1 ring-blue-500': scopeType === 'Whole Work'}">
-                        <input type="radio" x-model="scopeType" value="Whole Work" class="mr-3">
-                        <span class="font-bold text-sm">Obra Completa</span>
-                    </label>
-                    <label
-                        class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition flex-1"
-                        :class="{'border-blue-500 bg-blue-50 ring-1 ring-blue-500': scopeType === 'Movement'}">
-                        <input type="radio" x-model="scopeType" value="Movement" class="mr-3">
-                        <span class="font-bold text-sm">Movimiento</span>
-                    </label>
-                </div>
-
-                <!-- Movement Details (Conditional) -->
-                <div x-show="scopeType === 'Movement'" class="p-4 border rounded bg-gray-50 space-y-3">
-                    <div class="flex gap-2">
-                        <div class="w-1/3">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nº</label>
-                            <select x-model="movementNumber" class="w-full border p-2 rounded text-sm bg-white">
-                                <option value="">-</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
-                        </div>
-                        <div class="w-2/3">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre
-                                (Opcional)</label>
-                            <input type="text" x-model="movementName" placeholder="ej. Allegro ma non troppo"
-                                class="w-full border p-2 rounded text-sm">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Excerpt Toggle (Orthogonal) -->
-                <div class="pt-2 border-t mt-2">
-                    <label class="flex items-start cursor-pointer">
-                        <div class="flex items-center h-5">
-                            <input type="checkbox" x-model="isExcerpt"
-                                class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
-                        </div>
-                        <div class="ml-3 text-sm">
-                            <label class="font-bold text-gray-700 block">Es un fragmento / selección</label>
-                            <span class="text-gray-500 text-xs">Marcar si solo se analizó una parte (compases,
-                                sección, etc.)</span>
-                        </div>
-                    </label>
-
-                    <!-- Excerpt Details -->
-                    <div x-show="isExcerpt" class="mt-3 pl-7">
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Detalles del
-                            fragmento</label>
-                        <input type="text" x-model="excerptDetails" placeholder="ej. Compases 1-50, solo Cadenza"
-                            class="w-full border p-2 rounded text-sm bg-yellow-50 border-yellow-200">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Turnstile Widget -->
-            <div class="mb-4 flex justify-center">
-                <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-callback="onTurnstileSuccess">
-                </div>
-            </div>
-
-            <button @click="submitReport" :disabled="!turnstileToken"
-                :class="{'opacity-50 cursor-not-allowed': !turnstileToken}"
-                class="mt-6 bg-green-600 text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700 shadow">Enviar
-                Aportación</button>
-            <div x-show="submitStatus" class="mt-4 p-4 rounded text-center"
-                :class="submitSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                <p x-text="submitStatus"></p>
-            </div>
-
-            <div class="flex gap-4 mt-4">
-                <button @click="step=2" class="text-sm text-gray-500 underline flex-1 text-center">Volver a
-                    Obra</button>
-                <button @click="hardReset" class="text-sm text-red-400 underline flex-1 text-center">Reiniciar
-                    Formulario</button>
-            </div>
-        </div>
-        <!-- Auth Modal -->
-        <div x-show="showAuthModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-            style="display: none;">
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-
-                <!-- Initial State: Ask for Email -->
-                <div x-show="!magicLinkSent" class="mt-3 text-center">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">Verificación de Email Requerida</h3>
-                    <div class="mt-2 px-7 py-3">
-                        <p class="text-sm text-gray-500">
-                            Para mantener la calidad de los datos, por favor verifica tu email. Te enviaremos un enlace
-                            mágico.
-                        </p>
-                        <input type="email" x-model="authEmail" class="mt-4 w-full border p-2 rounded"
-                            placeholder="pianista@ejemplo.com">
-                    </div>
-                    <div class="items-center px-4 py-3">
-                        <button @click="requestMagicLink" :disabled="!authEmail"
-                            :class="{'opacity-50 cursor-not-allowed': !authEmail}"
-                            class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
-                            Enviar Enlace Mágico
-                        </button>
-                        <button @click="showAuthModal = false"
-                            class="mt-2 text-sm text-gray-500 underline">Cancelar</button>
-                    </div>
-                </div>
-
-                <!-- Sent State: Instructions -->
-                <div x-show="magicLinkSent" class="mt-3 text-center">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                        <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">¡Enlace Mágico Enviado!</h3>
-                    <div class="mt-2 px-7 py-3">
-                        <p class="text-sm text-gray-500">
-                            Por favor revisa tu email <strong><span x-text="authEmail"></span></strong>.
-                        </p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            Haz clic en el enlace del email para volver aquí y enviar tu reporte.
-                        </p>
-                        <div class="mt-4 p-2 bg-blue-50 text-xs text-blue-800 rounded text-left">
-                            <strong>Siguiente:</strong> Haz clic en el enlace de tu email. Te traerá de vuelta aquí para
-                            que puedas
-                            <strong>confirmar el captcha y enviar tu reporte</strong>.
-                        </div>
-                    </div>
-                    <div class="items-center px-4 py-3">
-                        <button @click="showAuthModal = false"
-                            class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">
-                            Cerrar
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
+    </div>
 
         <script>
             function wizard(eventId) {

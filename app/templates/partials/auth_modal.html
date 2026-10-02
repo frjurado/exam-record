@@ -1,6 +1,7 @@
-<div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+<div id="auth-modal" class="wa-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title"
     hx-swap-oob="true">
-    <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4 relative"
+    <div class="wa-modal__backdrop" aria-hidden="true"></div>
+    <div class="wa-modal__panel"
         @click.away="document.getElementById('auth-modal').outerHTML = '<div id=\'auth-modal\'></div>'" x-data="{
             email: '',
             isLoading: false,
@@ -33,55 +34,46 @@
             }
         }">
 
-        <button onclick="document.getElementById('auth-modal').outerHTML = '<div id=\'auth-modal\'></div>'"
-            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-
         <!-- Initial Form State -->
         <div x-show="!sent">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Verifica tu Email</h2>
-            <p class="text-gray-600 mb-6">
+            <h3 class="wa-modal__title" id="auth-modal-title">Verifica tu Email</h3>
+            <p class="wa-modal__text">
                 Para asegurar la integridad de nuestros registros, necesitamos verificar tu email antes de contar tu
                 voto/reporte.
                 ¡No te preocupes, es solo un enlace de verificación único!
             </p>
 
-            <form @submit.prevent="submit" class="space-y-4">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Dirección de Email</label>
-                    <input type="email" x-model="email" id="email" required
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+            <form @submit.prevent="submit">
+                <div class="wa-field" style="margin-top:24px">
+                    <label for="email" class="wa-label">Dirección de Email</label>
+                    <input type="email" x-model="email" id="email" required class="wa-input"
                         placeholder="tu@conservatorio.edu">
                 </div>
 
-                <div x-show="error" class="text-red-600 text-sm" x-text="error"></div>
+                <div x-show="error" class="wa-error" x-text="error"></div>
 
-                <button type="submit" :disabled="isLoading"
-                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
-                    :class="{'opacity-50 cursor-not-allowed': isLoading}">
-                    <span x-show="!isLoading">Enviar Enlace Mágico</span>
-                    <span x-show="isLoading">Enviando...</span>
-                </button>
+                <div class="wa-modal__actions">
+                    <button type="button" class="wa-btn wa-btn--ghost"
+                        onclick="document.getElementById('auth-modal').outerHTML = '<div id=\'auth-modal\'></div>'">
+                        Cancelar
+                    </button>
+                    <button type="submit" :disabled="isLoading" class="wa-btn wa-btn--primary">
+                        <span x-show="!isLoading">Enviar Enlace Mágico</span>
+                        <span x-show="isLoading">Enviando...</span>
+                    </button>
+                </div>
             </form>
         </div>
 
         <!-- Success State -->
-        <div x-show="sent" class="text-center py-4" style="display: none;">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-            </div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">¡Enlace Mágico Enviado!</h3>
-            <div class="mt-2 px-2 py-3">
-                <p class="text-sm text-gray-500">
-                    Por favor revisa tu email <strong><span x-text="email"></span></strong>.
-                </p>
+        <div x-show="sent" x-cloak>
+            <h3 class="wa-modal__title">¡Enlace Mágico Enviado!</h3>
+            <p class="wa-modal__text">
+                Por favor revisa tu email <strong><span x-text="email"></span></strong>.
+            </p>
+            <div class="wa-modal__actions">
                 <button onclick="document.getElementById('auth-modal').outerHTML = '<div id=\'auth-modal\'></div>'"
-                    class="mt-6 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
+                    type="button" class="wa-btn wa-btn--ghost">
                     Cerrar
                 </button>
             </div>
