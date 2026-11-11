@@ -46,21 +46,8 @@ async def prepare_database():
     await engine.dispose()
 
 
-@pytest.fixture
-async def db_session(prepare_database):
-    async with TestingSessionLocal() as session:
-        yield session
-        # Rollback is automatic if not committed?
-        # But we commit in endpoints.
-        # For isolation, we might want to drop/create tables or use nested transactions (unsupported in aiosqlite easily?)
-        # For now, let's keep it simple. State persists across tests in session.
-        # We might need to cleanup data manually or scope to function.
-        # Changing scope of prepare_database to function is safer but slower.
-        # Let's try function scope for safety.
-
-
 @pytest.fixture(scope="function")
-async def db(prepare_database):  # Renamed to db for clarity
+async def db(prepare_database):
     async with TestingSessionLocal() as session:
         yield session
         # Clean up tables (votes first — references reports and users)
