@@ -109,8 +109,8 @@ erDiagram
     *   *Response:* HTML (SSR).
 
 ### submission (The Contribution Engine)
-*   `GET /api/composers/search?q=...`: Proxy to local cache or Wikidata.
-*   `GET /api/works/search?q=...`: Proxy to local cache or OpenOpus.
+*   `GET /api/composers/search?q=...&source=local|external`: Local composers, or OpenOpus + Wikidata merged.
+*   `GET /api/works/search?q=...&composer_id=...`: One composer's works, local and OpenOpus merged (`openopus_composer_id` for composers not stored yet).
 *   `POST /api/reports`: Submits a new exam report.
     *   *Payload:* `{ region_slug, discipline_slug, year, composer: {...}, work: {...}, scope, movement_details }`
     *   *Logic:* Handles "Get or Create" for the Event, Composer and Work, and casts the submitter's vote.
@@ -124,4 +124,4 @@ erDiagram
 ## 4. External Integrations
 *   **Wikidata** (`services/wikidata.py`): composer lookup through the `wbsearchentities` API (not SPARQL).
 *   **OpenOpus API** (`services/openopus.py`): works by composer, fetched live and filtered locally.
-*   Neither is cached or mirrored yet; that is part of the wizard rework in the November 2026 plan.
+*   OpenOpus catalogues are cached in memory per composer for a day, with titles rendered in Spanish by `services/titles.py`. `services/catalog_service.py` merges local and external results.

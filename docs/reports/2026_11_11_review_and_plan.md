@@ -1,7 +1,9 @@
 # Project Review & Plan — November 2026
 
 A full read of the app, templates, docs and scripts, done on 2026-11-11, and the plan that
-came out of it. Phase 1 (hygiene) was carried out the same day and is recorded at the end.
+came out of it. Phase 1 (hygiene) was carried out and deployed the same day (section 8).
+Phase 2 (wizard rework) was written, reviewed and released the same day (section 9).
+Phases 3 to 5 have not been started.
 
 **Summary.** The backend is in decent shape (tests pass, coverage ~88%, clean lint and types).
 The contribution wizard is the weak point: it loses data, creates duplicates and has dead
@@ -142,7 +144,7 @@ Ordered by importance. Items marked ✅ were fixed in Phase 1.
 ### Phase 1 — Hygiene ✅ (done 2026-11-11)
 See section 8.
 
-### Phase 2 — Wizard rework
+### Phase 2 — Wizard rework (done 2026-11-11, see section 9)
 1. Server: match free-text composers and works to existing rows before inserting
    (normalised name / title within the composer). Accept and store the nickname.
 2. Composer search chain: local → OpenOpus composers → Wikidata (filtered by occupation,
@@ -230,3 +232,100 @@ weight (9), backups (10), pinning dependencies, Sentry account, domain.
 **Decisions taken for Phase 2**
 - Work titles and stored details should be in Spanish where possible.
 - Movement/excerpt details belong to the report, not to each vote.
+
+---
+
+## 9. Phase 2 record: the wizard rework
+
+Status: written and tested on branch `feat/wizard-rework`, reviewed by the project owner,
+then merged to `main` and released on 2026-11-11.
+
+**Duplicates (finding 1)**
+- A composer or work typed by hand is matched against existing rows before a new one is
+  created. Matching ignores case, accents, punctuation and the spelling of "number"
+  (`n.º`, `nº`, `no.`, `núm.`). Works are matched within their composer.
+- Composers and works get a `search_text` column holding that normalized form, kept up to
+  date by listeners in `app/models.py`. Migration `b7d2e9f0a1c3` adds and fills it.
+- Ids sent by the browser are confirmed against the catalogue before anything is marked
+  verified: an OpenOpus composer id must match the composer OpenOpus returns for that
+  name, and a work's title is taken from the composer's catalogue, not from the request.
+- The same person picked from two catalogues is stored once: a Wikidata pick whose
+  Spanish or English name matches a stored composer is attached to it.
+
+**Search**
+- Composer chain: local database → OpenOpus → Wikidata → free text. The external step
+  runs by itself when nothing local matches; the "use it as I typed it" option only
+  appears after it has run.
+- Wikidata search is restricted to people whose occupation is composer and returns
+  Spanish names where Wikidata has them. A catalogue hit for a composer already stored
+  under another spelling ("Chaikovski" → "Tchaikovsky") is offered as the stored one.
+- A new Wikidata composer is linked to OpenOpus when the names match exactly, so their
+  works become searchable.
+- Work search matches every word typed, in any order, against local works and the
+  composer's OpenOpus catalogue together. The catalogue is downloaded once per composer
+  and cached for a day. If OpenOpus is down, local works are still returned.
+- Search endpoints are rate-limited and no longer return raw exception text.
+
+**Spanish titles**
+- `app/services/titles.py` renders OpenOpus's English titles in Spanish: "Piano Sonata
+  no. 14 in C sharp minor, op. 27 no. 2" becomes "Sonata para piano n.º 14 en do
+  sostenido menor, op. 27 n.º 2", and well-known nicknames get their Spanish form
+  ("Claro de luna"). The original English words stay searchable.
+- It is a glossary, not a translator. Titles it does not recognise (proper names, titles
+  in German or French, English phrases outside the glossary) are left as they are, so
+  some catalogue entries remain in English. The glossary is the place to extend.
+- The migration applies the same rendering to works already stored from OpenOpus.
+- Composer names are kept as their source gives them (OpenOpus's form, or Wikidata's
+  Spanish label).
+
+**Prepopulation**
+- The form opens with the works already reported for that exam ("¿Es una de estas?")
+  and the composers most reported for the discipline.
+- After choosing a composer, their most reported and most popular works are listed
+  before anything is typed.
+- A signed-in user who already participated is sent to the exam page instead of the form.
+
+**Describing a work by hand**
+- Fields: type (with suggestions), instrument, number, catalogue (prefilled with the
+  composer's usual prefix: BWV, K., D., Hob.…), key as note + accidental + mode,
+  nickname. The resulting Spanish title is shown before it is used, and matching
+  catalogue works are offered while typing.
+
+**Details**
+- Stored as plain Spanish text ("Mov. 2 (Adagio) · fragmento: cc. 1-40"), shown on the
+  exam page under the work. They belong to the report: a later voter joins the report as
+  it stands. The migration strips the old `[Movement]` / `[Excerpt]` prefixes.
+
+**Submission and errors**
+- The form works without Turnstile keys, and gets a fresh token after a failed attempt.
+- Failed magic-link requests, rejected votes and rate limits now show a message (a toast
+  for HTMX actions).
+- The contribute page extends `base.html`, is in Spanish, has real breadcrumbs, and
+  shares the email-verification panel with the vote flow.
+- The magic-link email is in Spanish.
+
+**Also done (finding 4, in part)**
+- The rate limiter keys on `Fly-Client-IP`, so visitors no longer share one bucket behind
+  Fly's proxy. The limits themselves are unchanged; the classroom case (many people on
+  one school IP) is still open.
+
+**Verification**
+- 143 automated tests pass; `ruff` and `mypy` clean. Tests can no longer reach the real
+  external services by accident.
+- Both migrations run on copies of the local database.
+- The app was run locally against the live OpenOpus and Wikidata services: searches,
+  two users typing the same unlisted work (one verified entry with two votes), the
+  redirect for a participant, and details on the exam page.
+- The wizard's own script was run under Node against that server (18 checks covering
+  search, the builder, details text, the email round trip and error handling).
+- The project owner reviewed the result before release. No automated test drives the
+  form in a real browser, so layout, the Turnstile widget and the email round trip are
+  covered only by that manual pass.
+
+**Left for later**
+- Wizard state still lives in the browser, so opening the email link on another device
+  starts an empty form.
+- A composer picked from Wikidata with no exact OpenOpus match has no searchable
+  catalogue; the work is described by hand.
+- Existing duplicate works and composers are not merged (Phase 3).
+- `work_card.html` is still two near-identical halves; consensus logic still exists twice.

@@ -35,7 +35,9 @@ runs both on every commit.
 - **Services** (`app/services/*.py`) hold the logic, structured as a class of `@staticmethod`s
   (see `ReportService`, `ExamService`, `WorkService`) — there's no instance state, so there's
   no reason to instantiate them.
-- **Models** (`app/models.py`) are data only: columns and relationships. No properties that
+- **Models** (`app/models.py`) are data only: columns and relationships. The one exception is the
+  pair of listeners that keep `search_text` in sync with the name/title, which live there so
+  that no creation path (service, script or test) can leave the column stale. No properties that
   compute derived values or call out to other logic — that belongs in a service
   (`WorkService.get_score_url`, not a `Work.best_score_url` property).
 - Cross-cutting reads used from multiple call sites (e.g. `check_user_event_participation`)

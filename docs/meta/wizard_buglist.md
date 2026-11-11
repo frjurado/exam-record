@@ -1,5 +1,10 @@
 I'm giving you the list of bugs I found in the wizard here, in order to be more structured about them.
 
+> **Status, November 2026:** the wizard rework (see `docs/reports/2026_11_11_review_and_plan.md`,
+> section 9) addresses every item below except two. Still open: typo tolerance in composer
+> search ("Bethoven"), and fetching a work's movements automatically (OpenOpus has no
+> movement data).
+
 
 ## Composer Section
 
