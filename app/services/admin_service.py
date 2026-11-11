@@ -310,6 +310,50 @@ class AdminService:
         await db.commit()
         logger.info("admin: merged composer %s into %s", source_id, target_id)
 
+    @staticmethod
+    async def composer_candidates(query: str) -> list[dict[str, Any]]:
+        """OpenOpus composers matching `query` (the API rejects very short ones)."""
+        if len(query.strip()) < openopus.MIN_QUERY_LENGTH:
+            return []
+        try:
+            return await openopus.search_composers(query.strip())
+        except httpx.HTTPError as e:
+            raise AdminError("No se pudo consultar OpenOpus.") from e
+
+    @staticmethod
+    async def link_composer_to_catalogue(
+        db: AsyncSession, composer_id: int, openopus_id: str, query: str
+    ) -> None:
+        """Tie a hand-typed composer to an OpenOpus composer, so their catalogue can be
+        searched. `query` is the search that listed the candidate: it is run again so the
+        id is confirmed by OpenOpus rather than trusted from the form.
+
+        If that OpenOpus composer is already stored, the two are merged; otherwise this
+        composer takes the catalogue's id and name.
+        """
+        composer = await AdminService._get(db, Composer, composer_id, "Compositor")
+        candidates = await AdminService.composer_candidates(query)
+        entry = next((c for c in candidates if c["openopus_id"] == openopus_id), None)
+        if entry is None:
+            raise AdminError("Ese compositor no aparece en OpenOpus con esa búsqueda.")
+
+        stored = (
+            await db.execute(select(Composer).where(Composer.openopus_id == openopus_id))
+        ).scalar_one_or_none()
+        if stored is not None and stored.id != composer.id:
+            await AdminService.merge_composers(db, composer_id, int(stored.id))
+            return
+        composer.openopus_id = openopus_id
+        composer.name = entry["name"]
+        composer.is_verified = True
+        await db.commit()
+        logger.info("admin: linked composer %s to OpenOpus %s", composer_id, openopus_id)
+
+    @staticmethod
+    async def get_composer(db: AsyncSession, composer_id: int) -> Composer:
+        composer: Composer = await AdminService._get(db, Composer, composer_id, "Compositor")
+        return composer
+
     # ------------------------------------------------------------------- helpers
 
     @staticmethod

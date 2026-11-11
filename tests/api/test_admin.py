@@ -138,3 +138,29 @@ async def test_rename_composer(client, db, data):
     composer = (await db.execute(select(Composer))).scalar_one()
     await db.refresh(composer)
     assert composer.name == "Johann Sebastian Bach"
+
+
+async def test_link_composer_page_and_action(client, db, data):
+    from unittest.mock import AsyncMock, patch
+
+    _sign_in(data["admin"])
+    found = [{"openopus_id": "87", "name": "Johann Sebastian Bach", "description": "Baroque"}]
+    with patch(
+        "app.services.admin_service.openopus.search_composers", AsyncMock(return_value=found)
+    ):
+        page = await client.get(f"/admin/composers/{data['composer']}?q=bach")
+        assert page.status_code == 200
+        assert "Johann Sebastian Bach" in page.text
+        response = await client.post(
+            f"/admin/composers/{data['composer']}/link",
+            content="openopus_id=87&q=bach",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+    assert response.headers["location"].startswith("/admin?msg=")
+    composer = (await db.execute(select(Composer))).scalar_one()
+    await db.refresh(composer)
+    assert composer.openopus_id == "87"
+
+    assert (await client.get("/admin/composers/99999")).status_code == 404
+    _sign_in(data["visitor"])
+    assert (await client.get(f"/admin/composers/{data['composer']}")).status_code == 404

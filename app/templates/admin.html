@@ -170,6 +170,33 @@
         </div>
         <button type="submit" class="wa-btn wa-btn--primary wa-btn--sm">Cambiar nombre</button>
     </form>
+
+    <table class="wa-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Compositor</th>
+                <th>Obras</th>
+                <th>OpenOpus</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in composers %}
+            <tr>
+                <td>{{ row.composer.id }}</td>
+                <td>{{ row.composer.name }}</td>
+                <td>{{ row.works }}</td>
+                <td>{{ "Sí" if row.composer.openopus_id else "No" }}</td>
+                <td class="wa-table__actions">
+                    {% if not row.composer.openopus_id %}
+                    <a class="wa-link" href="/admin/composers/{{ row.composer.id }}">Vincular</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </section>
 
 <section class="wa-panel wa-admin__section" id="reportes">

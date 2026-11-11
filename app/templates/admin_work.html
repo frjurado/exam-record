@@ -51,8 +51,9 @@
     <p class="wa-hint">Esta obra ya está vinculada al catálogo de OpenOpus (n.º {{ work.openopus_id }}).</p>
     {% elif not work.composer.openopus_id %}
     <p class="wa-hint">
-        El compositor no está vinculado a OpenOpus, así que no hay catálogo donde buscar. Si es un
-        duplicado de un compositor del catálogo, fusiónalos primero.
+        El compositor no está vinculado a OpenOpus, así que no hay catálogo donde buscar.
+        <a href="/admin/composers/{{ work.composer.id }}">Vincula primero a {{ work.composer.name }}</a>
+        y vuelve a esta página.
     </p>
     {% else %}
     <p class="wa-hint">

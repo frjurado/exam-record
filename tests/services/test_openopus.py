@@ -149,3 +149,28 @@ async def test_search_work_empty_query_lists_popular_first():
 @pytest.mark.asyncio
 async def test_search_work_without_composer_returns_nothing():
     assert await openopus.search_work("sonata") == []
+
+
+def test_name_search_terms_skip_words_openopus_rejects():
+    # OpenOpus refuses searches under four letters, so "Sor" cannot be the search term.
+    assert openopus.name_search_terms("Fernando Sor") == ["fernando"]
+    assert openopus.name_search_terms("Carl Philipp Emanuel Bach") == [
+        "bach",
+        "philipp",
+        "emanuel",
+        "carl",
+    ]
+    assert openopus.name_search_terms("") == []
+
+
+async def test_find_composer_id_with_a_short_surname():
+    from unittest.mock import AsyncMock, patch
+
+    found = [
+        {"name": "Fernando Lopes-Graça", "openopus_id": "119", "description": ""},
+        {"name": "Fernando Sor", "openopus_id": "212", "description": ""},
+    ]
+    search = AsyncMock(return_value=found)
+    with patch("app.services.openopus.search_composers", search):
+        assert await openopus.find_composer_id("Fernando Sor") == "212"
+    search.assert_awaited_once_with("fernando")

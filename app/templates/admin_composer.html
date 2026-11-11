@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}WikiAnálisis | Vincular compositor{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <a href="/admin#compositores">Administración</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">Compositor #{{ composer.id }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="wa-pagehead">
+    <h1 class="wa-pagehead__title">{{ composer.name }}</h1>
+</div>
+
+{% if msg %}<p class="wa-note wa-admin__msg" role="status">{{ msg }}</p>{% endif %}
+{% if error %}<p class="wa-note wa-admin__msg wa-admin__msg--error" role="alert">{{ error }}</p>{% endif %}
+
+<section class="wa-panel wa-admin__section">
+    <h2 class="wa-section-title">OpenOpus</h2>
+    {% if composer.openopus_id %}
+    <p class="wa-hint">Este compositor ya está vinculado a OpenOpus (n.º {{ composer.openopus_id }}).</p>
+    {% else %}
+    <p class="wa-hint">
+        Busca al compositor en OpenOpus y vincúlalo: tomará el nombre del catálogo y sus obras
+        se podrán vincular después al catálogo. Si ese compositor ya existía aquí, los dos se fusionan.
+        OpenOpus no admite búsquedas de menos de cuatro letras: para apellidos cortos
+        («Sor») busca por el nombre («Fernando»).
+    </p>
+    <form method="get" action="/admin/composers/{{ composer.id }}" class="wa-admin__form">
+        <div class="wa-field">
+            <label class="wa-label" for="q">Buscar en OpenOpus</label>
+            <input type="search" name="q" id="q" class="wa-input" minlength="4" required
+                value="{{ q or suggested_q }}">
+        </div>
+        <button type="submit" class="wa-btn wa-btn--ghost wa-btn--sm">Buscar</button>
+    </form>
+    {% if q %}
+    <table class="wa-table">
+        <tbody>
+            {% for candidate in candidates %}
+            <tr>
+                <td>{{ candidate.name }}<br><span class="wa-hint">{{ candidate.description }}</span></td>
+                <td class="wa-table__actions">
+                    <form method="post" action="/admin/composers/{{ composer.id }}/link" class="wa-admin__inline"
+                        onsubmit="return confirm('¿Vincular con este compositor de OpenOpus?')">
+                        <input type="hidden" name="openopus_id" value="{{ candidate.openopus_id }}">
+                        <input type="hidden" name="q" value="{{ q }}">
+                        <button type="submit" class="wa-link">Vincular</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="wa-hint">
+                    Sin resultados. Si OpenOpus no tiene a este compositor, sus obras se quedan como
+                    están; puedes corregir sus títulos a mano desde «Editar».
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

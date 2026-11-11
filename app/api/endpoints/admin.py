@@ -19,6 +19,7 @@ from app.api import deps
 from app.core.constants import Roles
 from app.db.session import get_db
 from app.models import User
+from app.services import openopus
 from app.services.admin_service import AdminError, AdminService
 
 templates = Jinja2Templates(directory="app/templates")
@@ -215,3 +216,55 @@ async def rename_composer(
         await AdminService.rename_composer(db, _int(form, "composer_id"), form.get("name", ""))
 
     return await _run(db, action, ok="Nombre cambiado.")
+
+
+@router.get("/composers/{composer_id}", response_class=HTMLResponse)
+async def composer_page(
+    request: Request,
+    composer_id: int,
+    q: str = "",
+    msg: str = "",
+    error: str = "",
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+) -> HTMLResponse:
+    try:
+        composer = await AdminService.get_composer(db, composer_id)
+    except AdminError as e:
+        raise HTTPException(status_code=404, detail="Not Found") from e
+    try:
+        candidates = await AdminService.composer_candidates(q)
+    except AdminError as e:
+        candidates, error = [], str(e)
+    return templates.TemplateResponse(
+        request,
+        "admin_composer.html",
+        {
+            "user": admin,
+            "composer": composer,
+            "q": q,
+            # OpenOpus rejects short words, so "Fernando Sor" is searched as "fernando".
+            "suggested_q": next(iter(openopus.name_search_terms(str(composer.name))), ""),
+            "candidates": candidates,
+            "msg": msg,
+            "error": error,
+        },
+    )
+
+
+@router.post("/composers/{composer_id}/link")
+async def link_composer(
+    request: Request,
+    composer_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> Response:
+    form = await _form(request)
+    # After a link the composer may have been merged away, so go back to the main page.
+    return await _run(
+        db,
+        lambda: AdminService.link_composer_to_catalogue(
+            db, composer_id, form.get("openopus_id", ""), form.get("q", "")
+        ),
+        ok="Compositor vinculado a OpenOpus. Ya puedes vincular sus obras al catálogo.",
+    )

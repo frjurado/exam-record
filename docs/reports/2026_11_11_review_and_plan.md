@@ -353,7 +353,13 @@ these tools is still to be done (see "To do after deploying").
   when that was its last report).
 - Works: merge one into another, edit title / nickname / IMSLP address, delete a work
   nobody reported, and link a hand-typed work to its OpenOpus catalogue entry.
-- Composers: merge one into another, rename.
+- Composers: merge one into another, rename, and link a hand-typed composer to their
+  OpenOpus record (added right after release, when the first cleanup showed that
+  hand-typed works usually have a hand-typed composer too). OpenOpus rejects searches
+  under four letters, so name lookups now fall back from a short surname to the other
+  words of the name ("Fernando Sor" is found through "fernando"); this also fixes the
+  contribute form for such composers. Composers OpenOpus does not have (Clementi) stay
+  unlinked and their works are edited by hand.
 - Exams: delete those with no reports (left over from before Phase 1).
 
 **How merging behaves**

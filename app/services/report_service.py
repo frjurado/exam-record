@@ -141,11 +141,8 @@ class ReportService:
     @staticmethod
     async def _confirm_openopus_composer(openopus_id: str, name: str) -> str | None:
         """The catalogue's own name for this OpenOpus composer id, or None if unconfirmed."""
-        name_tokens = text.tokens(name)
-        if not name_tokens:
-            return None
         try:
-            candidates = await openopus.search_composers(name_tokens[-1])
+            candidates = await openopus.search_composers_by_name(name)
         except httpx.HTTPError:
             logger.warning("OpenOpus lookup failed for composer %s", openopus_id)
             return None

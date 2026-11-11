@@ -251,3 +251,44 @@ async def test_link_requires_a_catalogue_composer(db, world):
     await db.commit()
     with pytest.raises(AdminError):
         await AdminService.link_work_to_catalogue(db, orphan.id, "900")
+
+
+OO_COMPOSERS = [
+    {"openopus_id": "145", "name": "Ludwig van Beethoven", "description": "Early Romantic"},
+    {"openopus_id": "77", "name": "Muzio Clementi", "description": "Classical"},
+]
+
+
+async def test_link_composer_adopts_catalogue_identity(db, world):
+    with patch(
+        "app.services.admin_service.openopus.search_composers",
+        AsyncMock(return_value=OO_COMPOSERS),
+    ):
+        await AdminService.link_composer_to_catalogue(db, world["typed"], "77", "clementi")
+        # An id the search does not return is refused.
+        with pytest.raises(AdminError):
+            await AdminService.link_composer_to_catalogue(db, world["typed"], "999", "clementi")
+
+    composer = await AdminService.get_composer(db, world["typed"])
+    assert (composer.name, composer.openopus_id) == ("Muzio Clementi", "77")
+    assert composer.is_verified
+    assert composer.search_text == "muzio clementi"
+
+
+async def test_link_composer_already_stored_merges(db, world):
+    db.add(Work(title="Bagatela", composer_id=world["typed"]))
+    await db.commit()
+    with patch(
+        "app.services.admin_service.openopus.search_composers",
+        AsyncMock(return_value=OO_COMPOSERS),
+    ):
+        await AdminService.link_composer_to_catalogue(db, world["typed"], "145", "beethoven")
+
+    assert await _count(db, Composer) == 1
+    assert {w.composer_id for w in (await db.execute(select(Work))).scalars()} == {
+        world["beethoven"]
+    }
+
+
+async def test_composer_candidates_skips_queries_openopus_rejects():
+    assert await AdminService.composer_candidates(" sor ") == []

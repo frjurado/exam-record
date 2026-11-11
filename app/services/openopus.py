@@ -9,6 +9,8 @@ from app.services import text, titles
 
 OPENOPUS_API_URL = "https://api.openopus.org"
 TIMEOUT_SECONDS = 10.0
+# OpenOpus answers "Too short search term" to anything under four letters.
+MIN_QUERY_LENGTH = 4
 
 # A composer's catalogue is a single large download (Bach has ~1000 works) and changes
 # essentially never, so it is fetched once and filtered in memory on every keystroke.
@@ -57,17 +59,37 @@ async def search_composers(query: str) -> list[dict[str, Any]]:
     return results
 
 
+def name_search_terms(name: str) -> list[str]:
+    """Words of a composer's name worth sending to OpenOpus: the surname first, then the
+    rest from longest to shortest, leaving out those the API rejects as too short
+    ("Sor" in "Fernando Sor" is, so that composer is found through "fernando")."""
+    name_tokens = text.tokens(name)
+    if not name_tokens:
+        return []
+    ordered = [name_tokens[-1], *sorted(name_tokens[:-1], key=len, reverse=True)]
+    return [token for token in ordered if len(token) >= MIN_QUERY_LENGTH]
+
+
+async def search_composers_by_name(name: str) -> list[dict[str, Any]]:
+    """Candidates for a full name: the first of its words that OpenOpus finds anything for."""
+    for term in name_search_terms(name):
+        results = await search_composers(term)
+        if results:
+            return results
+    return []
+
+
 async def find_composer_id(name: str) -> str | None:
     """Best-effort OpenOpus id for a composer known only by name (e.g. picked from Wikidata).
 
-    Searches by surname and accepts only an exact match on the full name, so a wrong
-    composer's catalogue is never attached.
+    Accepts only an exact match on the full name, so a wrong composer's catalogue is
+    never attached.
     """
     name_tokens = text.tokens(name)
     if not name_tokens:
         return None
     wanted = " ".join(name_tokens)
-    for candidate in await search_composers(name_tokens[-1]):
+    for candidate in await search_composers_by_name(name):
         if text.normalize(candidate["name"]) == wanted:
             return cast(str, candidate["openopus_id"])
     return None
