@@ -1,3 +1,4 @@
+import httpx
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
@@ -7,6 +8,7 @@ from app.core.limiter import limiter
 from app.db.base import Base  # Ensure this import is correct based on checking file
 from app.db.session import get_db
 from app.main import app as fastapi_app
+from app.services import openopus
 from app.services.reference_data_service import ReferenceDataService
 
 
@@ -27,6 +29,25 @@ def _reset_reference_data_cache():
     # stale cached id.
     ReferenceDataService.reset_cache()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_openopus_cache():
+    # Catalogues are cached per composer id for the process lifetime; tests reuse ids
+    # with different mocked catalogues.
+    openopus.reset_cache()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _no_real_network(monkeypatch):
+    # A test that forgets to mock OpenOpus/Wikidata/Turnstile must fail fast instead of
+    # reaching the real service (slow, flaky, and impolite). The in-process ASGI
+    # transport used by the `client` fixture is a different class and is unaffected.
+    async def refuse(self, request):
+        raise httpx.ConnectError(f"Real network access attempted in a test: {request.url}")
+
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", refuse)
 
 
 # Use in-memory SQLite for tests

@@ -57,8 +57,8 @@ async def test_create_report_simple(client, db, user, event):
         "year": 2026,
         "composer": {"id": composer.id},
         "work": {"id": work.id},
-        "scope": "Whole Work",
-        "movement_details": "Played perfectly",
+        "scope": "Movement",
+        "movement_details": "Mov. 2 (Adagio)",
     }
 
     try:
@@ -75,7 +75,7 @@ async def test_create_report_simple(client, db, user, event):
     result = await db.execute(select(Report).filter(Report.id == data["id"]))
     report = result.scalar_one()
     assert report.work_id == work.id
-    assert report.movement_details == "Played perfectly"
+    assert report.movement_details == "Mov. 2 (Adagio)"
 
 
 @pytest.mark.asyncio

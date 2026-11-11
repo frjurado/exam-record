@@ -23,6 +23,9 @@ class RateLimit:
     MAGIC_LINK_REQUEST = "5/minute"
     REPORT_CREATION = "10/hour"
     VOTE_CAST = "20/hour"
+    # Type-ahead searches that may reach OpenOpus/Wikidata. High enough for fast typing,
+    # low enough that the endpoints cannot be used as an open proxy to those services.
+    CATALOG_SEARCH = "120/minute"
 
 
 class Cache:
@@ -31,3 +34,14 @@ class Cache:
     # takes to show up rather than guarding against real staleness.
     REFERENCE_DATA_TTL_SECONDS = 3600
     REFERENCE_DATA_MAX_ENTRIES = 64
+    # A composer's OpenOpus catalogue is static for our purposes; a day bounds memory
+    # use on a long-lived worker rather than guarding against staleness.
+    OPENOPUS_TTL_SECONDS = 86400
+    OPENOPUS_MAX_COMPOSERS = 128
+
+
+class Suggestions:
+    # How many frequently reported composers the contribute form offers before typing.
+    MAX_COMPOSERS = 8
+    # How many of a composer's works are offered before typing.
+    MAX_WORKS = 40

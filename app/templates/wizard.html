@@ -1,809 +1,769 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contribute - Exam Record</title>
-    <link rel="icon" href="/static/favicon.png" type="image/png">
-    <link rel="stylesheet" href="/static/css/wikianalisis.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-</head>
+{% block title %}Aportar obra · {{ discipline.name }} {{ year }} | WikiAnálisis{% endblock %}
 
-<body x-data="wizard('{{ region_slug }}', '{{ discipline_slug }}', {{ year }})">
-    <!-- Loading Overlay -->
-    <div x-show="isVerifying" x-cloak class="wa-overlay" role="status">
-        <span class="wa-spinner"></span>
-        <h2 class="wa-modal__title">Verificando...</h2>
-        <p class="wa-modal__text">Estamos validando tu enlace mágico y enviando la aportación.</p>
-    </div>
+{% block head_extra %}
+<meta name="robots" content="noindex">
+{% if turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}
 
-    <!-- Success Overlay -->
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <a href="/exams/{{ region_slug }}/{{ discipline_slug }}">{{ region.name }} — {{ discipline.name }}</a>
+    <span class="wa-crumbs__sep">›</span>
+    <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}">{{ year }}</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">Aportar</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% set wizard_config = {
+    "regionSlug": region_slug,
+    "disciplineSlug": discipline_slug,
+    "year": year,
+    "eventUrl": "/exams/" ~ region_slug ~ "/" ~ discipline_slug ~ "/" ~ year,
+    "authenticated": user is not none,
+    "turnstileKey": turnstile_site_key,
+    "existing": existing_reports,
+    "suggested": suggested_composers,
+} %}
+<div x-data='wizard({{ wizard_config|tojson }})' @magic-link-sent="onMagicLinkSent()"
+    @auth-close="showAuthModal = false">
+
+    <!-- Success -->
     <div x-show="submitSuccess" x-cloak class="wa-overlay" role="status">
         <div class="wa-feature__icon" aria-hidden="true">✓</div>
-        <h2 class="wa-modal__title">¡Aportación Enviada!</h2>
-        <p class="wa-modal__text">Gracias por contribuir al registro. Tu aportación ayuda a la
-            comunidad.</p>
-        <p class="wa-hint">Redirigiendo en <span x-text="countdown"></span>...</p>
+        <h2 class="wa-modal__title">¡Aportación enviada!</h2>
+        <p class="wa-modal__text">Gracias. Tu aportación ayuda a quienes se presenten después.</p>
+        <p class="wa-hint">Volviendo al examen en <span x-text="countdown"></span>…</p>
     </div>
 
-    <div class="wa-shell">
-        <header class="wa-header">
-            <a href="/" class="wa-logo"><span class="wa-logo__dot"></span><span>Wiki<i>Análisis</i></span></a>
-        </header>
-
-        <!-- Breadcrumbs -->
-        <nav class="wa-crumbs" aria-label="Ruta">
-            <a href="/">Inicio</a>
-            <span class="wa-crumbs__sep">›</span>
-            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}">Región - Especialidad</a>
-            <span class="wa-crumbs__sep">›</span>
-            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}">{{ year }}</a>
-            <span class="wa-crumbs__sep">›</span>
-            <span aria-current="page">Contribuir</span>
-        </nav>
-
-        <main class="wa-main">
-            <div class="wa-pagehead">
-                <h1 class="wa-pagehead__title">Asistente de Aportación</h1>
-            </div>
-
-            <!-- Email Verified Banner (Post-Magic Link) -->
-            <div x-show="isAuthenticated && pendingSubmission" x-cloak class="wa-banner wa-banner--resolved">
-                <span class="wa-banner__icon" aria-hidden="true">✓</span>
-                <div>
-                    <p class="wa-banner__title">¡Email verificado correctamente!</p>
-                    <p class="wa-banner__text">
-                        Por favor, valida el captcha abajo y pulsa "Enviar Aportación" para terminar.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Blocking Overlay for Pending Verification -->
-            <div x-show="pendingSubmission && !isAuthenticated && !showAuthModal" x-cloak class="wa-modal"
-                role="dialog" aria-modal="true" aria-labelledby="pending-verification-title">
-                <div class="wa-modal__backdrop" aria-hidden="true"></div>
-                <div class="wa-modal__panel">
-                    <h3 class="wa-modal__title" id="pending-verification-title">Esperando Verificación</h3>
-                    <p class="wa-modal__text">
-                        Hemos enviado un enlace a tu correo. Por favor, haz clic en él para confirmar tu aportación.
-                    </p>
-                    <div class="wa-split" style="margin-top:16px">
-                        <button @click="showAuthModal = true" type="button" class="wa-link">
-                            ¿No recibiste el correo?
-                        </button>
-                        <button @click="pendingSubmission = false; saveState()" type="button"
-                            class="wa-link wa-link--muted">
-                            Cancelar y volver a editar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Waiting for Verification Banner (Small) - Removed/Replaced by Overlay -->
-
-            <div class="wa-panel">
-                <!-- Step Indicator -->
-                <ol class="wa-steps">
-                    <li class="wa-steps__item" :class="{'wa-steps__item--current': step===1}">1. Compositor</li>
-                    <li class="wa-steps__item" :class="{'wa-steps__item--current': step===2}">2. Obra</li>
-                    <li class="wa-steps__item" :class="{'wa-steps__item--current': step===3}">3. Detalles</li>
-                </ol>
-
-                <!-- Step 1: Composer -->
-                <div x-show="step === 1">
-                    <h2 class="wa-section-title">¿Quién es el compositor?</h2>
-                    <input type="text" x-model="searchComposerQuery" @input.debounce.300ms="searchComposer"
-                        class="wa-input" placeholder="Buscar compositor (ej. Bach)" aria-label="Buscar compositor">
-
-                    <div class="wa-results">
-                        <template x-for="c in composerResults" :key="c.id || c.wikidata_id">
-                            <div @click="selectComposer(c)" class="wa-result">
-                                <span x-text="c.name"></span>
-                                <span x-show="c.is_verified" class="wa-status--verified">✓</span>
-                            </div>
-                        </template>
-                    </div>
-
-                    <div x-show="searchComposerQuery.length > 2" class="wa-inset">
-                        <p class="wa-hint" style="margin:0 0 4px" x-show="composerResults.length === 0">No se
-                            encontraron resultados locales.</p>
-                        <div class="wa-split">
-                            <button @click="searchWikidata" type="button" class="wa-link">Buscar en Wikidata</button>
-                            <button @click="createUnverifiedComposer" type="button" class="wa-link wa-link--muted">Usar
-                                "<span x-text="searchComposerQuery"></span>" (Sin Verificar)</button>
-                        </div>
-
-                        <div x-show="wikidataResults.length > 0" style="margin-top:16px">
-                            <h3 class="wa-label" style="margin:0">¿Quizás quisiste decir...?</h3>
-                            <div class="wa-results">
-                                <template x-for="c in wikidataResults" :key="c.wikidata_id">
-                                    <div @click="selectComposer(c)" class="wa-result">
-                                        <div>
-                                            <div x-text="c.name"></div>
-                                            <div class="wa-hint" x-text="c.description"></div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                        <p x-show="searchComposerQuery.length > 2 && wikidataResults.length === 0 && wikidataSearched"
-                            class="wa-hint" style="margin:12px 0 0">
-                            No se encontraron resultados en la base global.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 2: Work -->
-                <div x-show="step === 2">
-                    <h2 class="wa-section-title">¿Qué obra?</h2>
-                    <p class="wa-hint" style="margin:0 0 12px">Compositor: <b
-                            x-text="selectedComposer ? selectedComposer.name : ''"></b></p>
-
-                    <input type="text" x-model="searchWorkQuery" @input.debounce.300ms="searchWork"
-                        class="wa-input" placeholder="Buscar obra (ej. Preludio)" aria-label="Buscar obra">
-
-                    <div class="wa-results wa-results--scroll">
-                        <template x-for="w in workResults" :key="w.id || w.openopus_id">
-                            <div @click="selectWork(w)" class="wa-result">
-                                <span>
-                                    <span x-text="w.title"></span>
-                                    <span x-show="w.nickname" x-text="`(${w.nickname})`" class="wa-hint"></span>
-                                </span>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Lazy Builder Fallback -->
-                    <div x-show="searchWorkQuery.length > 2" class="wa-inset">
-                        <h3 class="wa-label" style="margin:0 0 12px">¿No la encuentras? Crea una nueva entrada.</h3>
-                        <!-- Row 1: Genre & Nickname -->
-                        <div class="wa-row">
-                            <label class="wa-field">
-                                <span class="wa-label">Género <span class="wa-error">*</span></span>
-                                <input type="text" x-model="lazyGenre" @input.debounce.500ms="updateLazySearch"
-                                    placeholder="ej. Sonata" class="wa-input"
-                                    :class="{'wa-input--invalid': !lazyGenre && searchWorkQuery.length > 2}">
-                            </label>
-                            <label class="wa-field">
-                                <span class="wa-label">Título/Apodo (Opcional)</span>
-                                <input type="text" x-model="lazyNickname" @input.debounce.500ms="updateLazySearch"
-                                    placeholder='ej. "Pathetique"' class="wa-input">
-                            </label>
-                        </div>
-
-                        <!-- Row 2: Key (Split) -->
-                        <div class="wa-row">
-                            <label class="wa-field">
-                                <span class="wa-label">Tonalidad</span>
-                                <select x-model="lazyKeyNote" @change="updateLazySearch" class="wa-input">
-                                    <option value="">- Nota -</option>
-                                    <option value="Do">Do</option>
-                                    <option value="Do sostenido">Do#</option>
-                                    <option value="Re">Re</option>
-                                    <option value="Mi bemol">Mib</option>
-                                    <option value="Mi">Mi</option>
-                                    <option value="Fa">Fa</option>
-                                    <option value="Fa sostenido">Fa#</option>
-                                    <option value="Sol">Sol</option>
-                                    <option value="La bemol">Lab</option>
-                                    <option value="La">La</option>
-                                    <option value="Si bemol">Sib</option>
-                                    <option value="Si">Si</option>
-                                </select>
-                            </label>
-                            <label class="wa-field">
-                                <span class="wa-label">Modo</span>
-                                <select x-model="lazyKeyMode" @change="updateLazySearch" class="wa-input">
-                                    <option value="">- Modo -</option>
-                                    <option value="Mayor">Mayor</option>
-                                    <option value="Menor">Menor</option>
-                                </select>
-                            </label>
-                        </div>
-
-                        <!-- Row 3: Identifiers (Numeric) -->
-                        <div class="wa-row">
-                            <label class="wa-field">
-                                <span class="wa-label">Opus/BWV/KV</span>
-                                <input type="number" x-model="lazyOpus" @input.debounce.500ms="updateLazySearch"
-                                    placeholder="ej. 57" class="wa-input">
-                            </label>
-                            <label class="wa-field">
-                                <span class="wa-label">Número</span>
-                                <input type="number" x-model="lazyNumber" @input.debounce.500ms="updateLazySearch"
-                                    placeholder="ej. 23" class="wa-input">
-                            </label>
-                        </div>
-                        <button @click="createUnverifiedWork" :disabled="!lazyGenre" type="button"
-                            class="wa-btn wa-btn--primary wa-btn--block">
-                            Crear y Continuar
-                        </button>
-                    </div>
-
-                    <button @click="step=1; searchComposerQuery=''; composerResults=[]; wikidataResults=[]"
-                        type="button" class="wa-link wa-link--muted" style="margin-top:16px">Volver a
-                        Compositor</button>
-                </div>
-
-                <!-- Step 3: Scope -->
-                <div x-show="step === 3">
-                    <h2 class="wa-section-title">Detalles Finales</h2>
-                    <dl class="wa-summary">
-                        <dt>Compositor:</dt>
-                        <dd x-text="selectedComposer ? selectedComposer.name : ''"></dd>
-                        <dt>Obra:</dt>
-                        <dd x-text="selectedWork ? selectedWork.title : ''"></dd>
-                    </dl>
-
-                    <!-- Scope Selection -->
-                    <p class="wa-label" style="margin:0 0 8px">Alcance de la Aportación</p>
-
-                    <!-- Main Selector: Whole Work vs Movement -->
-                    <div class="wa-row">
-                        <label class="wa-option" :class="{'wa-option--selected': scopeType === 'Whole Work'}">
-                            <input type="radio" x-model="scopeType" value="Whole Work">
-                            <span>Obra Completa</span>
-                        </label>
-                        <label class="wa-option" :class="{'wa-option--selected': scopeType === 'Movement'}">
-                            <input type="radio" x-model="scopeType" value="Movement">
-                            <span>Movimiento</span>
-                        </label>
-                    </div>
-
-                    <!-- Movement Details (Conditional) -->
-                    <div x-show="scopeType === 'Movement'" class="wa-inset">
-                        <div class="wa-row wa-row--1-2">
-                            <label class="wa-field" style="margin:0">
-                                <span class="wa-label">Nº</span>
-                                <select x-model="movementNumber" class="wa-input">
-                                    <option value="">-</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                </select>
-                            </label>
-                            <label class="wa-field" style="margin:0">
-                                <span class="wa-label">Nombre (Opcional)</span>
-                                <input type="text" x-model="movementName" placeholder="ej. Allegro ma non troppo"
-                                    class="wa-input">
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Excerpt Toggle (Orthogonal) -->
-                    <div style="margin-top:16px">
-                        <label class="wa-check">
-                            <input type="checkbox" x-model="isExcerpt">
-                            <span class="wa-check__text">
-                                <span class="wa-label">Es un fragmento / selección</span>
-                                <span class="wa-hint">Marcar si solo se analizó una parte (compases,
-                                    sección, etc.)</span>
-                            </span>
-                        </label>
-
-                        <!-- Excerpt Details -->
-                        <label x-show="isExcerpt" class="wa-field" style="margin-top:8px">
-                            <span class="wa-label">Detalles del fragmento</span>
-                            <input type="text" x-model="excerptDetails" placeholder="ej. Compases 1-50, solo Cadenza"
-                                class="wa-input">
-                        </label>
-                    </div>
-
-                    <!-- Turnstile Widget -->
-                    <div class="wa-turnstile">
-                        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-callback="onTurnstileSuccess">
-                        </div>
-                    </div>
-
-                    <button @click="submitReport" :disabled="!turnstileToken" type="button"
-                        class="wa-btn wa-btn--primary wa-btn--block">Enviar
-                        Aportación</button>
-                    <div x-show="submitStatus" class="wa-banner" style="margin:16px 0 0"
-                        :class="submitSuccess ? 'wa-banner--resolved' : 'wa-banner--disputed'">
-                        <p class="wa-banner__title" x-text="submitStatus"></p>
-                    </div>
-
-                    <div class="wa-split" style="margin-top:16px">
-                        <button @click="step=2" type="button" class="wa-link wa-link--muted">Volver a
-                            Obra</button>
-                        <button @click="hardReset" type="button" class="wa-link wa-link--danger">Reiniciar
-                            Formulario</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Auth Modal -->
-    <div x-show="showAuthModal" x-cloak class="wa-modal" role="dialog" aria-modal="true"
-        aria-labelledby="wizard-auth-title">
+    <!-- Waiting for the magic link to be opened -->
+    <div x-show="pendingSubmission && !isAuthenticated && !showAuthModal" x-cloak class="wa-modal"
+        role="dialog" aria-modal="true" aria-labelledby="pending-verification-title">
         <div class="wa-modal__backdrop" aria-hidden="true"></div>
         <div class="wa-modal__panel">
-
-            <!-- Initial State: Ask for Email -->
-            <div x-show="!magicLinkSent">
-                <h3 class="wa-modal__title" id="wizard-auth-title">Verificación de Email Requerida</h3>
-                <p class="wa-modal__text">
-                    Para mantener la calidad de los datos, por favor verifica tu email. Te enviaremos un enlace
-                    mágico.
-                </p>
-                <label class="wa-field" style="margin-top:24px">
-                    <span class="wa-label">Email</span>
-                    <input type="email" x-model="authEmail" class="wa-input" placeholder="pianista@ejemplo.com">
-                </label>
-                <div class="wa-modal__actions">
-                    <button @click="showAuthModal = false" type="button" class="wa-btn wa-btn--ghost">Cancelar</button>
-                    <button @click="requestMagicLink" :disabled="!authEmail" type="button"
-                        class="wa-btn wa-btn--primary">
-                        Enviar Enlace Mágico
-                    </button>
-                </div>
+            <h3 class="wa-modal__title" id="pending-verification-title">Revisa tu correo</h3>
+            <p class="wa-modal__text">
+                Te hemos enviado un enlace. Ábrelo en este mismo navegador para volver aquí
+                con el formulario tal como lo dejaste.
+            </p>
+            <div class="wa-split" style="margin-top:16px">
+                <button @click="showAuthModal = true" type="button" class="wa-link">
+                    ¿No te ha llegado?
+                </button>
+                <button @click="pendingSubmission = false; saveState()" type="button"
+                    class="wa-link wa-link--muted">
+                    Volver al formulario
+                </button>
             </div>
-
-            <!-- Sent State: Instructions -->
-            <div x-show="magicLinkSent">
-                <h3 class="wa-modal__title">¡Enlace Mágico Enviado!</h3>
-                <p class="wa-modal__text">
-                    Por favor revisa tu email <strong><span x-text="authEmail"></span></strong>.
-                </p>
-                <p class="wa-modal__text" style="margin-top:8px">
-                    Haz clic en el enlace del email para volver aquí y enviar tu reporte.
-                </p>
-                <p class="wa-note" style="margin:16px 0 0">
-                    <b>Siguiente:</b> Haz clic en el enlace de tu email. Te traerá de vuelta aquí para
-                    que puedas
-                    <b>confirmar el captcha y enviar tu reporte</b>.
-                </p>
-                <div class="wa-modal__actions">
-                    <button @click="showAuthModal = false" type="button" class="wa-btn wa-btn--ghost">
-                        Cerrar
-                    </button>
-                </div>
-            </div>
-
         </div>
     </div>
 
-        <script>
-            function wizard(regionSlug, disciplineSlug, year) {
-                return {
-                    step: 1,
-                    // Composer
-                    searchComposerQuery: '',
-                    composerResults: [],
-                    wikidataResults: [],
-                    wikidataSearched: false,
-                    selectedComposer: null,
+    <div class="wa-pagehead">
+        <div>
+            <h1 class="wa-pagehead__title">Aportar obra <i>{{ discipline.name }} {{ year }}</i></h1>
+            <p class="wa-pagehead__sub">{{ region.name }} · Indica la obra que cayó en el examen de análisis.</p>
+        </div>
+    </div>
 
-                    // Work
-                    searchWorkQuery: '',
-                    workResults: [],
-                    selectedWork: null,
-                    lazyGenre: '',
-                    lazyNickname: '', // New
-                    lazyKeyNote: '',
-                    lazyKeyMode: '',
-                    lazyOpus: '',
-                    lazyNumber: '',
+    <div x-show="isAuthenticated && pendingSubmission" x-cloak class="wa-banner wa-banner--resolved">
+        <span class="wa-banner__icon" aria-hidden="true">✓</span>
+        <div>
+            <p class="wa-banner__title">Email verificado.</p>
+            <p class="wa-banner__text">Solo falta pulsar «Enviar aportación».</p>
+        </div>
+    </div>
 
-                    // Details
-                    scopeType: 'Whole Work', // 'Whole Work' | 'Movement'
-                    movementNumber: '',
-                    movementName: '',
-                    isExcerpt: false,
-                    excerptDetails: '',
+    <div class="wa-panel">
+        <ol class="wa-steps">
+            <li class="wa-steps__item" :class="{'wa-steps__item--current': step===1}">1. Compositor</li>
+            <li class="wa-steps__item" :class="{'wa-steps__item--current': step===2}">2. Obra</li>
+            <li class="wa-steps__item" :class="{'wa-steps__item--current': step===3}">3. Detalles</li>
+        </ol>
 
-                    // Auth
-                    isAuthenticated: false,
-                    showAuthModal: false,
-                    authEmail: '',
-                    magicLinkSent: false,
-                    pendingSubmission: false,
+        <!-- Step 1: composer -->
+        <div x-show="step === 1">
+            <template x-if="existing.length > 0">
+                <div style="margin-bottom:24px">
+                    <h2 class="wa-section-title">¿Es una de estas?</h2>
+                    <p class="wa-hint" style="margin:0">
+                        Ya aportadas para este examen. Si coincide con la tuya, elígela y tu voto se sumará.
+                    </p>
+                    <div class="wa-results">
+                        <template x-for="r in existing" :key="r.work.id">
+                            <button type="button" @click="selectExisting(r)" class="wa-result">
+                                <span>
+                                    <span x-text="workLabel(r.work)"></span>
+                                    <span class="wa-hint" style="display:block"
+                                        x-text="existingMeta(r)"></span>
+                                </span>
+                                <span class="wa-hint" x-text="r.votes === 1 ? '1 voto' : r.votes + ' votos'"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </template>
 
-                    // Meta
-                    submitStatus: '',
-                    submitSuccess: false,
-                    isVerifying: false,
-                    countdown: 3,
-                    regionSlug: regionSlug,
-                    disciplineSlug: disciplineSlug,
-                    year: year,
-                    storageKey: `wizardState_${regionSlug}/${disciplineSlug}/${year}`,
-                    turnstileToken: '',
+            <h2 class="wa-section-title"
+                x-text="existing.length > 0 ? 'Si es otra, ¿de qué compositor?' : '¿Quién es el compositor?'"></h2>
+            <input type="search" x-model="composerQuery" @input.debounce.300ms="searchComposers()"
+                class="wa-input" placeholder="Escribe un apellido (ej. Albéniz)" aria-label="Buscar compositor"
+                autocomplete="off">
 
-                    async init() {
-                        // 1. Define Global Callback IMMEDIATELY (to handle Turnstile even if auth check is slow)
-                        window.onTurnstileSuccess = (token) => {
-                            this.turnstileToken = token;
-                            this.submitStatus = ""; // Clear errors
-                        };
+            <!-- Before typing: frequent composers -->
+            <div x-show="composerQuery.trim().length < 2 && suggested.length > 0">
+                <p class="wa-hint" style="margin:16px 0 0">Frecuentes en {{ discipline.name }}</p>
+                <div class="wa-results">
+                    <template x-for="c in suggested" :key="c.id">
+                        <button type="button" @click="selectComposer(c)" class="wa-result">
+                            <span x-text="c.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
 
-                        // 2. Restore State (Sync)
-                        this.restoreState();
+            <!-- Local matches -->
+            <div class="wa-results" x-show="composerQuery.trim().length >= 2">
+                <template x-for="c in composerResults" :key="c.id">
+                    <button type="button" @click="selectComposer(c)" class="wa-result">
+                        <span x-text="c.name"></span>
+                    </button>
+                </template>
+            </div>
 
-                        // 3. Register Watchers (Sync)
-                        this.$watch('step', () => this.saveState());
-                        this.$watch('selectedComposer', () => this.saveState());
-                        this.$watch('selectedWork', () => this.saveState());
+            <!-- External catalogues -->
+            <div x-show="composerQuery.trim().length >= 2 && composerSearched" x-cloak class="wa-inset">
+                <p class="wa-hint" style="margin:0 0 4px" x-show="externalLoading">
+                    Buscando en catálogos externos…
+                </p>
+                <button x-show="!externalSearched && !externalLoading" @click="searchExternal()" type="button"
+                    class="wa-link">¿No aparece? Buscar en más catálogos</button>
 
-                        this.$watch('lazyKeyNote', () => this.saveState());
-                        this.$watch('lazyKeyMode', () => this.saveState());
-                        this.$watch('lazyNickname', () => this.saveState());
+                <div x-show="externalResults.length > 0">
+                    <p class="wa-label" style="margin:0">En catálogos externos</p>
+                    <div class="wa-results">
+                        <template x-for="c in externalResults"
+                            :key="c.id ? 'l' + c.id : (c.openopus_id ? 'o' + c.openopus_id : 'w' + c.wikidata_id)">
+                            <button type="button" @click="selectComposer(c)" class="wa-result">
+                                <span>
+                                    <span x-text="c.name"></span>
+                                    <span class="wa-hint" style="display:block" x-text="c.description || ''"></span>
+                                </span>
+                                <span class="wa-hint" x-text="c.source"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
 
-                        // New Scope Watchers
-                        this.$watch('scopeType', () => this.saveState());
-                        this.$watch('movementNumber', () => this.saveState());
-                        this.$watch('movementName', () => this.saveState());
-                        this.$watch('isExcerpt', () => this.saveState());
-                        this.$watch('excerptDetails', () => this.saveState());
+                <div x-show="externalSearched">
+                    <p class="wa-hint" style="margin:8px 0 0" x-show="externalResults.length === 0">
+                        No hay más resultados en los catálogos externos.
+                    </p>
+                    <button @click="useTypedComposer()" type="button" class="wa-link wa-link--muted">
+                        Usar «<span x-text="composerQuery.trim()"></span>» tal como lo he escrito
+                    </button>
+                </div>
+            </div>
+        </div>
 
+        <!-- Step 2: work -->
+        <div x-show="step === 2" x-cloak>
+            <h2 class="wa-section-title">¿Qué obra?</h2>
+            <p class="wa-hint" style="margin:0 0 12px">
+                Compositor: <b x-text="selectedComposer ? selectedComposer.name : ''"></b> ·
+                <button @click="backToComposer()" type="button" class="wa-link wa-link--muted"
+                    style="min-height:0">cambiar</button>
+            </p>
 
-                        // 4. Trigger Async Auth Check (Blocking only the magic link logic below)
-                        await this.checkAuth();
+            <div x-show="canSearchWorks()">
+                <input type="search" x-model="workQuery" @input.debounce.300ms="searchWorks()" class="wa-input"
+                    placeholder="Busca por tipo, número, tonalidad o catálogo (ej. sonata 14, op. 27)"
+                    aria-label="Buscar obra" autocomplete="off">
+                <p class="wa-hint" style="margin:8px 0 0" x-show="worksLoading">Buscando…</p>
+                <p class="wa-hint" style="margin:8px 0 0"
+                    x-show="!worksLoading && worksLoaded && workResults.length === 0">
+                    Ninguna obra coincide. Prueba con menos palabras o descríbela abajo.
+                </p>
+                <div class="wa-results wa-results--scroll">
+                    <template x-for="w in workResults" :key="w.id ? 'l' + w.id : 'o' + w.openopus_id">
+                        <button type="button" @click="selectWork(w)" class="wa-result">
+                            <span>
+                                <span x-text="workLabel(w)"></span>
+                                <span class="wa-hint" style="display:block" x-show="w.subtitle"
+                                    x-text="w.subtitle"></span>
+                            </span>
+                        </button>
+                    </template>
+                </div>
+                <button x-show="!showBuilder" @click="showBuilder = true" type="button" class="wa-link"
+                    style="margin-top:8px">¿No la encuentras? Descríbela</button>
+            </div>
 
-                        // Handle return from Magic Link
-                        if (this.isAuthenticated && this.pendingSubmission && this.step === 3) {
-                            // Wait a bit for DOM
-                            setTimeout(() => {
-                                const btn = document.querySelector('button[x-text="Enviar Aportación"]');
-                                if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                // We don't auto-submit because Turnstile needs interaction
-                            }, 800);
-                        }
+            <!-- Describe a work that is not in any catalogue -->
+            <div x-show="showBuilder || !canSearchWorks()" class="wa-inset">
+                <h3 class="wa-label" style="margin:0 0 4px">Describe la obra</h3>
+                <p class="wa-hint" style="margin:0 0 12px" x-show="!canSearchWorks()">
+                    No tenemos el catálogo de este compositor. Con el tipo de obra basta; añade lo que recuerdes.
+                </p>
 
-                        // Auto-submit check removed from here - waiting for Turnstile instead
-                    },
+                <div class="wa-row">
+                    <label class="wa-field">
+                        <span class="wa-label">Tipo de obra <span class="wa-error">*</span></span>
+                        <input type="text" x-model="builder.type" @input.debounce.400ms="matchBuilder()"
+                            list="work-types" placeholder="ej. Sonata" class="wa-input" autocomplete="off"
+                            maxlength="60">
+                    </label>
+                    <label class="wa-field">
+                        <span class="wa-label">Instrumento(s)</span>
+                        <input type="text" x-model="builder.instrument" @input.debounce.400ms="matchBuilder()"
+                            placeholder="ej. piano" class="wa-input" autocomplete="off" maxlength="40">
+                    </label>
+                </div>
+                <datalist id="work-types">
+                    {% for t in ["Sonata", "Sonatina", "Preludio", "Fuga", "Preludio y fuga", "Invención",
+                    "Estudio", "Nocturno", "Vals", "Balada", "Scherzo", "Impromptu", "Fantasía", "Variaciones",
+                    "Suite", "Partita", "Tocata", "Rondó", "Rapsodia", "Mazurca", "Polonesa", "Capricho",
+                    "Romanza", "Danza", "Canción", "Lied", "Aria", "Concierto", "Sinfonía", "Trío",
+                    "Cuarteto de cuerda", "Quinteto", "Pieza"] %}
+                    <option value="{{ t }}"></option>
+                    {% endfor %}
+                </datalist>
 
-                    saveState() {
-                        const state = {
-                            step: this.step,
-                            selectedComposer: this.selectedComposer,
-                            selectedWork: this.selectedWork,
-                            // Persist Lazy Builder
-                            lazyGenre: this.lazyGenre,
-                            lazyNickname: this.lazyNickname,
-                            lazyKeyNote: this.lazyKeyNote,
-                            lazyKeyMode: this.lazyKeyMode,
-                            lazyOpus: this.lazyOpus,
-                            lazyNumber: this.lazyNumber,
+                <div class="wa-row">
+                    <label class="wa-field">
+                        <span class="wa-label">Número</span>
+                        <input type="text" inputmode="numeric" x-model="builder.number"
+                            @input.debounce.400ms="matchBuilder()" placeholder="ej. 14" class="wa-input"
+                            maxlength="6">
+                    </label>
+                    <label class="wa-field">
+                        <span class="wa-label">Catálogo</span>
+                        <input type="text" x-model="builder.catalogue" @input.debounce.400ms="matchBuilder()"
+                            placeholder="ej. op. 27 n.º 2" class="wa-input" autocomplete="off" maxlength="30">
+                    </label>
+                </div>
 
-                            // Persist Scope
-                            scopeType: this.scopeType,
-                            movementNumber: this.movementNumber,
-                            movementName: this.movementName,
-                            isExcerpt: this.isExcerpt,
-                            excerptDetails: this.excerptDetails,
+                <div class="wa-row" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+                    <label class="wa-field">
+                        <span class="wa-label">Tonalidad</span>
+                        <select x-model="builder.note" @change="matchBuilder()" class="wa-input">
+                            <option value="">—</option>
+                            {% for n in ["do", "re", "mi", "fa", "sol", "la", "si"] %}
+                            <option value="{{ n }}">{{ n|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="wa-field">
+                        <span class="wa-label">Alteración</span>
+                        <select x-model="builder.accidental" @change="matchBuilder()" class="wa-input"
+                            :disabled="!builder.note">
+                            <option value="">natural</option>
+                            <option value="sostenido">sostenido</option>
+                            <option value="bemol">bemol</option>
+                        </select>
+                    </label>
+                    <label class="wa-field">
+                        <span class="wa-label">Modo</span>
+                        <select x-model="builder.mode" @change="matchBuilder()" class="wa-input"
+                            :disabled="!builder.note">
+                            <option value="">—</option>
+                            <option value="mayor">mayor</option>
+                            <option value="menor">menor</option>
+                        </select>
+                    </label>
+                </div>
 
-                            pendingSubmission: this.pendingSubmission || false
-                        };
-                        localStorage.setItem(this.storageKey, JSON.stringify(state));
-                    },
+                <label class="wa-field">
+                    <span class="wa-label">Sobrenombre</span>
+                    <input type="text" x-model="builder.nickname" placeholder="ej. Claro de luna" class="wa-input"
+                        autocomplete="off" maxlength="80">
+                </label>
 
-                    restoreState() {
-                        const saved = localStorage.getItem(this.storageKey);
-                        if (saved) {
-                            const state = JSON.parse(saved);
-                            this.step = state.step || 1;
-                            this.selectedComposer = state.selectedComposer;
-                            this.selectedWork = state.selectedWork;
-                            // Restore Lazy
-                            this.lazyGenre = state.lazyGenre || '';
-                            this.lazyNickname = state.lazyNickname || '';
-                            this.lazyKeyNote = state.lazyKeyNote || '';
-                            this.lazyKeyMode = state.lazyKeyMode || '';
-                            this.lazyOpus = state.lazyOpus || '';
-                            this.lazyNumber = state.lazyNumber || '';
+                <div x-show="builderMatches.length > 0" style="margin-bottom:16px">
+                    <p class="wa-label" style="margin:0">¿Es alguna de estas?</p>
+                    <div class="wa-results">
+                        <template x-for="w in builderMatches" :key="w.id ? 'l' + w.id : 'o' + w.openopus_id">
+                            <button type="button" @click="selectWork(w)" class="wa-result">
+                                <span x-text="workLabel(w)"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
 
-                            // Restore Scope
-                            this.scopeType = state.scopeType || 'Whole Work';
-                            this.movementNumber = state.movementNumber || '';
-                            this.movementName = state.movementName || '';
-                            this.isExcerpt = state.isExcerpt || false;
-                            this.excerptDetails = state.excerptDetails || '';
+                <p class="wa-hint" style="margin:0 0 12px" x-show="builderTitle()">
+                    Se guardará como: <b x-text="builderTitle()"></b>
+                </p>
+                <button @click="useBuilderWork()" :disabled="!builder.type.trim()" type="button"
+                    class="wa-btn wa-btn--primary wa-btn--block">Usar esta obra</button>
+            </div>
+        </div>
 
-                            this.pendingSubmission = state.pendingSubmission || false;
-                        }
-                    },
+        <!-- Step 3: details -->
+        <div x-show="step === 3" x-cloak>
+            <h2 class="wa-section-title">Detalles</h2>
+            <dl class="wa-summary">
+                <dt>Compositor:</dt>
+                <dd x-text="selectedComposer ? selectedComposer.name : ''"></dd>
+                <dt>Obra:</dt>
+                <dd x-text="selectedWork ? workLabel(selectedWork) : ''"></dd>
+            </dl>
 
-                    clearState() {
-                        localStorage.removeItem(this.storageKey);
-                        // Also clear specific fields
-                        this.step = 1;
-                        this.selectedComposer = null;
-                        this.selectedWork = null;
-                        this.lazyGenre = '';
-                        this.lazyNickname = '';
-                        this.lazyKeyNote = '';
-                        this.lazyKeyMode = '';
-                        this.lazyOpus = '';
-                        this.lazyNumber = '';
+            <!-- Already reported: the vote joins the existing report as it stands -->
+            <p x-show="existingReport" class="wa-note" style="display:block;margin-bottom:16px">
+                Esta obra ya está aportada para este examen<span x-show="existingReport && existingReport.details">
+                    (<span x-text="existingReport ? existingReport.details : ''"></span>)</span>.
+                <b>Tu voto se sumará a ella.</b>
+            </p>
 
-                        this.scopeType = 'Whole Work';
-                        this.movementNumber = '';
-                        this.movementName = '';
-                        this.isExcerpt = false;
-                        this.excerptDetails = '';
+            <div x-show="!existingReport">
+                <p class="wa-label" style="margin:0 0 8px">¿Qué parte cayó en el examen?</p>
+                <div class="wa-row">
+                    <label class="wa-option" :class="{'wa-option--selected': scope === 'whole'}">
+                        <input type="radio" x-model="scope" value="whole">
+                        <span>La obra completa</span>
+                    </label>
+                    <label class="wa-option" :class="{'wa-option--selected': scope === 'movement'}">
+                        <input type="radio" x-model="scope" value="movement">
+                        <span>Un movimiento</span>
+                    </label>
+                </div>
 
-                        this.turnstileToken = '';
-                        if (window.turnstile) window.turnstile.reset();
-                    },
+                <div x-show="scope === 'movement'" class="wa-inset">
+                    <div class="wa-row wa-row--1-2">
+                        <label class="wa-field" style="margin:0">
+                            <span class="wa-label">N.º</span>
+                            <select x-model="movementNumber" class="wa-input">
+                                <option value="">—</option>
+                                {% for n in range(1, 11) %}
+                                <option value="{{ n }}">{{ n }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label class="wa-field" style="margin:0">
+                            <span class="wa-label">Nombre o tempo</span>
+                            <input type="text" x-model="movementName" placeholder="ej. Allegro ma non troppo"
+                                class="wa-input" maxlength="80">
+                        </label>
+                    </div>
+                </div>
 
-                    hardReset() {
-                        if (confirm("¿Estás seguro de que quieres limpiar el formulario?")) {
-                            this.clearState();
-                            window.location.reload();
-                        }
-                    },
+                <div style="margin-top:16px">
+                    <label class="wa-check">
+                        <input type="checkbox" x-model="isExcerpt">
+                        <span class="wa-check__text">
+                            <span class="wa-label">Solo un fragmento</span>
+                            <span class="wa-hint">Márcalo si se analizó una parte (unos compases, una sección…).</span>
+                        </span>
+                    </label>
+                    <label x-show="isExcerpt" class="wa-field" style="margin-top:8px">
+                        <span class="wa-label">¿Qué fragmento?</span>
+                        <input type="text" x-model="excerptDetails" placeholder="ej. cc. 1-50, exposición"
+                            class="wa-input" maxlength="120">
+                    </label>
+                </div>
+            </div>
 
-                    async checkAuth() {
-                        try {
-                            const res = await fetch('/api/auth/me', { credentials: 'include' });
-                            if (res.ok) {
-                                this.isAuthenticated = true;
-                                if (this.step === 3) {
-                                    // Optional: Auto-submit if desired, but safer to let user click
-                                    this.submitStatus = "";
-                                }
-                            } else {
-                                this.isAuthenticated = false;
-                            }
-                        } catch (e) {
-                            this.isAuthenticated = false;
-                        }
-                    },
+            {% if turnstile_site_key %}
+            <div class="wa-turnstile">
+                <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
+                    data-callback="onTurnstileSuccess" data-expired-callback="onTurnstileExpired"></div>
+            </div>
+            {% endif %}
 
-                    async requestMagicLink() {
-                        if (!this.authEmail) return;
-                        try {
-                            const payload = {
-                                email: this.authEmail,
-                                next_url: window.location.href // This ensures we come back here
-                            };
+            <button @click="submitReport()" :disabled="submitting || (turnstileKey && !turnstileToken)"
+                type="button" class="wa-btn wa-btn--primary wa-btn--block" style="margin-top:16px">
+                <span x-text="submitting ? 'Enviando…' : 'Enviar aportación'"></span>
+            </button>
+            <p class="wa-hint" style="margin:8px 0 0;text-align:center" x-show="!isAuthenticated">
+                Al enviar te pediremos verificar tu email con un enlace. Solo se usa para contar un voto por persona.
+            </p>
+            <div x-show="submitError" class="wa-banner wa-banner--disputed" style="margin:16px 0 0" role="alert">
+                <p class="wa-banner__title" x-text="submitError"></p>
+            </div>
 
-                            const res = await fetch('/api/auth/magic-link', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-                            if (res.ok) {
-                                this.magicLinkSent = true;
-                                this.pendingSubmission = true; // Mark intention to submit
-                                this.saveState(); // Ensure state is saved before they leave
-                            }
-                        } catch (e) {
-                            console.error("Magic link failed", e);
-                        }
-                    },
+            <div class="wa-split" style="margin-top:16px">
+                <button @click="backToWork()" type="button" class="wa-link wa-link--muted">Cambiar la obra</button>
+                <button @click="startOver()" type="button" class="wa-link wa-link--danger">Empezar de nuevo</button>
+            </div>
+        </div>
+    </div>
 
-                    async searchComposer() {
-                        if (this.searchComposerQuery.length < 2) {
-                            this.composerResults = [];
-                            this.wikidataResults = [];
-                            return;
-                        }
-                        try {
-                            const res = await fetch(`/api/composers/search?q=${this.searchComposerQuery}&source=local`);
-                            if (res.ok) this.composerResults = await res.json();
-                        } catch (e) { console.error(e); }
-                    },
+    <!-- Email verification. Re-created on every opening so it always starts at the form. -->
+    <template x-if="showAuthModal">
+        <div class="wa-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+            <div class="wa-modal__backdrop" aria-hidden="true"></div>
+            {% set next_url = "" %}
+            {% include "partials/auth_panel.html" %}
+        </div>
+    </template>
+</div>
+{% endblock %}
 
-                    async searchWikidata() {
-                        this.wikidataResults = [];
-                        this.wikidataSearched = false;
-                        try {
-                            const res = await fetch(`/api/composers/search?q=${this.searchComposerQuery}&source=wikidata`);
-                            this.wikidataSearched = true;
-                            if (res.ok) {
-                                this.wikidataResults = await res.json();
-                            }
-                        } catch (e) { console.error(e); }
-                    },
+{% block scripts %}
+<script>
+    // Catalogue prefix most often used for a composer, offered as a starting point.
+    const CATALOGUE_PREFIXES = [
+        [/\bbach\b/, 'BWV '], [/mozart/, 'K. '], [/schubert/, 'D. '], [/haydn/, 'Hob. '],
+        [/scarlatti/, 'K. '], [/h[aä]ndel|haendel/, 'HWV '], [/vivaldi/, 'RV '],
+        [/debussy/, 'L. '], [/liszt/, 'S. '],
+    ];
 
-                    selectComposer(c) {
-                        this.selectedComposer = c;
-                        this.searchWorkQuery = '';
-                        this.workResults = [];
-                        // Reset lazy builder
-                        this.lazyGenre = '';
-                        this.lazyNickname = '';
-                        this.lazyKeyNote = '';
-                        this.lazyKeyMode = '';
-                        this.lazyOpus = '';
-                        this.lazyNumber = '';
-                        this.step = 2;
-                    },
+    function emptyBuilder() {
+        return { type: '', instrument: '', number: '', catalogue: '', note: '', accidental: '', mode: '', nickname: '' };
+    }
 
-                    createUnverifiedComposer() {
-                        const name = this.searchComposerQuery;
-                        this.selectedComposer = { name: name, is_verified: false };
-                        this.step = 2;
-                    },
+    function wizard(config) {
+        return {
+            ...config,
+            step: 1,
+            isAuthenticated: config.authenticated,
 
-                    async searchWork() {
-                        const query = this.searchWorkQuery;
-                        if (query.length < 2) {
-                            this.workResults = [];
-                            return;
-                        }
+            // Composer
+            composerQuery: '',
+            composerResults: [],
+            composerSearched: false,
+            externalResults: [],
+            externalSearched: false,
+            externalLoading: false,
+            selectedComposer: null,
 
-                        // Priority 1: OpenOpus Search (if validated link exists)
-                        if (this.selectedComposer.openopus_id) {
-                            try {
-                                const url = `/api/works/search?q=${query}&source=openopus&composer_id=${this.selectedComposer.openopus_id}`;
-                                const res = await fetch(url);
-                                if (res.ok) this.workResults = await res.json();
-                            } catch (e) {
-                                console.error("OpenOpus search failed", e);
-                                this.workResults = [];
-                            }
-                            return;
-                        }
+            // Work
+            workQuery: '',
+            workResults: [],
+            worksLoading: false,
+            worksLoaded: false,
+            showBuilder: false,
+            builder: emptyBuilder(),
+            builderMatches: [],
+            selectedWork: null,
+            existingReport: null,
 
-                        // Priority 2: Local Search (fallback)
-                        if (this.selectedComposer.id) {
-                            try {
-                                const url = `/api/works/search?q=${query}&source=local&composer_id=${this.selectedComposer.id}`;
-                                const res = await fetch(url);
-                                if (res.ok) this.workResults = await res.json();
-                            } catch (e) {
-                                console.error("Local search failed", e);
-                                this.workResults = [];
-                            }
-                            return;
-                        }
+            // Details
+            scope: 'whole',
+            movementNumber: '',
+            movementName: '',
+            isExcerpt: false,
+            excerptDetails: '',
 
-                        // No ID available to search
-                        this.workResults = [];
-                    },
+            // Submission
+            showAuthModal: false,
+            pendingSubmission: false,
+            submitting: false,
+            submitError: '',
+            submitSuccess: false,
+            countdown: 3,
+            turnstileToken: '',
+            requestSeq: {},
 
-                    // Live search for Lazy Builder
-                    updateLazySearch() {
-                        const keyString = (this.lazyKeyNote && this.lazyKeyMode)
-                            ? `${this.lazyKeyNote} ${this.lazyKeyMode}`
-                            : (this.lazyKeyNote ? this.lazyKeyNote : '');
+            get storageKey() {
+                return `wizardState_${this.regionSlug}/${this.disciplineSlug}/${this.year}`;
+            },
 
-                        const parts = [
-                            this.lazyGenre,
-                            this.lazyNickname ? `"${this.lazyNickname}"` : '',
-                            keyString,
-                            this.lazyOpus ? 'Op. ' + this.lazyOpus : '',
-                            this.lazyNumber ? 'No. ' + this.lazyNumber : ''
-                        ];
-                        // Join non-empty parts
-                        const validParts = parts.filter(p => p && p.trim().length > 0);
-                        const potentialTitle = validParts.join(' ');
+            init() {
+                window.onTurnstileSuccess = (token) => { this.turnstileToken = token; this.submitError = ''; };
+                window.onTurnstileExpired = () => { this.turnstileToken = ''; };
 
-                        if (potentialTitle.length > 2) {
-                            this.searchWorkQuery = potentialTitle;
-                            // Only search if we have a composer ID (Local or OpenOpus) to search against
-                            if (this.selectedComposer.id || this.selectedComposer.openopus_id) {
-                                this.searchWork();
-                            } else {
-                                this.workResults = [];
-                            }
-                        }
-                    },
+                this.restoreState();
+                const persisted = ['step', 'selectedComposer', 'selectedWork', 'existingReport', 'builder',
+                    'showBuilder', 'scope', 'movementNumber', 'movementName', 'isExcerpt', 'excerptDetails'];
+                persisted.forEach((key) => this.$watch(key, () => this.saveState()));
 
-                    selectWork(w) {
-                        this.selectedWork = w;
-                        this.step = 3;
-                    },
+                if (this.step === 2 && this.selectedComposer) this.searchWorks();
+            },
 
-                    createUnverifiedWork() {
-                        if (!this.lazyGenre) return; // Guard
+            // ---- persistence (survives the round trip through the email link) ----
+            saveState() {
+                const state = {
+                    step: this.step, selectedComposer: this.selectedComposer, selectedWork: this.selectedWork,
+                    existingReport: this.existingReport, builder: this.builder, showBuilder: this.showBuilder,
+                    scope: this.scope, movementNumber: this.movementNumber, movementName: this.movementName,
+                    isExcerpt: this.isExcerpt, excerptDetails: this.excerptDetails,
+                    pendingSubmission: this.pendingSubmission,
+                };
+                try { localStorage.setItem(this.storageKey, JSON.stringify(state)); } catch (e) { /* private mode */ }
+            },
 
-                        const keyString = (this.lazyKeyNote && this.lazyKeyMode)
-                            ? `${this.lazyKeyNote} ${this.lazyKeyMode}`
-                            : (this.lazyKeyNote ? this.lazyKeyNote : '');
+            restoreState() {
+                let state = null;
+                try { state = JSON.parse(localStorage.getItem(this.storageKey)); } catch (e) { /* ignore */ }
+                if (!state || !state.selectedComposer) return;
+                Object.assign(this, {
+                    step: state.step || 1,
+                    selectedComposer: state.selectedComposer,
+                    selectedWork: state.selectedWork || null,
+                    existingReport: state.existingReport || null,
+                    builder: { ...emptyBuilder(), ...(state.builder || {}) },
+                    showBuilder: !!state.showBuilder,
+                    scope: state.scope || 'whole',
+                    movementNumber: state.movementNumber || '',
+                    movementName: state.movementName || '',
+                    isExcerpt: !!state.isExcerpt,
+                    excerptDetails: state.excerptDetails || '',
+                    pendingSubmission: !!state.pendingSubmission,
+                });
+                if (this.step === 3 && !this.selectedWork) this.step = 2;
+            },
 
-                        const parts = [
-                            this.lazyGenre,
-                            keyString ? 'en ' + keyString : '',
-                            this.lazyOpus ? 'Op. ' + this.lazyOpus : '',
-                            this.lazyNumber ? 'No. ' + this.lazyNumber : ''
-                        ];
-                        // "Sonata en Do Mayor Op. 57"
-                        const title = parts.filter(p => p && p.trim().length > 0).join(' ').trim() || this.searchWorkQuery;
+            startOver() {
+                if (!confirm('¿Borrar lo que has rellenado y empezar de nuevo?')) return;
+                try { localStorage.removeItem(this.storageKey); } catch (e) { /* ignore */ }
+                window.location.reload();
+            },
 
-                        this.selectedWork = {
-                            title: title,
-                            nickname: this.lazyNickname,
-                            is_verified: false
-                        };
-                        this.step = 3;
-                    },
+            // ---- helpers ----
+            workLabel(w) {
+                return w.nickname ? `${w.title} («${w.nickname}»)` : w.title;
+            },
 
-                    async submitReport() {
-                        if (!this.isAuthenticated) {
-                            this.showAuthModal = true;
-                            return;
-                        }
+            existingMeta(r) {
+                return r.details ? `${r.composer.name} · ${r.details}` : r.composer.name;
+            },
 
-                        // Verify Turnstile
-                        if (!this.turnstileToken && '{{ turnstile_site_key }}') {
-                            this.isVerifying = false; // Fix: Stop loading overlay
-                            this.submitStatus = "Por favor completa la verificación anti-spam.";
-                            this.submitSuccess = false;
-
-                            // Scroll to turnstile
-                            const turnstileEl = document.querySelector('.cf-turnstile');
-                            if (turnstileEl) turnstileEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                            return;
-                        }
-
-                        // Map UI Scope to Backend Scope
-                        let finalScope = 'Whole Work';
-                        let finalDetails = null;
-
-                        if (this.isExcerpt) {
-                            finalScope = 'Excerpt'; // Backend Enum
-                            // Construct complex detail string
-                            let base = (this.scopeType === 'Movement')
-                                ? `Mov. ${this.movementNumber || '?'} ${this.movementName ? '(' + this.movementName + ')' : ''}`
-                                : 'Obra Completa';
-                            finalDetails = `${base} - Fragmento: ${this.excerptDetails}`;
-                        } else if (this.scopeType === 'Movement') {
-                            finalScope = 'Movement';
-                            finalDetails = `Mov. ${this.movementNumber || '?'} ${this.movementName ? '(' + this.movementName + ')' : ''}`.trim();
-                        }
-
-                        const payload = {
-                            region_slug: this.regionSlug,
-                            discipline_slug: this.disciplineSlug,
-                            year: this.year,
-                            composer: this.selectedComposer,
-                            work: this.selectedWork,
-                            scope: finalScope,
-                            movement_details: finalDetails,
-                            turnstile_token: this.turnstileToken
-                        };
-
-                        try {
-                            const res = await fetch('/api/reports/', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload),
-                                credentials: 'include'
-                            });
-
-                            if (res.ok) {
-                                this.isVerifying = false;
-                                this.submitSuccess = true;
-                                this.clearState(); // Clear stored state on success
-
-                                // Countdown timer
-                                let timer = setInterval(() => {
-                                    this.countdown--;
-                                    if (this.countdown <= 0) {
-                                        clearInterval(timer);
-                                        window.location.href = `/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}`;
-                                    }
-                                }, 1000);
-                            } else {
-                                this.isVerifying = false;
-                                const err = await res.json();
-                                this.submitSuccess = false;
-                                this.submitStatus = "Error: " + (err.detail || "Unknown error");
-                            }
-                        } catch (e) {
-                            this.isVerifying = false;
-                            this.submitSuccess = false;
-                            this.submitStatus = "Error: Error de red";
-                        }
-                    }
+            // Fetch JSON; resolves to null on failure or when a newer request of the same
+            // kind has been sent meanwhile, so a slow response never overwrites a newer one.
+            async fetchLatest(kind, path, params) {
+                const seq = (this.requestSeq[kind] || 0) + 1;
+                this.requestSeq[kind] = seq;
+                try {
+                    const res = await fetch(`${path}?${new URLSearchParams(params)}`);
+                    if (seq !== this.requestSeq[kind] || !res.ok) return null;
+                    return await res.json();
+                } catch (e) {
+                    return null;
                 }
-            }
-        </script>
-</body>
+            },
 
-</html>
+            // ---- composer ----
+            async searchComposers() {
+                const q = this.composerQuery.trim();
+                this.externalResults = [];
+                this.externalSearched = false;
+                this.externalLoading = false;
+                // Invalidate any external search still in flight for the previous text.
+                this.requestSeq.external = (this.requestSeq.external || 0) + 1;
+                if (q.length < 2) {
+                    this.requestSeq.composers = (this.requestSeq.composers || 0) + 1;
+                    this.composerResults = [];
+                    this.composerSearched = false;
+                    return;
+                }
+                const results = await this.fetchLatest('composers', '/api/composers/search', { q, source: 'local' });
+                if (results === null) return;
+                this.composerResults = results;
+                this.composerSearched = true;
+                // Nothing local: look further without making the user ask.
+                if (results.length === 0) this.searchExternal();
+            },
+
+            async searchExternal() {
+                const q = this.composerQuery.trim();
+                if (q.length < 2) return;
+                this.externalLoading = true;
+                const seq = (this.requestSeq.external || 0) + 1;
+                const results = await this.fetchLatest('external', '/api/composers/search', { q, source: 'external' });
+                if (seq !== this.requestSeq.external) return;
+                this.externalLoading = false;
+                this.externalResults = results || [];
+                this.externalSearched = true;
+            },
+
+            selectComposer(c) {
+                this.selectedComposer = c;
+                this.selectedWork = null;
+                this.existingReport = null;
+                this.workQuery = '';
+                this.workResults = [];
+                this.worksLoaded = false;
+                this.builder = emptyBuilder();
+                this.builderMatches = [];
+                this.showBuilder = false;
+                const name = c.name.toLowerCase();
+                const prefix = CATALOGUE_PREFIXES.find(([pattern]) => pattern.test(name));
+                this.builder.catalogue = prefix ? prefix[1] : 'op. ';
+                this.step = 2;
+                this.searchWorks();
+            },
+
+            useTypedComposer() {
+                const name = this.composerQuery.trim();
+                if (name.length < 2) return;
+                this.selectComposer({ name });
+            },
+
+            backToComposer() {
+                this.step = 1;
+            },
+
+            // ---- work ----
+            canSearchWorks() {
+                const c = this.selectedComposer;
+                return !!c && !!(c.id || c.openopus_id);
+            },
+
+            workSearchParams(q) {
+                const c = this.selectedComposer;
+                const params = { q };
+                if (c.id) params.composer_id = c.id;
+                else params.openopus_composer_id = c.openopus_id;
+                return params;
+            },
+
+            async searchWorks() {
+                if (!this.canSearchWorks()) return;
+                this.worksLoading = true;
+                const seq = (this.requestSeq.works || 0) + 1;
+                const results = await this.fetchLatest('works', '/api/works/search',
+                    this.workSearchParams(this.workQuery.trim()));
+                if (seq !== this.requestSeq.works) return;
+                this.worksLoading = false;
+                if (results === null) return;
+                this.workResults = results;
+                this.worksLoaded = true;
+            },
+
+            builderTitle() {
+                const b = this.builder;
+                const type = b.type.trim();
+                if (!type) return '';
+                let title = type;
+                if (b.instrument.trim()) title += ` para ${b.instrument.trim()}`;
+                if (b.number.trim()) title += ` n.º ${b.number.trim()}`;
+                if (b.note) {
+                    title += ` en ${b.note}`;
+                    if (b.accidental) title += ` ${b.accidental}`;
+                    if (b.mode) title += ` ${b.mode}`;
+                }
+                // The catalogue field starts with a bare prefix ("op. "); it only counts once it has a number.
+                if (/\d/.test(b.catalogue)) title += `, ${b.catalogue.trim()}`;
+                return title;
+            },
+
+            // While the user describes a work, look for it in the catalogue once more.
+            async matchBuilder() {
+                const title = this.builderTitle();
+                if (!this.canSearchWorks() || title.length < 3) { this.builderMatches = []; return; }
+                const results = await this.fetchLatest('builder', '/api/works/search', this.workSearchParams(title));
+                if (results !== null) this.builderMatches = results.slice(0, 5);
+            },
+
+            selectWork(w) {
+                this.selectedWork = w;
+                this.existingReport = w.id ? (this.existing.find((r) => r.work.id === w.id) || null) : null;
+                this.step = 3;
+            },
+
+            selectExisting(r) {
+                this.selectedComposer = r.composer;
+                this.selectedWork = r.work;
+                this.existingReport = r;
+                this.step = 3;
+            },
+
+            useBuilderWork() {
+                const title = this.builderTitle();
+                if (!title) return;
+                this.selectWork({ title, nickname: this.builder.nickname.trim() || null });
+            },
+
+            backToWork() {
+                this.existingReport = null;
+                this.step = 2;
+                if (!this.worksLoaded) this.searchWorks();
+            },
+
+            // ---- details ----
+            detailsText() {
+                const parts = [];
+                if (this.scope === 'movement') {
+                    let movement = this.movementNumber ? `Mov. ${this.movementNumber}` : '';
+                    const name = this.movementName.trim();
+                    if (name) movement = movement ? `${movement} (${name})` : name;
+                    if (movement) parts.push(movement);
+                }
+                if (this.isExcerpt) {
+                    const excerpt = this.excerptDetails.trim();
+                    const label = parts.length ? 'fragmento' : 'Fragmento';
+                    parts.push(excerpt ? `${label}: ${excerpt}` : label);
+                }
+                return parts.join(' · ') || null;
+            },
+
+            // ---- submission ----
+            onMagicLinkSent() {
+                this.pendingSubmission = true;
+                this.saveState();
+            },
+
+            resetTurnstile() {
+                this.turnstileToken = '';
+                if (window.turnstile) { try { window.turnstile.reset(); } catch (e) { /* not rendered */ } }
+            },
+
+            async submitReport() {
+                if (!this.isAuthenticated) { this.showAuthModal = true; return; }
+                if (this.submitting) return;
+
+                const c = this.selectedComposer;
+                const w = this.selectedWork;
+                const payload = {
+                    region_slug: this.regionSlug,
+                    discipline_slug: this.disciplineSlug,
+                    year: this.year,
+                    composer: {
+                        id: c.id || null, openopus_id: c.openopus_id || null,
+                        wikidata_id: c.wikidata_id || null, name: c.name
+                    },
+                    work: {
+                        id: w.id || null, openopus_id: w.openopus_id || null,
+                        title: w.title, nickname: w.nickname || null
+                    },
+                    scope: this.isExcerpt ? 'Excerpt' : (this.scope === 'movement' ? 'Movement' : 'Whole Work'),
+                    movement_details: this.existingReport ? null : this.detailsText(),
+                    turnstile_token: this.turnstileToken,
+                };
+
+                this.submitting = true;
+                this.submitError = '';
+                try {
+                    const res = await fetch('/api/reports/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (res.ok) {
+                        this.submitSuccess = true;
+                        try { localStorage.removeItem(this.storageKey); } catch (e) { /* ignore */ }
+                        const timer = setInterval(() => {
+                            this.countdown--;
+                            if (this.countdown <= 0) { clearInterval(timer); window.location.href = this.eventUrl; }
+                        }, 1000);
+                        return;
+                    }
+                    if (res.status === 401) {
+                        // Session expired while filling in the form.
+                        this.isAuthenticated = false;
+                        this.showAuthModal = true;
+                    } else if (res.status === 429) {
+                        this.submitError = 'Demasiados envíos seguidos. Espera un rato y vuelve a intentarlo.';
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        this.submitError = typeof err.detail === 'string'
+                            ? err.detail : 'No se pudo enviar la aportación. Revisa los datos e inténtalo de nuevo.';
+                    }
+                } catch (e) {
+                    this.submitError = 'No se pudo conectar con el servidor. Inténtalo de nuevo.';
+                }
+                // A Turnstile token is single-use: get a fresh one for the next attempt.
+                this.resetTurnstile();
+                this.submitting = false;
+            },
+        };
+    }
+</script>
+{% endblock %}

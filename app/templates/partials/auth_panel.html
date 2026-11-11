@@ -1,0 +1,47 @@
+{# Email verification form, shared by the vote flow (auth_modal.html) and the contribute form.
+   Expects `next_url` (may be empty: the current page is used). Dispatches `magic-link-sent`
+   when the email goes out and `auth-close` when dismissed; the surrounding modal decides
+   what closing means. #}
+<div class="wa-modal__panel" x-data='authForm({{ (next_url or "")|tojson }})'
+    @click.outside="$dispatch('auth-close')">
+
+    <div x-show="!sent">
+        <h3 class="wa-modal__title" id="auth-modal-title">Verifica tu email</h3>
+        <p class="wa-modal__text">
+            Para contar un solo voto por persona necesitamos comprobar tu email.
+            Te enviaremos un enlace; no hay contraseña ni registro.
+        </p>
+
+        <form @submit.prevent="submit">
+            <div class="wa-field" style="margin-top:24px">
+                <label for="auth-email" class="wa-label">Email</label>
+                <input type="email" x-model="email" id="auth-email" required class="wa-input"
+                    placeholder="tu@correo.es" autocomplete="email">
+            </div>
+
+            <div x-show="error" class="wa-error" x-text="error" role="alert"></div>
+
+            <div class="wa-modal__actions">
+                <button type="button" class="wa-btn wa-btn--ghost" @click="$dispatch('auth-close')">
+                    Cancelar
+                </button>
+                <button type="submit" :disabled="isLoading" class="wa-btn wa-btn--primary">
+                    <span x-text="isLoading ? 'Enviando…' : 'Enviar enlace'"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div x-show="sent" x-cloak>
+        <h3 class="wa-modal__title">Enlace enviado</h3>
+        <p class="wa-modal__text">
+            Revisa <strong x-text="email"></strong> y abre el enlace en este mismo navegador.
+            Si no llega en un par de minutos, mira en la carpeta de correo no deseado.
+        </p>
+        <div class="wa-modal__actions">
+            <button type="button" class="wa-btn wa-btn--ghost" @click="$dispatch('auth-close')">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>

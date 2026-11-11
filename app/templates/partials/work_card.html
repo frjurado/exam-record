@@ -14,6 +14,9 @@
         <a href="{{ item.score_url }}" target="_blank" rel="noopener noreferrer" class="wa-chip"
             title="Búsqueda automática en IMSLP (vía DuckDuckGo)">IMSLP ↗</a>
     </p>
+    {% if item.details %}
+    <p class="wa-work__detail">{{ item.details }}</p>
+    {% endif %}
     <p class="wa-work__meta">
         <b>{{ item.votes }} votos verificados</b> · {{ item.percentage }}% coincidencia
     </p>
@@ -60,6 +63,9 @@
             title="Búsqueda automática en IMSLP (vía DuckDuckGo)">IMSLP ↗</a>
     </p>
 
+    {% if item.details %}
+    <p class="wa-work__detail">{{ item.details }}</p>
+    {% endif %}
     <p class="wa-work__meta">
         {% if event_status == 'disputed' or item.votes > 1 %}
         {{ item.votes }} voto(s) ({{ item.percentage }}%)

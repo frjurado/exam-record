@@ -1,69 +1,80 @@
+from typing import Any
+
 import httpx
 
 WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
+TIMEOUT_SECONDS = 10.0
+# Wikimedia asks automated clients to identify themselves with a way to reach the operator.
+HEADERS = {"User-Agent": "WikiAnalisisBot/1.0 (https://exam-record-beta.fly.dev)"}
+
+# occupation (P106) = composer (Q36834)
+_COMPOSER_FILTER = "haswbstatement:P106=Q36834"
 
 
-async def search_composer(query: str) -> list[dict]:
-    """
-    Search for a composer on Wikidata.
-    """
-    params = {
-        "action": "wbsearchentities",
-        "search": query,
-        "language": "en",
-        "format": "json",
-        "type": "item",
-        # P106 is "occupation", Q36834 is "composer".
-        # Wikidata search is broad, filtering might be needed client-side or we rely on description.
-        # For simple text search, we just pass the query.
-        "limit": "10",
-    }
-
-    headers = {"User-Agent": "ExamRecordbot/1.0 (exam-record-project; contact@example.com)"}
-
-    async with httpx.AsyncClient(headers=headers) as client:
-        response = await client.get(WIKIDATA_API_URL, params=params)
-        response.raise_for_status()
-        data = response.json()
-
-    results = []
-    for item in data.get("search", []):
-        # To filter by occupation, we often need a secondary check because standard search doesn't return claims.
-        # Ideally, we would use a SPARQL query or WBGETENTITIES, but for search box speed, we might have to accept some noise.
-        # However, we can check the description for "composer".
-        description = item.get("description", "").lower()
-        if "composer" in description:
-            results.append(
-                {
-                    "name": item.get("label"),
-                    "wikidata_id": item.get("id"),
-                    "description": item.get("description"),
-                }
-            )
-    return results
+def _pick(values: dict[str, Any], *languages: str) -> str | None:
+    for language in languages:
+        value = values.get(language, {}).get("value")
+        if value:
+            return str(value)
+    return None
 
 
-async def get_composer_by_id(wikidata_id: str) -> dict:
-    """
-    Fetch details for a specific Wikidata ID.
-    Using the entity data endpoint.
-    """
-    url = f"https://www.wikidata.org/wiki/Special:EntityData/{wikidata_id}.json"
-
-    headers = {"User-Agent": "ExamRecordbot/1.0 (exam-record-project; contact@example.com)"}
-
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
-        response = await client.get(url)
-        response.raise_for_status()
-        data = response.json()
-
-    entities = data.get("entities", {})
-    entity = entities.get(wikidata_id, {})
-
-    # Extract labels, claims etc.
-    # This can get complex. For MVP, let's just return the raw entity or a slightly cleaned up version.
+def _entity_summary(wikidata_id: str, entity: dict[str, Any]) -> dict[str, Any]:
+    labels = entity.get("labels", {})
     return {
         "wikidata_id": wikidata_id,
-        "name": entity.get("labels", {}).get("en", {}).get("value"),
-        "claims": entity.get("claims", {}),  # Contains structured data like dates
+        "name": _pick(labels, "es", "en"),
+        "name_en": _pick(labels, "en", "es"),
+        "description": _pick(entity.get("descriptions", {}), "es", "en"),
     }
+
+
+async def _get_entities(client: httpx.AsyncClient, ids: list[str]) -> dict[str, Any]:
+    response = await client.get(
+        WIKIDATA_API_URL,
+        params={
+            "action": "wbgetentities",
+            "ids": "|".join(ids),
+            "props": "labels|descriptions",
+            "languages": "es|en",
+            "format": "json",
+        },
+    )
+    response.raise_for_status()
+    entities: dict[str, Any] = response.json().get("entities", {})
+    return entities
+
+
+async def search_composer(query: str, limit: int = 6) -> list[dict[str, Any]]:
+    """Search Wikidata for people whose occupation is composer.
+
+    The full-text search matches labels and aliases in every language, so "Chaikovski"
+    and "Tchaikovsky" find the same person. Names come back in Spanish when Wikidata
+    has a Spanish label, otherwise in English.
+    """
+    async with httpx.AsyncClient(headers=HEADERS, timeout=TIMEOUT_SECONDS) as client:
+        response = await client.get(
+            WIKIDATA_API_URL,
+            params={
+                "action": "query",
+                "list": "search",
+                "srsearch": f"{_COMPOSER_FILTER} {query}",
+                "srlimit": str(limit),
+                "format": "json",
+            },
+        )
+        response.raise_for_status()
+        ids = [hit["title"] for hit in response.json().get("query", {}).get("search", [])]
+        if not ids:
+            return []
+        entities = await _get_entities(client, ids)
+
+    results = [_entity_summary(qid, entities.get(qid, {})) for qid in ids]
+    return [r for r in results if r["name"]]
+
+
+async def get_composer_by_id(wikidata_id: str) -> dict[str, Any]:
+    """Names and description for one Wikidata entity."""
+    async with httpx.AsyncClient(headers=HEADERS, timeout=TIMEOUT_SECONDS) as client:
+        entities = await _get_entities(client, [wikidata_id])
+    return _entity_summary(wikidata_id, entities.get(wikidata_id, {}))

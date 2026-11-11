@@ -1,5 +1,5 @@
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from slowapi import _rate_limit_exceeded_handler
@@ -16,7 +16,6 @@ from app.core.monitoring import init_sentry
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User
 from app.services.exam_service import ExamService
-from app.services.reference_data_service import ReferenceDataService
 
 init_sentry()
 
@@ -113,27 +112,23 @@ async def contribute_page(
     year: int,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
-) -> HTMLResponse:
+) -> Response:
     # The ExamEvent itself is only created when a report is actually submitted
     # (ReportService.get_or_create_event), so opening this page never writes to the DB.
-    region = await ReferenceDataService.get_region_by_slug(db, region_slug)
-    discipline = await ReferenceDataService.get_discipline_by_slug(db, discipline_slug)
-    if not region or not discipline:
-        return HTMLResponse(content="<h1>Región o Especialidad no encontrada</h1>", status_code=404)
-    if not ExamService.is_valid_exam_year(year):
-        return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
-
-    return templates.TemplateResponse(
-        request,
-        "wizard.html",
-        {
-            "region_slug": region_slug,
-            "discipline_slug": discipline_slug,
-            "year": year,
-            "turnstile_site_key": settings.TURNSTILE_SITE_KEY,
-            "user": current_user,
-        },
+    context = await ExamService.get_contribute_context(
+        db, region_slug, discipline_slug, year, current_user
     )
+    if context is None:
+        return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
+    if context["has_participated"]:
+        # One participation per exam: send them to the page that shows their choice
+        # instead of letting them fill in a form that would be rejected at the end.
+        return RedirectResponse(
+            url=f"/exams/{region_slug}/{discipline_slug}/{year}", status_code=303
+        )
+
+    context["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY or ""
+    return templates.TemplateResponse(request, "wizard.html", context)
 
 
 @app.get("/health")

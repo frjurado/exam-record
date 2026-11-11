@@ -153,6 +153,8 @@ a.wa-year:hover .wa-year__arrow{color:var(--wa-accent);transform:translateX(3px)
 .wa-work__nick{font-style:italic;font-weight:400;color:var(--wa-muted)}
 .wa-work__composer{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--wa-ink-soft);margin:0}
 .wa-work--verified .wa-work__composer{font-size:14px}
+.wa-work__detail{font-size:13px;color:var(--wa-ink-soft);margin:6px 0 0}
+.wa-work__detail::before{content:"Se analizó: ";color:var(--wa-muted)}
 .wa-work__meta{font-size:12px;color:var(--wa-muted);margin:12px 0 0}
 .wa-work__meta b{color:var(--wa-ok);font-weight:600}
 .wa-work--disputed .wa-work__meta b{color:var(--wa-warn)}
@@ -205,6 +207,9 @@ a.wa-year:hover .wa-year__arrow{color:var(--wa-accent);transform:translateX(3px)
 /* Toast (vote success) */
 .wa-toast{position:fixed;left:16px;right:16px;bottom:20px;margin:0 auto;width:fit-content;z-index:60;display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--wa-ink);color:var(--wa-bg);border-radius:var(--wa-r-md);font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(28,32,30,.18)}
 .wa-toast::before{content:"✓";color:var(--wa-accent-soft)}
+.wa-toast--error{background:var(--wa-danger);color:#fff}
+.wa-toast--error::before{content:"!";color:#fff;font-weight:600}
+.wa-toast[hidden]{display:none}
 
 /* Modal (vote confirm, existing participation, auth) */
 .wa-modal{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
@@ -248,6 +253,7 @@ a.wa-year:hover .wa-year__arrow{color:var(--wa-accent);transform:translateX(3px)
 .wa-results--scroll{max-height:240px;overflow-y:auto}
 .wa-result{display:flex;justify-content:space-between;align-items:center;gap:var(--wa-s3);min-height:var(--wa-tap);padding:10px 12px;background:var(--wa-card);border:1px solid var(--wa-rule);border-radius:var(--wa-r-sm);cursor:pointer;transition:border-color var(--wa-ease),background var(--wa-ease)}
 .wa-result:hover{border-color:var(--wa-accent);background:var(--wa-accent-soft)}
+button.wa-result{width:100%;text-align:left;font-size:14px}
 .wa-inset{margin-top:var(--wa-s4);padding:var(--wa-s4);background:var(--wa-bg-soft);border-radius:var(--wa-r-md)}
 .wa-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--wa-s3)}
 .wa-row--1-2{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}

@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload
 from app.api import deps
 from app.core.constants import Calendar, Consensus, Pagination
 from app.models import Discipline, ExamEvent, Region, Report, User, Work
+from app.services import catalog_service
 from app.services.consensus import ConsensusService
 from app.services.reference_data_service import ReferenceDataService
 from app.services.work_service import WorkService
@@ -23,6 +24,69 @@ class ExamService:
     @staticmethod
     def is_valid_exam_year(year: int) -> bool:
         return Calendar.MIN_YEAR <= year <= ExamService.latest_exam_year()
+
+    @staticmethod
+    async def get_contribute_context(
+        db: AsyncSession,
+        region_slug: str,
+        discipline_slug: str,
+        year: int,
+        current_user: User | None,
+    ) -> dict[str, Any] | None:
+        """Template context for the contribute form, or None if the exam cannot exist.
+
+        Includes what the form offers before the user types: the works already reported
+        for this exam and the composers most often reported for the discipline.
+        """
+        region = await ReferenceDataService.get_region_by_slug(db, region_slug)
+        discipline = await ReferenceDataService.get_discipline_by_slug(db, discipline_slug)
+        if not region or not discipline or not ExamService.is_valid_exam_year(year):
+            return None
+
+        stmt = (
+            select(ExamEvent)
+            .options(
+                joinedload(ExamEvent.reports).joinedload(Report.work).joinedload(Work.composer),
+                joinedload(ExamEvent.reports).selectinload(Report.votes),
+            )
+            .filter(
+                ExamEvent.region_id == region.id,
+                ExamEvent.discipline_id == discipline.id,
+                ExamEvent.year == year,
+            )
+        )
+        event = (await db.execute(stmt)).unique().scalar_one_or_none()
+
+        has_participated = False
+        existing_reports: list[dict[str, Any]] = []
+        if event:
+            if current_user:
+                has_participated, _ = await deps.check_user_event_participation(
+                    db, int(current_user.id), int(event.id)
+                )
+            for report in sorted(event.reports, key=lambda r: len(r.votes), reverse=True):
+                existing_reports.append(
+                    {
+                        "composer": catalog_service.composer_dict(report.work.composer),
+                        "work": catalog_service.work_dict(report.work),
+                        "details": report.movement_details,
+                        "votes": len(report.votes),
+                    }
+                )
+
+        return {
+            "region": region,
+            "discipline": discipline,
+            "region_slug": region_slug,
+            "discipline_slug": discipline_slug,
+            "year": year,
+            "user": current_user,
+            "has_participated": has_participated,
+            "existing_reports": existing_reports,
+            "suggested_composers": await catalog_service.CatalogService.suggested_composers(
+                db, discipline.id
+            ),
+        }
 
     @staticmethod
     async def get_exam_context(

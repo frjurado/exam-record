@@ -56,6 +56,70 @@
 
     <!-- Global Modals/Scripts -->
     <div id="auth-modal"></div>
+    <div id="error-toast" class="wa-toast wa-toast--error" role="alert" hidden></div>
+    <script>
+        // Email verification form (partials/auth_panel.html).
+        function authForm(nextUrl) {
+            return {
+                email: '',
+                isLoading: false,
+                sent: false,
+                error: '',
+                async submit() {
+                    if (!this.email || this.isLoading) return;
+                    this.isLoading = true;
+                    this.error = '';
+                    try {
+                        const res = await fetch('/api/auth/magic-link', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: this.email, next_url: nextUrl || window.location.href })
+                        });
+                        if (res.ok) {
+                            this.sent = true;
+                            this.$dispatch('magic-link-sent');
+                        } else if (res.status === 429) {
+                            this.error = 'Demasiados intentos. Espera un minuto y vuelve a probar.';
+                        } else if (res.status === 422) {
+                            this.error = 'Ese email no parece válido.';
+                        } else {
+                            this.error = 'No se pudo enviar el enlace. Inténtalo de nuevo.';
+                        }
+                    } catch (e) {
+                        this.error = 'No se pudo conectar con el servidor.';
+                    } finally {
+                        this.isLoading = false;
+                    }
+                }
+            };
+        }
+
+        // HTMX leaves the page untouched on an error response, so say what happened.
+        (function () {
+            const toast = document.getElementById('error-toast');
+            let timer = null;
+            function show(message) {
+                toast.textContent = message;
+                toast.hidden = false;
+                clearTimeout(timer);
+                timer = setTimeout(() => { toast.hidden = true; }, 6000);
+            }
+            document.body.addEventListener('htmx:responseError', (event) => {
+                const xhr = event.detail.xhr;
+                let message = 'No se pudo completar la acción. Inténtalo de nuevo.';
+                if (xhr.status === 429) {
+                    message = 'Demasiados intentos seguidos. Espera un rato y vuelve a probar.';
+                } else {
+                    try {
+                        const detail = JSON.parse(xhr.responseText).detail;
+                        if (typeof detail === 'string') message = detail;
+                    } catch (e) { /* not JSON */ }
+                }
+                show(message);
+            });
+            document.body.addEventListener('htmx:sendError', () => show('No se pudo conectar con el servidor.'));
+        })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 

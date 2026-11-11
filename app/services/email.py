@@ -24,15 +24,18 @@ class EmailService:
             logger.info(f"EMAIL SIMULATION for {email}: {link}")
             return
 
+        minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
         html_content = f"""
-        <h1>Log in to Exam Record</h1>
-        <p>Click the link below to verify your email and complete your action:</p>
+        <h1 style="font-family: Georgia, serif; font-weight: 500;">WikiAnálisis</h1>
+        <p>Pulsa el botón para verificar tu email y terminar lo que estabas haciendo:</p>
         <p>
-            <a href="{link}" style="background-color: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                Verify Email
+            <a href="{link}" style="background-color: #1F5A5E; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 3px;">
+                Verificar mi email
             </a>
         </p>
-        <p><small>Or copy this link: {link}</small></p>
+        <p><small>Ábrelo en el mismo navegador donde lo pediste. El enlace caduca en {minutes} minutos.</small></p>
+        <p><small>Si el botón no funciona, copia esta dirección: {link}</small></p>
+        <p><small>Si no has pedido este enlace, puedes ignorar este mensaje.</small></p>
         """
 
         try:
@@ -40,7 +43,7 @@ class EmailService:
                 {
                     "from": settings.FROM_EMAIL,
                     "to": email,
-                    "subject": "Verify your email for Exam Record",
+                    "subject": "Tu enlace para WikiAnálisis",
                     "html": html_content,
                 }
             )

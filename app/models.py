@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
+from typing import Any
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.services.text import normalize
 
 
 class User(Base):
@@ -62,6 +64,8 @@ class Composer(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String)
+    # normalize(name): accent- and case-insensitive matching. Kept in sync by a listener below.
+    search_text: Mapped[str | None] = mapped_column(String)
     wikidata_id: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     openopus_id: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
@@ -75,6 +79,8 @@ class Work(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String)
     nickname: Mapped[str | None] = mapped_column(String)
+    # normalize(title + nickname). Kept in sync by a listener below.
+    search_text: Mapped[str | None] = mapped_column(String)
     openopus_id: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     composer_id: Mapped[int] = mapped_column(ForeignKey("composers.id"))
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
@@ -125,3 +131,17 @@ class Vote(Base):
     report: Mapped["Report"] = relationship("Report", back_populates="votes")
 
     __table_args__ = (Index("uix_vote_user_event", "user_id", "event_id", unique=True),)
+
+
+# search_text is derived data. Setting it here, rather than at each place a Composer or
+# Work is created (services, scripts, tests), means no code path can leave it stale.
+@event.listens_for(Composer, "before_insert")
+@event.listens_for(Composer, "before_update")
+def _set_composer_search_text(_mapper: Any, _connection: Any, target: Composer) -> None:
+    target.search_text = normalize(target.name)
+
+
+@event.listens_for(Work, "before_insert")
+@event.listens_for(Work, "before_update")
+def _set_work_search_text(_mapper: Any, _connection: Any, target: Work) -> None:
+    target.search_text = normalize(f"{target.title} {target.nickname or ''}")
