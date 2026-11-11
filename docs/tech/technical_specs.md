@@ -119,6 +119,14 @@ erDiagram
 *   `POST /api/reports/{id}/flag`: Flags an entry.
 *   `POST /api/reports/{id}/vote`: Quick "Me too" vote (adds a Vote to the existing Report; one per user and event).
 
+### admin (server-rendered, role `Admin` only, 404 for anyone else)
+*   `GET /admin`: Flagged reports, works, composers, all reports, count of empty exams.
+*   `POST /admin/reports/{id}/clear-flag`, `POST /admin/reports/{id}/delete`
+*   `POST /admin/works/merge`, `GET|POST /admin/works/{id}` (edit), `POST /admin/works/{id}/link` (OpenOpus), `POST /admin/works/{id}/delete`
+*   `POST /admin/composers/merge`, `POST /admin/composers/rename`
+*   `POST /admin/events/delete-empty`
+*   Roles are granted with `scripts/set_role.py`.
+
 ---
 
 ## 4. External Integrations

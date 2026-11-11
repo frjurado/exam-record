@@ -3,7 +3,8 @@
 A full read of the app, templates, docs and scripts, done on 2026-11-11, and the plan that
 came out of it. Phase 1 (hygiene) was carried out and deployed the same day (section 8).
 Phase 2 (wizard rework) was written, reviewed and released the same day (section 9).
-Phases 3 to 5 have not been started.
+Phase 3 (admin tools) was written and released the same day (section 10).
+Phases 4 and 5 have not been started.
 
 **Summary.** The backend is in decent shape (tests pass, coverage ~88%, clean lint and types).
 The contribution wizard is the weak point: it loses data, creates duplicates and has dead
@@ -162,7 +163,7 @@ See section 8.
 Decided: titles in Spanish where possible, and movement details belong to the report
 (see the end of section 8).
 
-### Phase 3 — Admin tools
+### Phase 3 — Admin tools (done 2026-11-11, see section 10; production cleanup pending)
 Merge two works or two composers (moving their reports and votes), delete a report, clear
 a flag. A small page gated on `role == "Admin"`, or CLI scripts if that is enough. Then
 use it to clean the existing duplicates and any empty events created before Phase 1.
@@ -329,3 +330,68 @@ then merged to `main` and released on 2026-11-11.
   catalogue; the work is described by hand.
 - Existing duplicate works and composers are not merged (Phase 3).
 - `work_card.html` is still two near-identical halves; consensus logic still exists twice.
+
+---
+
+## 10. Phase 3 record: admin tools
+
+Status: written and tested on branch `feat/admin-tools`, approved by the project owner,
+then merged to `main` and released on 2026-11-11. The cleanup of production data with
+these tools is still to be done (see "To do after deploying").
+
+**The page**
+- `/admin`, server-rendered, in Spanish. Only a signed-in user whose role is `Admin` can
+  open it or post to it; everyone else gets a 404. Admins see an "Admin" link in the header.
+- A role is granted with `python scripts/set_role.py <email> Admin` (`--list` shows the
+  users). The role is read from the database on each request, so it applies at once.
+- Every action is a form post that returns to the page with a message saying what
+  happened, or why nothing was changed. Destructive ones ask for confirmation first.
+  Actions are written to the server log (`admin: ...`). There is no undo.
+
+**What it can do**
+- Reports: remove a flag; delete a report together with its votes (the exam row goes too
+  when that was its last report).
+- Works: merge one into another, edit title / nickname / IMSLP address, delete a work
+  nobody reported, and link a hand-typed work to its OpenOpus catalogue entry.
+- Composers: merge one into another, rename.
+- Exams: delete those with no reports (left over from before Phase 1).
+
+**How merging behaves**
+- Merging works moves the reports. When both works were reported for the same exam, the
+  two reports become one: the votes are added together, and missing details and a flag
+  are carried over. No vote can be lost or doubled, because a user has one vote per exam.
+- The kept work takes the catalogue id, nickname and IMSLP address it lacks. If it takes
+  the catalogue id it also takes the catalogue title.
+- Merging composers moves the works; works with the same title (ignoring case, accents
+  and punctuation) are merged as above. The kept composer keeps its name and gains the
+  OpenOpus / Wikidata ids it lacks.
+- Linking a work to the catalogue gives it the catalogue's title and id, or merges it
+  into the stored copy of that catalogue work if there is one.
+
+**Also in this pass**
+- The year list on a region/discipline page links IMSLP for the work it names whether or
+  not the exam is verified (it used to appear only for verified ones).
+- Nickname glossary: "Facile" → "Fácil", "Salzburg Symphony no. N" → "Sinfonía de
+  Salzburgo n.º N", and a dozen other common ones. Nicknames already stored are not
+  rewritten; they can be edited on the admin page.
+- Choosing a catalogue work in the form now adopts a same-titled hand-typed work of that
+  composer instead of storing a second copy.
+
+**Verification**
+- 168 automated tests pass; `ruff` and `mypy` clean.
+- Run locally against a copy of the local database and the live OpenOpus service:
+  access refused when signed out, catalogue link (which merged two works), work merge,
+  deletion of an unreported work, refusal to delete a reported one, empty-exam cleanup.
+- No automated test drives the page in a real browser, so layout and the confirmation
+  dialogs are covered only by manual use.
+
+**To do after deploying**
+- Grant the Admin role to the owner's account.
+- Delete the 93 empty exams, link or merge the four hand-typed works, and fix the two
+  stored nicknames ("Facile", "Salzburg Symphony no. 3").
+
+**Left for later**
+- No history of admin actions beyond the server log, and no undo. Take a backup of the
+  database before a large cleanup.
+- No tool to spot likely duplicates; the lists are sorted so that they sit together.
+- Users cannot be managed from the page (roles are set with the script).

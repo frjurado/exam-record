@@ -57,7 +57,8 @@ fly deploy
 
 1. **HTML pages** (SSR): Routes defined directly in `app/main.py` return Jinja2 templates. The frontend uses HTMX for partial updates and Alpine.js for client-side wizard state.
 2. **API endpoints**: Registered under `/api` prefix via `app/api/api.py`, implemented in `app/api/endpoints/`.
-3. **Auth**: Stateless JWT stored in an HTTP-only cookie. Magic link flow — user requests email → clicks link → token verified → cookie set. Dependency injection in `app/api/deps.py` provides `get_current_user` (required) and `get_current_user_optional`.
+3. **Admin page**: `/admin`, routes in `app/api/endpoints/admin.py`, logic in `app/services/admin_service.py`. Plain form posts that redirect back with a message. Requires `User.role == "Admin"` (404 otherwise); grant it with `python scripts/set_role.py <email> Admin`.
+4. **Auth**: Stateless JWT stored in an HTTP-only cookie. Magic link flow — user requests email → clicks link → token verified → cookie set. Dependency injection in `app/api/deps.py` provides `get_current_user` (required) and `get_current_user_optional`.
 
 ### Data Model
 
