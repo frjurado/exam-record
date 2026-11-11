@@ -114,43 +114,19 @@ async def contribute_page(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
 ) -> HTMLResponse:
-    # 1. Check if event exists
-    stmt = (
-        select(ExamEvent)
-        .join(Region)
-        .join(Discipline)
-        .filter(
-            Region.slug == region_slug, Discipline.slug == discipline_slug, ExamEvent.year == year
-        )
-    )
-    result = await db.execute(stmt)
-    event = result.scalar_one_or_none()
-
-    # 2. Lazy Creation Logic
-    if not event:
-        # Validate year (Optional: limit to reasonable range?)
-        # For now, trust the user or the upstream link.
-
-        # We need Region and Discipline objects to create the event
-        region = await ReferenceDataService.get_region_by_slug(db, region_slug)
-        discipline = await ReferenceDataService.get_discipline_by_slug(db, discipline_slug)
-
-        if not region or not discipline:
-            return HTMLResponse(
-                content="<h1>Región o Especialidad no encontrada</h1>", status_code=404
-            )
-
-        # Create the missing event
-        event = ExamEvent(region_id=region.id, discipline_id=discipline.id, year=year)
-        db.add(event)
-        await db.commit()
-        await db.refresh(event)
+    # The ExamEvent itself is only created when a report is actually submitted
+    # (ReportService.get_or_create_event), so opening this page never writes to the DB.
+    region = await ReferenceDataService.get_region_by_slug(db, region_slug)
+    discipline = await ReferenceDataService.get_discipline_by_slug(db, discipline_slug)
+    if not region or not discipline:
+        return HTMLResponse(content="<h1>Región o Especialidad no encontrada</h1>", status_code=404)
+    if not ExamService.is_valid_exam_year(year):
+        return HTMLResponse(content="<h1>Convocatoria no encontrada</h1>", status_code=404)
 
     return templates.TemplateResponse(
         request,
         "wizard.html",
         {
-            "event_id": event.id,
             "region_slug": region_slug,
             "discipline_slug": discipline_slug,
             "year": year,
@@ -165,28 +141,40 @@ async def health_check() -> dict[str, str]:
     return {"status": "ok", "app": settings.PROJECT_NAME, "environment": settings.ENVIRONMENT}
 
 
+def _public_base_url(request: Request) -> str:
+    """Base URL as seen by visitors. Fly terminates TLS and forwards plain HTTP, so the
+    request's own scheme is http in production even though the site is https-only."""
+    base_url = str(request.base_url).rstrip("/")
+    if settings.ENVIRONMENT == "production" and base_url.startswith("http://"):
+        base_url = "https://" + base_url.removeprefix("http://")
+    return base_url
+
+
 @app.get("/robots.txt", response_class=HTMLResponse)
-async def robots_txt() -> Response:
-    content = """User-agent: *
+async def robots_txt(request: Request) -> Response:
+    content = f"""User-agent: *
 Allow: /
-Sitemap: https://exam-record.com/sitemap.xml
+Sitemap: {_public_base_url(request)}/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
 
 
 @app.get("/sitemap.xml", response_class=HTMLResponse)
 async def sitemap_xml(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
-    stmt = select(ExamEvent).options(joinedload(ExamEvent.region), joinedload(ExamEvent.discipline))
+    # Only events that have at least one report: empty events have nothing to index.
+    stmt = (
+        select(ExamEvent)
+        .where(ExamEvent.reports.any())
+        .options(joinedload(ExamEvent.region), joinedload(ExamEvent.discipline))
+    )
     result = await db.execute(stmt)
     events = result.scalars().all()
 
-    base_url = str(request.base_url).rstrip("/")
+    base_url = _public_base_url(request)
 
     xml_content = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml_content.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-
-    # Home Page (?) - We don't have one exposed yet, maybe just the base
-    # xml_content.append(f'<url><loc>{base_url}/</loc></url>')
+    xml_content.append(f"<url><loc>{base_url}/</loc></url>")
 
     for event in events:
         loc = f"{base_url}/exams/{event.region.slug}/{event.discipline.slug}/{event.year}"

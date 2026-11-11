@@ -34,9 +34,11 @@ class WorkInput(BaseModel):
 
 
 class ReportCreate(BaseModel):
-    event_id: int = Field(
-        ..., description="ID of the exam event this report belongs to", examples=[42]
+    region_slug: str = Field(..., description="Slug of the exam's region", examples=["andalucia"])
+    discipline_slug: str = Field(
+        ..., description="Slug of the exam's discipline", examples=["piano"]
     )
+    year: int = Field(..., description="Natural year the exam took place", examples=[2025])
     composer: ComposerInput = Field(
         ...,
         description="Composer identification — supply id or wikidata_id for known composers, or name to create a new entry",

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -114,9 +114,14 @@ class Vote(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), index=True)
+    # Denormalised from report.event_id so "one participation per user and event" can be
+    # a database constraint instead of a check-then-insert race.
+    event_id: Mapped[int] = mapped_column(ForeignKey("exam_events.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True
     )
 
     user: Mapped["User"] = relationship("User", back_populates="votes")
     report: Mapped["Report"] = relationship("Report", back_populates="votes")
+
+    __table_args__ = (Index("uix_vote_user_event", "user_id", "event_id", unique=True),)

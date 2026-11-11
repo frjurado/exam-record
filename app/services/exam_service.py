@@ -15,6 +15,16 @@ from app.services.work_service import WorkService
 
 class ExamService:
     @staticmethod
+    def latest_exam_year() -> int:
+        """Most recent year whose exam has already taken place (exams are held around June)."""
+        now = datetime.now()
+        return now.year if now.month >= Calendar.ACADEMIC_YEAR_CUTOFF_MONTH else now.year - 1
+
+    @staticmethod
+    def is_valid_exam_year(year: int) -> bool:
+        return Calendar.MIN_YEAR <= year <= ExamService.latest_exam_year()
+
+    @staticmethod
     async def get_exam_context(
         db: AsyncSession,
         region_slug: str,
@@ -83,11 +93,7 @@ class ExamService:
         if not region or not discipline:
             return None
 
-        # Determine anchor year using academic year logic
-        now = datetime.now()
-        base_anchor_year = (
-            now.year if now.month >= Calendar.ACADEMIC_YEAR_CUTOFF_MONTH else now.year - 1
-        )
+        base_anchor_year = ExamService.latest_exam_year()
 
         batch_size = Pagination.DEFAULT_BATCH_SIZE
 

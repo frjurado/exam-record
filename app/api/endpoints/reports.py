@@ -10,7 +10,7 @@ from app.db.session import get_db
 from app.models import Report, User
 from app.schemas.report import ReportCreate, ReportResponse
 from app.services.consensus import ConsensusService
-from app.services.report_service import ReportService
+from app.services.report_service import ALREADY_PARTICIPATED, ReportService
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -95,7 +95,7 @@ async def vote_report(
         db, int(current_user.id), int(report.event_id)
     )
     if has_participated:
-        raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
+        raise HTTPException(status_code=400, detail=ALREADY_PARTICIPATED)
 
     await ReportService.cast_vote(db, int(current_user.id), report)
 

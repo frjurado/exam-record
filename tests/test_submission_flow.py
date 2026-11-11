@@ -25,7 +25,9 @@ async def test_submission_flow_unauthenticated(client: AsyncClient, db):
     # In reports.py: current_user: User = Depends(deps.get_current_user) -> REQUIRED.
 
     payload = {
-        "event_id": event.id,
+        "region_slug": "test-region",
+        "discipline_slug": "test-discipline",
+        "year": 2026,
         "composer": {"name": "Test Composer"},
         "work": {"title": "Test Work"},
         "scope": "Whole Work",
@@ -82,7 +84,9 @@ async def test_submission_flow_full(client: AsyncClient, db):
     client.cookies = response.cookies
 
     payload = {
-        "event_id": event.id,
+        "region_slug": "test-region-2",
+        "discipline_slug": "test-discipline-2",
+        "year": 2026,
         "composer": {"name": "Test Composer"},
         "work": {"title": "Test Work"},
         "scope": "Whole Work",

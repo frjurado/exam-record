@@ -15,7 +15,7 @@ async def setup_data(db):
     db.add(discipline)
     await db.flush()
 
-    event = ExamEvent(year=2030, region_id=region.id, discipline_id=discipline.id)
+    event = ExamEvent(year=2025, region_id=region.id, discipline_id=discipline.id)
     db.add(event)
     await db.commit()
     return event
@@ -66,7 +66,6 @@ async def test_strict_voting_limits(client, db, setup_data, test_user):
     user_email = user.email
     user_role = user.role
 
-    event_id = event.id
     composer_id = composer.id
     composer_name = composer.name
     work2_id = work2.id
@@ -107,7 +106,9 @@ async def test_strict_voting_limits(client, db, setup_data, test_user):
         # C. Try to Contribute (Create new Report) for Work 2 -> Should Fail
         # Prepare payload
         payload = {
-            "event_id": event_id,
+            "region_slug": "test-region",
+            "discipline_slug": "test-discipline",
+            "year": 2025,
             "composer": {"id": composer_id, "name": composer_name},
             "work": {"id": work2_id, "title": work2_title},
             "scope": "Whole Work",

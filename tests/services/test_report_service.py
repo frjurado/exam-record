@@ -218,7 +218,9 @@ async def test_get_or_create_work_no_data_raises(db, composer):
 
 async def test_submit_report_happy_path(db, user, event, composer, work):
     report_in = ReportCreate(
-        event_id=event.id,
+        region_slug="rs-region",
+        discipline_slug="rs-discipline",
+        year=2025,
         composer=ComposerInput(id=composer.id),
         work=WorkInput(id=work.id),
         scope=ScopeEnum.WHOLE_WORK,
@@ -235,11 +237,52 @@ async def test_submit_report_happy_path(db, user, event, composer, work):
     vote = result.scalar_one_or_none()
     assert vote is not None
     assert vote.user_id == user.id
+    assert vote.event_id == event.id
 
 
-async def test_submit_report_event_not_found(db, user, composer, work):
+async def test_submit_report_creates_event_on_first_report(db, user, event, composer, work):
     report_in = ReportCreate(
-        event_id=99999,
+        region_slug="rs-region",
+        discipline_slug="rs-discipline",
+        year=2024,
+        composer=ComposerInput(id=composer.id),
+        work=WorkInput(id=work.id),
+        scope=ScopeEnum.WHOLE_WORK,
+    )
+
+    with patch.object(app_config.settings, "TURNSTILE_SECRET_KEY", None):
+        report = await ReportService.submit_report(db, user, report_in)
+
+    created = (
+        await db.execute(select(ExamEvent).filter(ExamEvent.id == report.event_id))
+    ).scalar_one()
+    assert created.year == 2024
+    assert created.id != event.id
+
+
+@pytest.mark.parametrize("year", [1999, 3000])
+async def test_submit_report_rejects_out_of_range_year(db, user, event, composer, work, year):
+    report_in = ReportCreate(
+        region_slug="rs-region",
+        discipline_slug="rs-discipline",
+        year=year,
+        composer=ComposerInput(id=composer.id),
+        work=WorkInput(id=work.id),
+        scope=ScopeEnum.WHOLE_WORK,
+    )
+
+    with patch.object(app_config.settings, "TURNSTILE_SECRET_KEY", None):
+        with pytest.raises(HTTPException) as exc_info:
+            await ReportService.submit_report(db, user, report_in)
+    assert exc_info.value.status_code == 404
+    assert (await db.execute(select(ExamEvent).filter(ExamEvent.year == year))).first() is None
+
+
+async def test_submit_report_unknown_discipline(db, user, event, composer, work):
+    report_in = ReportCreate(
+        region_slug="rs-region",
+        discipline_slug="no-such-discipline",
+        year=2025,
         composer=ComposerInput(id=composer.id),
         work=WorkInput(id=work.id),
         scope=ScopeEnum.WHOLE_WORK,
@@ -253,7 +296,9 @@ async def test_submit_report_event_not_found(db, user, composer, work):
 
 async def test_submit_report_blocks_double_participation(db, user, event, composer, work):
     report_in = ReportCreate(
-        event_id=event.id,
+        region_slug="rs-region",
+        discipline_slug="rs-discipline",
+        year=2025,
         composer=ComposerInput(id=composer.id),
         work=WorkInput(id=work.id),
         scope=ScopeEnum.WHOLE_WORK,
@@ -269,7 +314,9 @@ async def test_submit_report_blocks_double_participation(db, user, event, compos
 
 async def test_submit_report_scope_prefix_stored(db, user, event, composer, work):
     report_in = ReportCreate(
-        event_id=event.id,
+        region_slug="rs-region",
+        discipline_slug="rs-discipline",
+        year=2025,
         composer=ComposerInput(id=composer.id),
         work=WorkInput(id=work.id),
         scope=ScopeEnum.MOVEMENT,
@@ -286,7 +333,9 @@ async def test_submit_report_scope_prefix_stored(db, user, event, composer, work
 
 async def test_submit_report_scope_prefix_no_details(db, user, event, composer, work):
     report_in = ReportCreate(
-        event_id=event.id,
+        region_slug="rs-region",
+        discipline_slug="rs-discipline",
+        year=2025,
         composer=ComposerInput(id=composer.id),
         work=WorkInput(id=work.id),
         scope=ScopeEnum.MOVEMENT,
@@ -324,6 +373,25 @@ async def test_cast_vote_creates_vote_record(db, user, event, composer, work):
     )
     vote = result.scalar_one_or_none()
     assert vote is not None
+    assert vote.event_id == event.id
+
+
+async def test_cast_vote_twice_is_rejected_by_constraint(db, user, event, composer, work):
+    # Bypasses the application-level participation check on purpose: this is the race
+    # (e.g. a double click) that only the unique (user_id, event_id) index can stop.
+    report = Report(user_id=user.id, event_id=event.id, work_id=work.id, is_flagged=False)
+    db.add(report)
+    await db.commit()
+    await db.refresh(report)
+    user_id = user.id
+
+    await ReportService.cast_vote(db, user_id, report)
+    with pytest.raises(HTTPException) as exc_info:
+        await ReportService.cast_vote(db, user_id, report)
+    assert exc_info.value.status_code == 400
+
+    votes = (await db.execute(select(Vote).filter(Vote.user_id == user_id))).scalars().all()
+    assert len(votes) == 1
 
 
 # ---------------------------------------------------------------------------

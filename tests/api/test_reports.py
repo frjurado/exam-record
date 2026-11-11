@@ -52,7 +52,9 @@ async def test_create_report_simple(client, db, user, event):
     fastapi_app.dependency_overrides[deps.get_current_user] = lambda: user
 
     payload = {
-        "event_id": event.id,
+        "region_slug": "andalucia",
+        "discipline_slug": "piano",
+        "year": 2026,
         "composer": {"id": composer.id},
         "work": {"id": work.id},
         "scope": "Whole Work",
@@ -81,7 +83,9 @@ async def test_create_report_unverified_composer_and_work(client, db, user, even
     fastapi_app.dependency_overrides[deps.get_current_user] = lambda: user
 
     payload = {
-        "event_id": event.id,
+        "region_slug": "andalucia",
+        "discipline_slug": "piano",
+        "year": 2026,
         "composer": {"name": "New Composer"},
         "work": {"title": "New Song"},
         "scope": "Whole Work",

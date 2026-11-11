@@ -11,7 +11,7 @@
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
-<body x-data="wizard({{ event_id }})">
+<body x-data="wizard('{{ region_slug }}', '{{ discipline_slug }}', {{ year }})">
     <!-- Loading Overlay -->
     <div x-show="isVerifying" x-cloak class="wa-overlay" role="status">
         <span class="wa-spinner"></span>
@@ -374,7 +374,7 @@
     </div>
 
         <script>
-            function wizard(eventId) {
+            function wizard(regionSlug, disciplineSlug, year) {
                 return {
                     step: 1,
                     // Composer
@@ -414,7 +414,10 @@
                     submitSuccess: false,
                     isVerifying: false,
                     countdown: 3,
-                    eventId: eventId,
+                    regionSlug: regionSlug,
+                    disciplineSlug: disciplineSlug,
+                    year: year,
+                    storageKey: `wizardState_${regionSlug}/${disciplineSlug}/${year}`,
                     turnstileToken: '',
 
                     async init() {
@@ -480,14 +483,13 @@
                             isExcerpt: this.isExcerpt,
                             excerptDetails: this.excerptDetails,
 
-                            eventId: this.eventId,
                             pendingSubmission: this.pendingSubmission || false
                         };
-                        localStorage.setItem('wizardState_' + this.eventId, JSON.stringify(state));
+                        localStorage.setItem(this.storageKey, JSON.stringify(state));
                     },
 
                     restoreState() {
-                        const saved = localStorage.getItem('wizardState_' + this.eventId);
+                        const saved = localStorage.getItem(this.storageKey);
                         if (saved) {
                             const state = JSON.parse(saved);
                             this.step = state.step || 1;
@@ -513,7 +515,7 @@
                     },
 
                     clearState() {
-                        localStorage.removeItem('wizardState_' + this.eventId);
+                        localStorage.removeItem(this.storageKey);
                         // Also clear specific fields
                         this.step = 1;
                         this.selectedComposer = null;
@@ -756,7 +758,9 @@
                         }
 
                         const payload = {
-                            event_id: this.eventId,
+                            region_slug: this.regionSlug,
+                            discipline_slug: this.disciplineSlug,
+                            year: this.year,
                             composer: this.selectedComposer,
                             work: this.selectedWork,
                             scope: finalScope,

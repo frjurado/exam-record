@@ -3,6 +3,7 @@ from typing import Any
 import httpx
 from fastapi import HTTPException
 from sqlalchemy import Select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
@@ -13,7 +14,11 @@ from app.models import Composer, ExamEvent, Report, User, Vote, Work
 from app.schemas.report import ComposerInput, ReportCreate, ScopeEnum, WorkInput
 from app.services import wikidata
 from app.services.consensus import ConsensusService
+from app.services.exam_service import ExamService
+from app.services.reference_data_service import ReferenceDataService
 from app.services.work_service import WorkService
+
+ALREADY_PARTICIPATED = "Ya has participado en esta convocatoria."
 
 
 class ReportService:
@@ -110,6 +115,34 @@ class ReportService:
         raise HTTPException(status_code=400, detail="Identificación de obra requerida")
 
     @staticmethod
+    async def get_or_create_event(
+        db: AsyncSession, region_slug: str, discipline_slug: str, year: int
+    ) -> ExamEvent:
+        """Resolve the ExamEvent for a region/discipline/year, creating it on first report.
+
+        Events are created here (on an authenticated submission) rather than when the
+        contribute page is opened, so anonymous page views never write to the database.
+        """
+        region = await ReferenceDataService.get_region_by_slug(db, region_slug)
+        discipline = await ReferenceDataService.get_discipline_by_slug(db, discipline_slug)
+        if not region or not discipline or not ExamService.is_valid_exam_year(year):
+            raise HTTPException(status_code=404, detail="Convocatoria no encontrada")
+
+        result = await db.execute(
+            select(ExamEvent).filter(
+                ExamEvent.region_id == region.id,
+                ExamEvent.discipline_id == discipline.id,
+                ExamEvent.year == year,
+            )
+        )
+        event = result.scalar_one_or_none()
+        if not event:
+            event = ExamEvent(region_id=region.id, discipline_id=discipline.id, year=year)
+            db.add(event)
+            await db.flush()
+        return event
+
+    @staticmethod
     async def submit_report(
         db: AsyncSession, current_user: User, report_in: ReportCreate
     ) -> Report:
@@ -119,11 +152,10 @@ class ReportService:
         if settings.TURNSTILE_SECRET_KEY:
             await ReportService.verify_turnstile(report_in.turnstile_token or "")
 
-        # 1. Check Event
-        result = await db.execute(select(ExamEvent).filter(ExamEvent.id == report_in.event_id))
-        event = result.scalar_one_or_none()
-        if not event:
-            raise HTTPException(status_code=404, detail="Convocatoria no encontrada")
+        # 1. Resolve Event
+        event = await ReportService.get_or_create_event(
+            db, report_in.region_slug, report_in.discipline_slug, report_in.year
+        )
 
         # 2. Resolve Composer
         composer = await ReportService.get_or_create_composer(db, report_in.composer)
@@ -136,7 +168,7 @@ class ReportService:
             db, int(current_user.id), int(event.id)
         )
         if has_participated:
-            raise HTTPException(status_code=400, detail="Ya has participado en esta convocatoria.")
+            raise HTTPException(status_code=400, detail=ALREADY_PARTICIPATED)
 
         # 5. Build movement details string
         full_details = report_in.movement_details
@@ -165,10 +197,16 @@ class ReportService:
             await db.flush()
 
         # 7. Add Vote
-        vote = Vote(user_id=current_user.id, report_id=report.id)
+        vote = Vote(user_id=current_user.id, report_id=report.id, event_id=event.id)
         db.add(vote)
 
-        await db.commit()
+        try:
+            await db.commit()
+        except IntegrityError as e:
+            # A concurrent request got there first (same user voting twice, or the same
+            # work being reported twice); the unique constraints are the last line of defence.
+            await db.rollback()
+            raise HTTPException(status_code=400, detail=ALREADY_PARTICIPATED) from e
         await db.refresh(report)
         return report
 
@@ -215,9 +253,13 @@ class ReportService:
     @staticmethod
     async def cast_vote(db: AsyncSession, user_id: int, report: Report) -> None:
         """Insert a Vote for the given report and commit."""
-        vote = Vote(user_id=user_id, report_id=report.id)
+        vote = Vote(user_id=user_id, report_id=report.id, event_id=report.event_id)
         db.add(vote)
-        await db.commit()
+        try:
+            await db.commit()
+        except IntegrityError as e:
+            await db.rollback()
+            raise HTTPException(status_code=400, detail=ALREADY_PARTICIPATED) from e
 
     @staticmethod
     async def set_flagged(db: AsyncSession, report: Report) -> None:
