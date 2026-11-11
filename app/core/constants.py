@@ -1,3 +1,9 @@
+class Roles:
+    # users.role values. Only ADMIN is checked anywhere; it is granted with scripts/set_role.py.
+    VISITOR = "Visitor"
+    ADMIN = "Admin"
+
+
 class Pagination:
     DEFAULT_BATCH_SIZE = 10
 

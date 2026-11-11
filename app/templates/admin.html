@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}WikiAnálisis | Administración{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">Administración</span>
+</nav>
+{% endblock %}
+
+{% macro event_link(report) %}
+<a
+    href="/exams/{{ report.event.region.slug }}/{{ report.event.discipline.slug }}/{{ report.event.year }}">{{
+    report.event.region.name }} · {{ report.event.discipline.name }} · {{ report.event.year }}</a>
+{% endmacro %}
+
+{% macro post_button(action, label, confirm, danger=false) %}
+<form method="post" action="{{ action }}" class="wa-admin__inline" {% if confirm %}
+    onsubmit="return confirm({{ confirm|tojson|forceescape }})" {% endif %}>
+    <button type="submit" class="wa-link{% if danger %} wa-link--danger{% endif %}">{{ label }}</button>
+</form>
+{% endmacro %}
+
+{% block content %}
+<div class="wa-pagehead">
+    <h1 class="wa-pagehead__title">Administración</h1>
+    <p class="wa-pagehead__sub">Los cambios de esta página son inmediatos y no se pueden deshacer.</p>
+</div>
+
+{% if msg %}<p class="wa-note wa-admin__msg" role="status">{{ msg }}</p>{% endif %}
+{% if error %}<p class="wa-note wa-admin__msg wa-admin__msg--error" role="alert">{{ error }}</p>{% endif %}
+
+<section class="wa-panel wa-admin__section" id="marcados">
+    <h2 class="wa-section-title">Reportes marcados ({{ flagged|length }})</h2>
+    {% if flagged %}
+    <table class="wa-table">
+        <thead>
+            <tr>
+                <th>Convocatoria</th>
+                <th>Obra</th>
+                <th>Votos</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in flagged %}
+            <tr>
+                <td>{{ event_link(report) }}</td>
+                <td>{{ report.work.title }}<br><span class="wa-hint">{{ report.work.composer.name }}</span></td>
+                <td>{{ report.votes|length }}</td>
+                <td class="wa-table__actions">
+                    {{ post_button("/admin/reports/%d/clear-flag"|format(report.id), "Quitar marca", "") }}
+                    {{ post_button("/admin/reports/%d/delete"|format(report.id), "Eliminar",
+                    "¿Eliminar este reporte y sus votos?", danger=true) }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="wa-hint">Ninguno.</p>
+    {% endif %}
+</section>
+
+<section class="wa-panel wa-admin__section" id="obras">
+    <h2 class="wa-section-title">Obras ({{ works|length }})</h2>
+
+    <form method="post" action="/admin/works/merge" class="wa-inset wa-admin__form"
+        onsubmit="return confirm('¿Fusionar? La primera obra desaparece y sus reportes y votos pasan a la segunda.')">
+        <div class="wa-field">
+            <label class="wa-label" for="work-source">Fusionar esta obra (desaparece)</label>
+            <select name="source_id" id="work-source" class="wa-input" required>
+                <option value="">Elegir…</option>
+                {% for row in works %}
+                <option value="{{ row.work.id }}">{{ row.composer.name }} — {{ row.work.title }} (#{{ row.work.id }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="wa-field">
+            <label class="wa-label" for="work-target">en esta (se conserva)</label>
+            <select name="target_id" id="work-target" class="wa-input" required>
+                <option value="">Elegir…</option>
+                {% for row in works %}
+                <option value="{{ row.work.id }}">{{ row.composer.name }} — {{ row.work.title }} (#{{ row.work.id }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="wa-btn wa-btn--primary wa-btn--sm">Fusionar obras</button>
+    </form>
+
+    <table class="wa-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Obra</th>
+                <th>Reportes</th>
+                <th>Catálogo</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in works %}
+            <tr>
+                <td>{{ row.work.id }}</td>
+                <td>
+                    {{ row.work.title }}{% if row.work.nickname %} («{{ row.work.nickname }}»){% endif %}
+                    <br><span class="wa-hint">{{ row.composer.name }}</span>
+                </td>
+                <td>{{ row.reports }}</td>
+                <td>{{ "Sí" if row.work.openopus_id else "No" }}</td>
+                <td class="wa-table__actions">
+                    <a class="wa-link" href="/admin/works/{{ row.work.id }}">Editar</a>
+                    {% if not row.reports %}
+                    {{ post_button("/admin/works/%d/delete"|format(row.work.id), "Eliminar",
+                    "¿Eliminar esta obra sin reportes?", danger=true) }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section class="wa-panel wa-admin__section" id="compositores">
+    <h2 class="wa-section-title">Compositores ({{ composers|length }})</h2>
+
+    <form method="post" action="/admin/composers/merge" class="wa-inset wa-admin__form"
+        onsubmit="return confirm('¿Fusionar? El primer compositor desaparece y sus obras pasan al segundo.')">
+        <div class="wa-field">
+            <label class="wa-label" for="composer-source">Fusionar este compositor (desaparece)</label>
+            <select name="source_id" id="composer-source" class="wa-input" required>
+                <option value="">Elegir…</option>
+                {% for row in composers %}
+                <option value="{{ row.composer.id }}">{{ row.composer.name }} ({{ row.works }} obras, #{{
+                    row.composer.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="wa-field">
+            <label class="wa-label" for="composer-target">en este (se conserva, con su nombre)</label>
+            <select name="target_id" id="composer-target" class="wa-input" required>
+                <option value="">Elegir…</option>
+                {% for row in composers %}
+                <option value="{{ row.composer.id }}">{{ row.composer.name }} ({{ row.works }} obras, #{{
+                    row.composer.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="wa-btn wa-btn--primary wa-btn--sm">Fusionar compositores</button>
+    </form>
+
+    <form method="post" action="/admin/composers/rename" class="wa-inset wa-admin__form">
+        <div class="wa-field">
+            <label class="wa-label" for="composer-rename">Cambiar el nombre de</label>
+            <select name="composer_id" id="composer-rename" class="wa-input" required>
+                <option value="">Elegir…</option>
+                {% for row in composers %}
+                <option value="{{ row.composer.id }}">{{ row.composer.name }} (#{{ row.composer.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="wa-field">
+            <label class="wa-label" for="composer-name">Nombre nuevo</label>
+            <input type="text" name="name" id="composer-name" class="wa-input" maxlength="200" required>
+        </div>
+        <button type="submit" class="wa-btn wa-btn--primary wa-btn--sm">Cambiar nombre</button>
+    </form>
+</section>
+
+<section class="wa-panel wa-admin__section" id="reportes">
+    <h2 class="wa-section-title">Todos los reportes ({{ reports|length }})</h2>
+    <table class="wa-table">
+        <thead>
+            <tr>
+                <th>Convocatoria</th>
+                <th>Obra</th>
+                <th>Votos</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr>
+                <td>{{ event_link(report) }}</td>
+                <td>
+                    {{ report.work.title }}
+                    <br><span class="wa-hint">{{ report.work.composer.name }}{% if report.movement_details %} · {{
+                        report.movement_details }}{% endif %}</span>
+                </td>
+                <td>{{ report.votes|length }}</td>
+                <td class="wa-table__actions">
+                    {{ post_button("/admin/reports/%d/delete"|format(report.id), "Eliminar",
+                    "¿Eliminar este reporte y sus votos?", danger=true) }}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="wa-hint">Aún no hay reportes.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section class="wa-panel wa-admin__section" id="convocatorias">
+    <h2 class="wa-section-title">Convocatorias vacías ({{ empty_events }})</h2>
+    <p class="wa-hint">
+        Convocatorias sin ningún reporte, creadas por visitas antiguas a la página. Borrarlas no
+        cambia nada de lo que ven los usuarios.
+    </p>
+    {% if empty_events %}
+    <form method="post" action="/admin/events/delete-empty"
+        onsubmit="return confirm('¿Eliminar las convocatorias vacías?')">
+        <button type="submit" class="wa-btn wa-btn--ghost wa-btn--sm">Eliminar convocatorias vacías</button>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}

@@ -133,6 +133,21 @@ _NICKNAMES = {
     "Titan": "Titán",
     "From the New World": "Del Nuevo Mundo",
     "Funeral March": "Marcha fúnebre",
+    "Facile": "Fácil",
+    "Salzburg Symphony no. 1": "Sinfonía de Salzburgo n.º 1",
+    "Salzburg Symphony no. 2": "Sinfonía de Salzburgo n.º 2",
+    "Salzburg Symphony no. 3": "Sinfonía de Salzburgo n.º 3",
+    "Jupiter": "Júpiter",
+    "Prague": "Praga",
+    "Paris": "París",
+    "Turkish": "Turca",
+    "Coronation": "Coronación",
+    "Hunt": "La caza",
+    "Dissonance": "Las disonancias",
+    "Clock": "El reloj",
+    "London": "Londres",
+    "Military": "Militar",
+    "Drumroll": "Redoble de timbal",
 }
 
 _WORDS = {

@@ -638,3 +638,28 @@ async def test_build_item_dict_structure(db, user, event, composer, work):
     assert "score_url" in item
     assert item["votes"] == 1
     assert item["percentage"] == 100
+
+
+async def test_get_or_create_work_catalogue_pick_adopts_same_titled_hand_typed_work(db):
+    composer = Composer(name="OO Composer", openopus_id="145", is_verified=True)
+    db.add(composer)
+    await db.flush()
+    typed = Work(title="sonata para piano nº 8", composer_id=composer.id, is_verified=False)
+    db.add(typed)
+    await db.commit()
+    catalogue = [{"openopus_id": "16", "title": "Sonata para piano n.º 8", "nickname": "Patética"}]
+
+    with patch(
+        "app.services.report_service.openopus.get_composer_works",
+        new=AsyncMock(return_value=catalogue),
+    ):
+        result = await ReportService.get_or_create_work(db, WorkInput(openopus_id="16"), composer)
+    await db.commit()
+
+    assert result.id == typed.id
+    assert (result.title, result.nickname, result.openopus_id) == (
+        "Sonata para piano n.º 8",
+        "Patética",
+        "16",
+    )
+    assert result.is_verified is True

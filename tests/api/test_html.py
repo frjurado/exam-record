@@ -175,3 +175,23 @@ async def test_event_page_shows_what_was_analysed(client, db, event):
     response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2026")
     assert response.status_code == 200
     assert "Mov. 2 (Adagio) · fragmento: cc. 1-40" in response.text
+
+
+@pytest.mark.asyncio
+async def test_year_list_links_score_for_a_single_unverified_report(client, db, event):
+    event_obj, region, discipline = event
+    user = User(email="score@test.com")
+    composer = Composer(name="Score Composer")
+    db.add_all([user, composer])
+    await db.flush()
+    work = Work(title="Score Work", composer_id=composer.id)
+    db.add(work)
+    await db.flush()
+    db.add(Report(user_id=user.id, event_id=event_obj.id, work_id=work.id))
+    await db.commit()
+
+    response = await client.get(f"/exams/{region.slug}/{discipline.slug}")
+    assert response.status_code == 200
+    assert "Score Work" in response.text
+    # One report is not "verified", but the work is named, so its score link is offered.
+    assert "IMSLP ↗" in response.text

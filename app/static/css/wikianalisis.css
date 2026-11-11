@@ -277,3 +277,16 @@ button.wa-result{width:100%;text-align:left;font-size:14px}
 @media (min-width:720px){.wa-panel{padding:var(--wa-s6)}.wa-steps{font-size:13px}.wa-section-title{font-size:26px}}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Admin page */
+.wa-admin__section{margin-bottom:var(--wa-s5)}
+.wa-admin__msg{display:block;margin-bottom:var(--wa-s4)}
+.wa-admin__msg--error{background:var(--wa-warn-soft);color:var(--wa-danger)}
+.wa-admin__form{margin-bottom:var(--wa-s4)}
+.wa-admin__inline{display:inline}
+.wa-table{width:100%;border-collapse:collapse;font-size:13px}
+.wa-table th{text-align:left;font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--wa-muted)}
+.wa-table th,.wa-table td{padding:8px 10px 8px 0;border-bottom:1px solid var(--wa-rule);vertical-align:top}
+.wa-table__actions{white-space:nowrap;text-align:right}
+.wa-table__actions .wa-link{min-height:0;margin-left:var(--wa-s3)}
+select.wa-input{appearance:auto}

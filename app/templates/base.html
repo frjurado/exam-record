@@ -39,6 +39,7 @@
             <a href="/" class="wa-logo"><span class="wa-logo__dot"></span><span>Wiki<i>Análisis</i></span></a>
             <div class="wa-meta">
                 {% if user %}
+                {% if user.role == "Admin" %}<a href="/admin">Admin</a>{% endif %}
                 <span class="wa-meta__email">{{ user.email }}</span>
                 <a href="/logout">Salir</a>
                 {% endif %}

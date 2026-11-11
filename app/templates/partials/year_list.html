@@ -22,11 +22,11 @@
     <span class="wa-year__status wa-status wa-status--neutral">{{ item.status }}</span>
     {% endif %}
 
-    <!-- IMSLP Button (only if verified and existing) -->
-    {% if item.best_work and item.best_work.is_verified and item.best_work.imslp_url %}
+    <!-- IMSLP link for the work named in the row, verified or not -->
+    {% if item.best_work and item.best_work.imslp_url %}
     <object class="wa-year__imslp"> <!-- object tag prevents link nesting -->
         <a href="{{ item.best_work.imslp_url }}" target="_blank" rel="noopener noreferrer" class="wa-chip"
-            title="Ver partitura en IMSLP" onclick="event.stopPropagation();">IMSLP ↗</a>
+            title="Búsqueda automática en IMSLP (vía DuckDuckGo)" onclick="event.stopPropagation();">IMSLP ↗</a>
     </object>
     {% endif %}
 

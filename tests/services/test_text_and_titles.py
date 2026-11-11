@@ -81,3 +81,19 @@ def test_openopus_titles_are_rendered_in_spanish(raw, title, nickname):
 )
 def test_titles_outside_the_glossary_are_left_alone(raw):
     assert localize_openopus_title(raw) == (raw, None)
+
+
+@pytest.mark.parametrize(
+    ("raw", "nickname"),
+    [
+        ('Piano Sonata no. 16 in C major, K.545, "Facile"', "Fácil"),
+        (
+            'Divertimento in F major, K.138, "Salzburg Symphony no. 3"',
+            "Sinfonía de Salzburgo n.º 3",
+        ),
+        # A place name with no Spanish form stays as it is.
+        ('Piano Sonata no. 13 in B flat major, K. 333, "Linz"', "Linz"),
+    ],
+)
+def test_nicknames_reported_untranslated_in_production(raw, nickname):
+    assert localize_openopus_title(raw)[1] == nickname

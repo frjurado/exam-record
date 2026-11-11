@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}WikiAnálisis | Editar obra{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <a href="/admin#obras">Administración</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">Obra #{{ work.id }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="wa-pagehead">
+    <h1 class="wa-pagehead__title">{{ work.title }}</h1>
+    <p class="wa-pagehead__sub">{{ work.composer.name }}</p>
+</div>
+
+{% if msg %}<p class="wa-note wa-admin__msg" role="status">{{ msg }}</p>{% endif %}
+{% if error %}<p class="wa-note wa-admin__msg wa-admin__msg--error" role="alert">{{ error }}</p>{% endif %}
+
+<section class="wa-panel wa-admin__section">
+    <h2 class="wa-section-title">Datos</h2>
+    <form method="post" action="/admin/works/{{ work.id }}">
+        <div class="wa-field">
+            <label class="wa-label" for="title">Título</label>
+            <input type="text" name="title" id="title" class="wa-input" maxlength="300" required
+                value="{{ work.title }}">
+        </div>
+        <div class="wa-field">
+            <label class="wa-label" for="nickname">Sobrenombre</label>
+            <input type="text" name="nickname" id="nickname" class="wa-input" maxlength="200"
+                value="{{ work.nickname or '' }}">
+        </div>
+        <div class="wa-field">
+            <label class="wa-label" for="imslp_url">Página en IMSLP</label>
+            <input type="url" name="imslp_url" id="imslp_url" class="wa-input" maxlength="500"
+                placeholder="https://imslp.org/wiki/…" value="{{ work.imslp_url or '' }}">
+            <span class="wa-hint">Si se deja vacío, el enlace «IMSLP» hace una búsqueda automática.</span>
+        </div>
+        <button type="submit" class="wa-btn wa-btn--primary wa-btn--sm">Guardar</button>
+    </form>
+</section>
+
+<section class="wa-panel wa-admin__section">
+    <h2 class="wa-section-title">Catálogo</h2>
+    {% if work.openopus_id %}
+    <p class="wa-hint">Esta obra ya está vinculada al catálogo de OpenOpus (n.º {{ work.openopus_id }}).</p>
+    {% elif not work.composer.openopus_id %}
+    <p class="wa-hint">
+        El compositor no está vinculado a OpenOpus, así que no hay catálogo donde buscar. Si es un
+        duplicado de un compositor del catálogo, fusiónalos primero.
+    </p>
+    {% else %}
+    <p class="wa-hint">
+        Si esta obra escrita a mano es una del catálogo, búscala y vincúlala: tomará el título del
+        catálogo y, si esa obra ya existía aquí, las dos se fusionan.
+    </p>
+    <form method="get" action="/admin/works/{{ work.id }}" class="wa-admin__form">
+        <div class="wa-field">
+            <label class="wa-label" for="q">Buscar en el catálogo de {{ work.composer.name }}</label>
+            <input type="search" name="q" id="q" class="wa-input" value="{{ q }}" placeholder="sonata 14">
+        </div>
+        <button type="submit" class="wa-btn wa-btn--ghost wa-btn--sm">Buscar</button>
+    </form>
+    {% if q %}
+    <table class="wa-table">
+        <tbody>
+            {% for candidate in candidates %}
+            <tr>
+                <td>
+                    {{ candidate.title }}{% if candidate.nickname %} («{{ candidate.nickname }}»){% endif %}
+                </td>
+                <td class="wa-table__actions">
+                    <form method="post" action="/admin/works/{{ work.id }}/link" class="wa-admin__inline"
+                        onsubmit="return confirm('¿Vincular con esta obra del catálogo?')">
+                        <input type="hidden" name="openopus_id" value="{{ candidate.openopus_id }}">
+                        <button type="submit" class="wa-link">Vincular</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="wa-hint">Sin resultados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

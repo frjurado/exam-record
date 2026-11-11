@@ -191,6 +191,21 @@ class ReportService:
                 return work
             entry = await ReportService._find_catalogue_work(composer, data.openopus_id)
             if entry:
+                # The same work may already be stored from a hand-typed title: adopt it
+                # into the catalogue instead of storing it twice.
+                wanted = text.normalize(entry["title"])
+                result = await db.execute(
+                    select(Work)
+                    .filter(Work.composer_id == composer.id, Work.openopus_id.is_(None))
+                    .order_by(Work.id)
+                )
+                for existing in result.scalars().all():
+                    if text.normalize(existing.title) == wanted:
+                        existing.openopus_id = data.openopus_id
+                        existing.title = entry["title"]
+                        existing.nickname = existing.nickname or entry["nickname"]
+                        existing.is_verified = True
+                        return existing
                 work = Work(
                     title=entry["title"],
                     nickname=entry["nickname"],
