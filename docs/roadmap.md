@@ -2,6 +2,11 @@
 
 This roadmap defines the critical path to launch the "Constrained Beta" (Andalucía + Piano).
 
+> **Status (November 2026):** Phases 1–7 are shipped, and so is most of Phase 8. The beta now
+> covers Andalucía with 17 disciplines. Still open from Phase 8: the wikianalisis.org domain
+> (8.1) and the wizard bug list (8.4). Phases 9 onwards are summarised at the end; the detail
+> lives in [reports/2026_11_11_review_and_plan.md](reports/2026_11_11_review_and_plan.md).
+
 ## Phase 1: Foundation & Setup (Week 1)
 **Goal:** A running server with schema and basic input capability.
 *   **1.1 Project Init:** Repo setup, FastAPI skeleton, Environment config.
@@ -80,3 +85,11 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
     *   Add a small "About" note at the bottom of index page.
 *   **8.4 Bugs & issues:**
     *   Revise wizard_buglist.md and fix the most important issues.
+
+## Phase 9 onwards (planned November 2026)
+Detail and reasoning in [reports/2026_11_11_review_and_plan.md](reports/2026_11_11_review_and_plan.md).
+*   **9. Hygiene:** [Done] Remove junk, stop creating events on page view, enforce one vote per user and event in the database, fix docs.
+*   **10. Wizard rework:** Deduplicate free-text entries, better composer/work search, prepopulation, show movement details.
+*   **11. Admin tools:** Merge works/composers, delete a report, clear a flag.
+*   **12. Statistics:** Most frequent works and composers, work and composer pages, analytics.
+*   **13. Email capture:** "Avísame" sign-up with one mailing after the June exams.

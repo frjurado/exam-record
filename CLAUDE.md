@@ -63,11 +63,15 @@ fly deploy
 
 The core data flow is: a user submits a **Report** linking a **Work** (by a **Composer**) to an **ExamEvent** (year × region × discipline). Other users cast **Votes** on reports. The **ConsensusService** (`app/services/consensus.py`) aggregates votes at query time — nothing is stored.
 
-Key constraint: `(event_id, work_id)` is unique on `Report`, so each work can appear at most once per exam event.
+Key constraints:
+- `(event_id, work_id)` is unique on `Report`, so each work can appear at most once per exam event.
+- `(user_id, event_id)` is unique on `Vote` (`event_id` is denormalised from the report), so a user participates at most once per exam event. The migration skips this index if existing data violates it — check the boot log for `SKIPPED unique index`.
+
+An `ExamEvent` is created by `ReportService.get_or_create_event` when the first report for that region/discipline/year is submitted. Page views never create events, and years outside `Calendar.MIN_YEAR`..latest exam year are rejected.
 
 ### External Integrations
 
-- **Wikidata SPARQL** (`app/services/wikidata.py`): Composer search/lookup
+- **Wikidata API** (`app/services/wikidata.py`): Composer search/lookup via `wbsearchentities`
 - **OpenOpus API** (`app/services/openopus.py`): Work search by composer
 - **Resend** (`app/services/email.py`): Magic link emails — falls back to console logging if `RESEND_API_KEY` is unset (dev mode)
 - **Cloudflare Turnstile**: CAPTCHA on report submission
@@ -86,7 +90,7 @@ Required:
 Optional (have dev defaults):
 - `RESEND_API_KEY` — omit to log emails to console
 - `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` — omit to skip CAPTCHA
-- `FROM_EMAIL` — defaults to `noreply@wikianalisis.org`
+- `FROM_EMAIL` — code default is `onboarding@resend.dev`; production sets `noreply@wikianalisis.org` in `fly.toml`
 - `ENVIRONMENT` — `development` or `production`
 - `SENTRY_DSN` — omit to disable error tracking; only takes effect when `ENVIRONMENT=production` (see `app/core/monitoring.py`)
 

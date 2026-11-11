@@ -23,7 +23,12 @@ Given the requirement for SEO (browse pages) and complex interactions (data entr
 
 ## 2. Database Schema (ERD)
 
-The schema is normalized to separate the "Event" (Container) from the "Report" (Vote).
+The schema separates the "Event" (container), the "Report" (one work proposed for an event) and the "Vote" (one user backing one report).
+
+> The diagram below is the original design. The live schema (`app/models.py`) adds:
+> a `votes` table (`user_id`, `report_id`, `event_id`, `created_at`) with a unique
+> `(user_id, event_id)` index, a unique `(event_id, work_id)` constraint on `reports`,
+> `composers.openopus_id`, and `works.imslp_url`.
 
 ```mermaid
 erDiagram
@@ -88,16 +93,16 @@ erDiagram
 ```
 
 ### Key Logic
-*   **Consensus Calculation:** We do not store "Consensus" in a table. We calculate it on the fly (or via Materialized View) by aggregating `Reports` grouped by `event_id` and `work_id`.
-    *   *Query:* `SELECT work_id, COUNT(*) as votes FROM reports WHERE event_id = X GROUP BY work_id`
+*   **Consensus Calculation:** We do not store "Consensus" in a table. `ConsensusService` calculates it on the fly by counting the `Votes` on each `Report` of an event (each work has at most one report per event).
+*   **Event creation:** An `ExamEvent` row is created when the first report for that region/discipline/year is submitted, never on a page view.
 
 ---
 
 ## 3. API Design (Key Endpoints)
 
 ### auth
-*   `POST /auth/magic-link`: Sends email with token.
-*   `GET /auth/verify?token=...`: Sets HTTP-only cookie session.
+*   `POST /api/auth/magic-link`: Sends email with token.
+*   `GET /api/auth/verify?token=...`: Sets HTTP-only cookie session.
 
 ### search
 *   `GET /exams/{region}/{discipline}/{year}`: Returns the Exam Event page with list of proposed works + consensus status.
@@ -107,16 +112,16 @@ erDiagram
 *   `GET /api/composers/search?q=...`: Proxy to local cache or Wikidata.
 *   `GET /api/works/search?q=...`: Proxy to local cache or OpenOpus.
 *   `POST /api/reports`: Submits a new exam report.
-    *   *Payload:* `{ event_id, work_data: {...}, composer_data: {...} }`
-    *   *Logic:* Handles "Get or Create" for Composers/Works.
+    *   *Payload:* `{ region_slug, discipline_slug, year, composer: {...}, work: {...}, scope, movement_details }`
+    *   *Logic:* Handles "Get or Create" for the Event, Composer and Work, and casts the submitter's vote.
 
 ### moderation
 *   `POST /api/reports/{id}/flag`: Flags an entry.
-*   `POST /api/reports/{id}/vote`: Quick "Me too" vote (creates a new Report with same Work ID).
+*   `POST /api/reports/{id}/vote`: Quick "Me too" vote (adds a Vote to the existing Report; one per user and event).
 
 ---
 
 ## 4. External Integrations
-*   **Wikidata SPARQL Wrapper:** For resolving composer names / dates.
-*   **OpenOpus API:** For work catalog numbers.
-*   *Strategy:* We will build a `services/metadata.py` module to abstract these external calls and handle caching/rate-limiting.
+*   **Wikidata** (`services/wikidata.py`): composer lookup through the `wbsearchentities` API (not SPARQL).
+*   **OpenOpus API** (`services/openopus.py`): works by composer, fetched live and filtered locally.
+*   Neither is cached or mirrored yet; that is part of the wizard rework in the November 2026 plan.

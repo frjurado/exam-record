@@ -26,6 +26,8 @@ The remaining five items are not yet started. Two nearby issues from the origina
 
 ## Step 1 — Migrate Models to SQLAlchemy 2.0 Style (`Mapped`/`mapped_column`)
 
+**Status: ✅ COMPLETED (2026-07-04)** — models converted, `Vote.user` back-populated, FK indexes added in migration `e07ef69ec28e`.
+
 ### Why
 `app/models.py` still uses the SQLAlchemy 1.x `Column(...)` API. The 2.0-style `Mapped[T]` / `mapped_column(...)` API gives mypy real type information for ORM attributes (currently mypy can't catch `user.email` being used as an `int`, for instance), enables IDE autocomplete, and is the direction SQLAlchemy itself is moving — new features increasingly assume it. This is worth doing now, before more services are built against the current model shape, since it's a mechanical but invasive change (every model, every column).
 
@@ -49,6 +51,8 @@ It's also the natural place to fix two smaller items flagged in the same file: t
 ---
 
 ## Step 2 — Rate Limiting on Critical Endpoints
+
+**Status: ✅ COMPLETED (2026-07-04)** — `slowapi` limiter in `app/core/limiter.py`, limits in `app/core/constants.py`. Open question carried into the [November 2026 review](2026_11_11_review_and_plan.md): the limiter keys on the remote address, which behind Fly's proxy may not be the visitor's IP.
 
 ### Why
 There's currently no protection against brute-forcing `/api/auth/login` (magic-link request spam), report spam, or vote manipulation via scripted requests. This is a public-facing app taking anonymous submissions, so it's a real abuse vector, not a theoretical one.

@@ -6,7 +6,8 @@
 The complete documentation is located in the `docs/` folder:
 *   [Documentation Index](docs/README.md)
 *   [Project Roadmap](docs/roadmap.md)
-*   [Technical Specifications](docs/technical_specs.md)
+*   [Technical Specifications](docs/tech/technical_specs.md)
+*   [Current review & plan](docs/reports/2026_11_11_review_and_plan.md)
 
 ## Technology Stack
 *   **Backend:** Python 3.12+ / FastAPI / SQLAlchemy (Async)
