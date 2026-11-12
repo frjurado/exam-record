@@ -52,15 +52,15 @@
                         {% if cell.status == 'verified' %}
                         <a href="{{ cell.url }}" class="wa-coverage__cell wa-coverage__cell--verified"
                             title="{{ row.discipline.name }} {{ cell.year }}: verificada"
-                            aria-label="{{ row.discipline.name }} {{ cell.year }}: verificada">●</a>
+                            aria-label="{{ row.discipline.name }} {{ cell.year }}: verificada"><span class="wa-coverage__dot" aria-hidden="true"></span></a>
                         {% elif cell.status == 'disputed' %}
                         <a href="{{ cell.url }}" class="wa-coverage__cell wa-coverage__cell--disputed"
                             title="{{ row.discipline.name }} {{ cell.year }}: en disputa"
-                            aria-label="{{ row.discipline.name }} {{ cell.year }}: en disputa">●</a>
+                            aria-label="{{ row.discipline.name }} {{ cell.year }}: en disputa"><span class="wa-coverage__dot" aria-hidden="true"></span></a>
                         {% elif cell.status == 'neutral' %}
                         <a href="{{ cell.url }}" class="wa-coverage__cell wa-coverage__cell--neutral"
                             title="{{ row.discipline.name }} {{ cell.year }}: un solo aporte"
-                            aria-label="{{ row.discipline.name }} {{ cell.year }}: un solo aporte">○</a>
+                            aria-label="{{ row.discipline.name }} {{ cell.year }}: un solo aporte"><span class="wa-coverage__dot wa-coverage__dot--hollow" aria-hidden="true"></span></a>
                         {% else %}
                         <a href="{{ cell.url }}" rel="nofollow" class="wa-coverage__cell wa-coverage__cell--empty"
                             title="{{ row.discipline.name }} {{ cell.year }}: sin datos. Aportar"
@@ -75,10 +75,10 @@
     </div>
 
     <p class="wa-coverage__legend">
-        <span class="wa-coverage__cell--verified">●</span> Verificada
-        <span class="wa-coverage__cell--neutral">○</span> Un solo aporte
-        <span class="wa-coverage__cell--disputed">●</span> En disputa
-        <span class="wa-coverage__cell--empty">+</span> Sin datos: aportar
+        <span><span class="wa-coverage__dot wa-coverage__cell--verified" aria-hidden="true"></span> Verificada</span>
+        <span><span class="wa-coverage__dot wa-coverage__dot--hollow wa-coverage__cell--neutral" aria-hidden="true"></span> Un solo aporte</span>
+        <span><span class="wa-coverage__dot wa-coverage__cell--disputed" aria-hidden="true"></span> En disputa</span>
+        <span><span class="wa-coverage__cell--empty" aria-hidden="true">+</span> Sin datos: aportar</span>
     </p>
     {% if not all_years %}
     <p class="wa-hint wa-browse__foot">
