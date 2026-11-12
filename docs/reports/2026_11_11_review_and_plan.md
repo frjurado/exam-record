@@ -172,7 +172,7 @@ use it to clean the existing duplicates and any empty events created before Phas
 ### Phase 4 — Statistics and discovery (in progress, see section 13)
 0. Groundwork: one definition of an exam's outcome; https canonical addresses; addresses
    in Spanish. ✅
-1. Work and composer pages. ✅ (written, awaiting review)
+1. Work and composer pages. ✅
 2. Statistics page (`/estadisticas`): most frequent composers and works, by discipline.
 3. Coverage table per region (`/examenes/andalucia`): disciplines × years.
 4. Sitemap entries and structured data for the new pages.
@@ -527,8 +527,8 @@ Status: written and tested on branch `feat/backups`, then merged to `main` and r
 
 ### Steps 0 and 1 — groundwork, work and composer pages
 
-Status: written and tested on branch `feat/work-pages` on 2026-11-12. Awaiting the
-owner's review; not merged or released.
+Status: written and tested on branch `feat/work-pages`, reviewed by the owner, then merged
+to `main` and released on 2026-11-12.
 
 **Groundwork**
 - `ConsensusService.event_outcome` is now the only place that decides what an exam's
