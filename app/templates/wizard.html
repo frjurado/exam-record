@@ -16,9 +16,9 @@
 <nav class="wa-crumbs" aria-label="Ruta">
     <a href="/">Inicio</a>
     <span class="wa-crumbs__sep">›</span>
-    <a href="/exams/{{ region_slug }}/{{ discipline_slug }}">{{ region.name }} — {{ discipline.name }}</a>
+    <a href="/examenes/{{ region_slug }}/{{ discipline_slug }}">{{ region.name }} — {{ discipline.name }}</a>
     <span class="wa-crumbs__sep">›</span>
-    <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}">{{ year }}</a>
+    <a href="/examenes/{{ region_slug }}/{{ discipline_slug }}/{{ year }}">{{ year }}</a>
     <span class="wa-crumbs__sep">›</span>
     <span aria-current="page">Aportar</span>
 </nav>
@@ -29,7 +29,7 @@
     "regionSlug": region_slug,
     "disciplineSlug": discipline_slug,
     "year": year,
-    "eventUrl": "/exams/" ~ region_slug ~ "/" ~ discipline_slug ~ "/" ~ year,
+    "eventUrl": "/examenes/" ~ region_slug ~ "/" ~ discipline_slug ~ "/" ~ year,
     "authenticated": user is not none,
     "turnstileKey": turnstile_site_key,
     "existing": existing_reports,

@@ -106,7 +106,9 @@ erDiagram
 *   Rate limits (`app/core/constants.py`): link requests per IP and per target email; votes and reports per signed-in user.
 
 ### search
-*   `GET /exams/{region}/{discipline}/{year}`: Returns the Exam Event page with list of proposed works + consensus status.
+*   `GET /examenes/{region}/{discipline}/{year}`: Returns the Exam Event page with list of proposed works + consensus status. (`/exams/...` redirects here.)
+*   `GET /obras/{id}-{slug}`: A work and every exam it appeared in.
+*   `GET /compositores/{id}-{slug}`: A composer's works that appeared, with years. In both, the id decides and a wrong slug redirects.
     *   *Response:* HTML (SSR).
 
 ### submission (The Contribution Engine)

@@ -10,7 +10,7 @@ event.year }} en
 <nav class="wa-crumbs" aria-label="Ruta">
     <a href="/">Inicio</a>
     <span class="wa-crumbs__sep">›</span>
-    <a href="/exams/{{ region_slug }}/{{ discipline_slug }}">{{ event.region.name }} — {{ event.discipline.name }}</a>
+    <a href="/examenes/{{ region_slug }}/{{ discipline_slug }}">{{ event.region.name }} — {{ event.discipline.name }}</a>
     <span class="wa-crumbs__sep">›</span>
     <span aria-current="page">{{ event.year }}</span>
 </nav>
@@ -182,7 +182,7 @@ event.year }} en
         {% else %}
         <div class="wa-empty">
             <p class="wa-empty__text">Aún no se han encontrado reportes para este examen.</p>
-            <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
+            <a href="/examenes/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
                 class="wa-btn wa-btn--primary">
                 ¡Sé el primero en contribuir!
             </a>
@@ -200,7 +200,7 @@ event.year }} en
         </p>
         {% else %}
         <h3 class="wa-cta__title">¿No ves la obra que esperabas?</h3>
-        <a href="/exams/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
+        <a href="/examenes/{{ region_slug }}/{{ discipline_slug }}/{{ year }}/contribute"
             class="wa-btn wa-btn--primary">
             Aportar otra obra
         </a>

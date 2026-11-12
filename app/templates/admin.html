@@ -13,7 +13,7 @@
 
 {% macro event_link(report) %}
 <a
-    href="/exams/{{ report.event.region.slug }}/{{ report.event.discipline.slug }}/{{ report.event.year }}">{{
+    href="/examenes/{{ report.event.region.slug }}/{{ report.event.discipline.slug }}/{{ report.event.year }}">{{
     report.event.region.name }} · {{ report.event.discipline.name }} · {{ report.event.year }}</a>
 {% endmacro %}
 

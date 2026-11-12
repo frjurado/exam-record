@@ -58,7 +58,7 @@ async def test_consensus_logic(client, db):
     )
     await db.commit()
 
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2026")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}/2026")
     assert response.status_code == 200
     html = response.text
     assert "Prelude A" in html
@@ -88,7 +88,7 @@ async def test_consensus_logic(client, db):
     )
     await db.commit()
 
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2027")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}/2027")
     html2 = response.text
     assert "Prelude A" in html2
     assert "Verificado por estudiantes" in html2
@@ -107,7 +107,7 @@ async def test_consensus_logic(client, db):
     db.add(Vote(user_id=user3.id, report_id=report_b3.id))
     await db.commit()
 
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2028")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}/2028")
     html3 = response.text
     assert "Prelude B" in html3
     assert "Reporte único para este examen" in html3

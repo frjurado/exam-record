@@ -29,8 +29,8 @@ def _request(host: str = "test") -> Request:
     [
         (None, "/"),
         ("", "/"),
-        ("/exams/andalucia/piano/2024?action=vote&report_id=3", None),
-        ("http://test/exams/andalucia/piano", "/exams/andalucia/piano"),
+        ("/examenes/andalucia/piano/2024?action=vote&report_id=3", None),
+        ("http://test/examenes/andalucia/piano", "/examenes/andalucia/piano"),
         ("http://test", "/"),
         ("https://evil.example/login", "/"),
         ("//evil.example/login", "/"),

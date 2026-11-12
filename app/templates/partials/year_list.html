@@ -1,6 +1,6 @@
 {% for item in years %}
 {% if item.has_event %}
-<a href="/exams/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}" class="wa-year" id="year-{{ item.year }}">
+<a href="/examenes/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}" class="wa-year" id="year-{{ item.year }}">
     <span class="wa-year__num">{{ item.year }}</span>
 
     <!-- Content Preview -->
@@ -39,7 +39,7 @@
     <div>
         <div class="wa-year__composer">Sin información registrada</div>
     </div>
-    <a href="/exams/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}/contribute"
+    <a href="/examenes/{{ region.slug }}/{{ discipline.slug }}/{{ item.year }}/contribute"
         class="wa-btn wa-btn--ghost wa-btn--sm">Contribuir</a>
 </div>
 {% endif %}

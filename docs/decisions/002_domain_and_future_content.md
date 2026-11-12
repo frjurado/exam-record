@@ -8,7 +8,7 @@ recorded for later and nothing is planned yet.
 The site is served at `wikianalisis.org`. Its `www` form and the `exam-record-beta.fly.dev`
 address redirect to it (`CANONICAL_HOST` in `fly.toml`, `app/core/urls.py`).
 
-Future sections go in paths beside the exam registry (`/exams/...` today; for example
+Future sections go in paths beside the exam registry (`/examenes/...`; for example
 `/obras/...`, `/analisis/...`), not in subdomains.
 
 Why:
@@ -18,7 +18,11 @@ Why:
 - Search engines treat a subdomain almost as a separate site. With low, seasonal traffic,
   every page should add to the standing of a single domain.
 - One sign-in cookie covers everything.
-- Exam pages already sit under `/exams/`, so new sections need no change to existing links.
+- Exam pages already sit under their own path (`/examenes/`), so new sections need no change to existing links.
+
+Addresses are in Spanish, like the rest of the site: `/examenes`, `/obras`,
+`/compositores`. Exam pages lived under `/exams` until November 2026; those addresses
+redirect.
 
 A subdomain is the right choice only for a part run by a different tool (a video
 platform, a forum). That part would get the subdomain; the registry stays where it is.
@@ -39,6 +43,6 @@ Deferred until the site has more exam records and users. None is scheduled.
 4. **Contributed analyses.** Teachers and users submitting their own, in the spirit of
    the name. Needs moderation, so it comes after the others.
 5. **The home page changes role.** Today `/` is the registry's index. When a second
-   section exists, `/` becomes a general landing page and the index moves to `/exams`.
+   section exists, `/` becomes a general landing page and the index moves to `/examenes`.
 6. **The email list.** The "avísame" sign-up planned for spring 2027 (Phase 5) is also
    the audience to tell about new material, with the consent wording written to allow it.

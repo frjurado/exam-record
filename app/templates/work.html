@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ work.title }} — {{ composer.name }} | WikiAnálisis{% endblock %}
+
+{% block description %}{{ work.title }}, de {{ composer.name }}: {% if appearances %}en qué exámenes de análisis de acceso a conservatorio ha caído ({{ appearances|map(attribute='year')|unique|join(', ') }}).{% else %}obra registrada en WikiAnálisis.{% endif %}{% endblock %}
+
+{# Nothing confirmed to show yet: keep it out of search results. #}
+{% block head_extra %}{% if not appearances %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <a href="{{ composer.url_path }}">{{ composer.name }}</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">{{ work.title }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="wa-browse">
+    <div class="wa-pagehead">
+        <div>
+            <h1 class="wa-pagehead__title">{{ work.title }}{% if work.nickname %} <i>«{{ work.nickname }}»</i>{% endif %}</h1>
+            <p class="wa-pagehead__sub">
+                <a href="{{ composer.url_path }}" class="wa-browse__link">{{ composer.name }}</a>
+            </p>
+        </div>
+        <a href="{{ score_url }}" target="_blank" rel="noopener noreferrer" class="wa-chip"
+            title="Búsqueda automática en IMSLP (vía DuckDuckGo)">Partitura en IMSLP ↗</a>
+    </div>
+
+    <p class="wa-browse__lede">
+        {% if appearances|length == 1 %}
+        Esta obra ha caído en <b>1 convocatoria</b> registrada del examen de análisis.
+        {% elif appearances %}
+        Esta obra ha caído en <b>{{ appearances|length }} convocatorias</b> registradas del examen de análisis.
+        {% else %}
+        Todavía no hay ninguna convocatoria confirmada en la que haya caído esta obra.
+        {% endif %}
+    </p>
+
+    {% if appearances %}
+    <section class="wa-panel wa-browse__section">
+        <h2 class="wa-section-title">Convocatorias</h2>
+        <table class="wa-table">
+            <thead>
+                <tr>
+                    <th>Año</th>
+                    <th>Especialidad</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in appearances %}
+                <tr>
+                    <td><a href="{{ a.url }}" class="wa-browse__link">{{ a.year }}</a></td>
+                    <td>
+                        {{ a.discipline.name }} · {{ a.region.name }}
+                        {% if a.details %}<span class="wa-browse__detail">{{ a.details }}</span>{% endif %}
+                    </td>
+                    <td>{% with standing = a.standing %}{% include "partials/standing.html" %}{% endwith %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    {% if mentions %}
+    <section class="wa-panel wa-browse__section">
+        <h2 class="wa-section-title">Menciones sin confirmar</h2>
+        <span class="wa-hint">
+            Alguien aportó esta obra para estas convocatorias, pero hay otras propuestas.
+            No cuentan hasta que la convocatoria se resuelva.
+        </span>
+        <table class="wa-table">
+            <tbody>
+                {% for a in mentions %}
+                <tr>
+                    <td><a href="{{ a.url }}" class="wa-browse__link">{{ a.year }}</a></td>
+                    <td>{{ a.discipline.name }} · {{ a.region.name }}</td>
+                    <td>{% with standing = a.standing %}{% include "partials/standing.html" %}{% endwith %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    {# Reserved for study material on this work (analyses, videos, links): see
+       docs/decisions/002_domain_and_future_content.md. Nothing is shown until it exists. #}
+    {% block work_resources %}{% endblock %}
+</div>
+{% endblock %}

@@ -29,7 +29,7 @@ This roadmap defines the critical path to launch the "Constrained Beta" (Andaluc
     *   Step 2: Work (Select/Alias/Create).
     *   Step 3: Details (Movement/Excerpt).
 *   **3.2 Read-Only Views:**
-    *   `GET /exams/{region}/{discipline}/{year}`: Render the list of reported works.
+    *   `GET /examenes/{region}/{discipline}/{year}` (originally `/exams/...`): Render the list of reported works.
     *   Implement "Consensus Badges" (Green/Traffic Light logic) in Jinja templates.
 
 ## Phase 4: Validation & MVP Polish (Week 4)

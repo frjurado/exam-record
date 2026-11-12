@@ -29,7 +29,7 @@ async def test_wizard_page_load(client, db, event):
     event_obj, region, discipline = event
     with patch.object(settings, "TURNSTILE_SITE_KEY", None):
         response = await client.get(
-            f"/exams/{region.slug}/{discipline.slug}/{event_obj.year}/contribute"
+            f"/examenes/{region.slug}/{discipline.slug}/{event_obj.year}/contribute"
         )
     assert response.status_code == 200
     assert "Aportar obra · Piano 2026" in response.text
@@ -43,7 +43,7 @@ async def test_wizard_page_load(client, db, event):
 
 @pytest.mark.asyncio
 async def test_wizard_page_404(client, db):
-    response = await client.get("/exams/mars/theremin/3000/contribute")
+    response = await client.get("/examenes/mars/theremin/3000/contribute")
     assert response.status_code == 404
     assert "Convocatoria no encontrada" in response.text
 
@@ -51,7 +51,7 @@ async def test_wizard_page_404(client, db):
 @pytest.mark.asyncio
 async def test_wizard_page_does_not_create_event(client, db, event):
     _, region, discipline = event
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2020/contribute")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}/2020/contribute")
     assert response.status_code == 200
     count = (await db.execute(select(func.count()).select_from(ExamEvent))).scalar_one()
     assert count == 1  # only the fixture's event
@@ -61,7 +61,7 @@ async def test_wizard_page_does_not_create_event(client, db, event):
 @pytest.mark.parametrize("year", [1999, 3000])
 async def test_wizard_page_rejects_out_of_range_year(client, db, event, year):
     _, region, discipline = event
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}/{year}/contribute")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}/{year}/contribute")
     assert response.status_code == 404
 
 
@@ -81,8 +81,8 @@ async def test_sitemap_lists_only_events_with_reports(client, db, event):
 
     response = await client.get("/sitemap.xml")
     assert response.status_code == 200
-    assert "/exams/andalucia/piano/2026</loc>" in response.text
-    assert "/exams/andalucia/piano/2020" not in response.text
+    assert "/examenes/andalucia/piano/2026</loc>" in response.text
+    assert "/examenes/andalucia/piano/2020" not in response.text
 
 
 @pytest.mark.asyncio
@@ -111,7 +111,7 @@ async def test_wizard_page_offers_existing_reports_and_frequent_composers(client
     )
     await db.commit()
 
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2026/contribute")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}/2026/contribute")
     assert response.status_code == 200
     # Both lists are embedded as JSON for the form.
     assert '"title": "Goyescas"' in response.text
@@ -143,13 +143,13 @@ async def test_wizard_page_redirects_users_who_already_participated(client, db, 
     app.dependency_overrides[deps.get_current_user_optional] = lambda: user
     try:
         response = await client.get(
-            f"/exams/{region.slug}/{discipline.slug}/2026/contribute", follow_redirects=False
+            f"/examenes/{region.slug}/{discipline.slug}/2026/contribute", follow_redirects=False
         )
     finally:
         app.dependency_overrides.pop(deps.get_current_user_optional, None)
 
     assert response.status_code == 303
-    assert response.headers["location"] == "/exams/andalucia/piano/2026"
+    assert response.headers["location"] == "/examenes/andalucia/piano/2026"
 
 
 @pytest.mark.asyncio
@@ -172,7 +172,7 @@ async def test_event_page_shows_what_was_analysed(client, db, event):
     )
     await db.commit()
 
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}/2026")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}/2026")
     assert response.status_code == 200
     assert "Mov. 2 (Adagio) · fragmento: cc. 1-40" in response.text
 
@@ -190,7 +190,7 @@ async def test_year_list_links_score_for_a_single_unverified_report(client, db, 
     db.add(Report(user_id=user.id, event_id=event_obj.id, work_id=work.id))
     await db.commit()
 
-    response = await client.get(f"/exams/{region.slug}/{discipline.slug}")
+    response = await client.get(f"/examenes/{region.slug}/{discipline.slug}")
     assert response.status_code == 200
     assert "Score Work" in response.text
     # One report is not "verified", but the work is named, so its score link is offered.

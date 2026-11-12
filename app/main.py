@@ -16,6 +16,7 @@ from app.core.monitoring import init_sentry
 from app.core.urls import canonical_redirect, public_base_url
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User
+from app.services.browse_service import BrowseService
 from app.services.exam_service import ExamService
 
 init_sentry()
@@ -41,6 +42,10 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # ty
 async def one_address(request: Request, call_next):  # type: ignore[no-untyped-def]
     """Send visitors of the site's other addresses to the canonical one, so links,
     search engines and the session cookie all use a single host."""
+    # Fly terminates TLS and forwards plain HTTP. Restore the visitor's scheme so that
+    # every address built from the request (canonical tags, links in emails) is https.
+    if request.headers.get("x-forwarded-proto") == "https":
+        request.scope["scheme"] = "https"
     target = canonical_redirect(request)
     if target:
         # 301 for page views; 308 keeps the method and body of anything else.
@@ -90,7 +95,7 @@ async def logout() -> Response:
     return response
 
 
-@app.get("/exams/{region_slug}/{discipline_slug}", response_class=HTMLResponse)
+@app.get("/examenes/{region_slug}/{discipline_slug}", response_class=HTMLResponse)
 async def discipline_page(
     request: Request,
     region_slug: str,
@@ -112,7 +117,7 @@ async def discipline_page(
     return templates.TemplateResponse(request, template, context)
 
 
-@app.get("/exams/{region_slug}/{discipline_slug}/{year}", response_class=HTMLResponse)
+@app.get("/examenes/{region_slug}/{discipline_slug}/{year}", response_class=HTMLResponse)
 async def exam_page(
     request: Request,
     region_slug: str,
@@ -129,7 +134,7 @@ async def exam_page(
     return templates.TemplateResponse(request, "event.html", context)
 
 
-@app.get("/exams/{region_slug}/{discipline_slug}/{year}/contribute", response_class=HTMLResponse)
+@app.get("/examenes/{region_slug}/{discipline_slug}/{year}/contribute", response_class=HTMLResponse)
 async def contribute_page(
     request: Request,
     region_slug: str,
@@ -149,11 +154,61 @@ async def contribute_page(
         # One participation per exam: send them to the page that shows their choice
         # instead of letting them fill in a form that would be rejected at the end.
         return RedirectResponse(
-            url=f"/exams/{region_slug}/{discipline_slug}/{year}", status_code=303
+            url=f"/examenes/{region_slug}/{discipline_slug}/{year}", status_code=303
         )
 
     context["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY or ""
     return templates.TemplateResponse(request, "wizard.html", context)
+
+
+@app.get("/exams/{rest:path}", include_in_schema=False)
+async def old_exam_addresses(request: Request, rest: str) -> RedirectResponse:
+    """Exam pages lived under /exams until November 2026; links to them still work."""
+    target = f"/examenes/{rest}"
+    if request.url.query:
+        target += "?" + request.url.query
+    return RedirectResponse(url=target, status_code=301)
+
+
+def _page_id(ref: str) -> int | None:
+    """The id at the start of "42-sonata-para-piano" (the slug after it is decoration)."""
+    head = ref.split("-", 1)[0]
+    return int(head) if head.isdigit() else None
+
+
+@app.get("/obras/{ref}", response_class=HTMLResponse)
+async def work_page(
+    request: Request,
+    ref: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional),
+) -> Response:
+    work_id = _page_id(ref)
+    context = await BrowseService.work_context(db, work_id) if work_id is not None else None
+    if context is None:
+        return HTMLResponse(content="<h1>Obra no encontrada</h1>", status_code=404)
+    if request.url.path != context["work"].url_path:
+        # An old or mistyped slug: the id found the work, send them to its real address.
+        return RedirectResponse(url=context["work"].url_path, status_code=301)
+    return templates.TemplateResponse(request, "work.html", {**context, "user": current_user})
+
+
+@app.get("/compositores/{ref}", response_class=HTMLResponse)
+async def composer_page(
+    request: Request,
+    ref: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional),
+) -> Response:
+    composer_id = _page_id(ref)
+    context = (
+        await BrowseService.composer_context(db, composer_id) if composer_id is not None else None
+    )
+    if context is None:
+        return HTMLResponse(content="<h1>Compositor no encontrado</h1>", status_code=404)
+    if request.url.path != context["composer"].url_path:
+        return RedirectResponse(url=context["composer"].url_path, status_code=301)
+    return templates.TemplateResponse(request, "composer.html", {**context, "user": current_user})
 
 
 @app.get("/health")
@@ -188,7 +243,7 @@ async def sitemap_xml(request: Request, db: AsyncSession = Depends(get_db)) -> R
     xml_content.append(f"<url><loc>{base_url}/</loc></url>")
 
     for event in events:
-        loc = f"{base_url}/exams/{event.region.slug}/{event.discipline.slug}/{event.year}"
+        loc = f"{base_url}/examenes/{event.region.slug}/{event.discipline.slug}/{event.year}"
         xml_content.append(f"""
             <url>
                 <loc>{loc}</loc>

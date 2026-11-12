@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 
 from app.api import deps
-from app.core.constants import Calendar, Consensus, Pagination
+from app.core.constants import Calendar, Pagination
 from app.models import Discipline, ExamEvent, Region, Report, User, Work
 from app.services import catalog_service
 from app.services.consensus import ConsensusService
@@ -231,40 +231,15 @@ class ExamService:
                     else f"{report_count} Aportaciones"
                 )
 
-                total_event_votes = sum(len(r.votes) for r in event.reports)
-                has_verified = False
-                work_stats: list[dict[str, Any]] = []
-
-                for report in event.reports:
-                    vote_count = len(report.votes)
-                    consensus_rate = vote_count / total_event_votes if total_event_votes > 0 else 0
-                    is_verified = (
-                        vote_count >= Consensus.MIN_VOTES_FOR_VERIFICATION
-                        and consensus_rate >= Consensus.VERIFICATION_THRESHOLD
-                    )
-                    if is_verified:
-                        has_verified = True
-                    work_stats.append(
-                        {"report": report, "votes": vote_count, "is_verified": is_verified}
-                    )
-
-                work_stats.sort(key=lambda x: x["votes"], reverse=True)
-
-                if work_stats:
-                    top = work_stats[0]
-                    item["best_work"] = {
-                        "title": top["report"].work.title,
-                        "composer": top["report"].work.composer.name,
-                        "imslp_url": WorkService.get_score_url(top["report"].work),
-                        "is_verified": top["is_verified"],
-                    }
-
-                if total_event_votes < Consensus.MIN_VOTES_FOR_VERIFICATION:
-                    item["badge_status"] = "neutral"
-                elif has_verified:
-                    item["badge_status"] = "verified"
-                else:
-                    item["badge_status"] = "disputed"
+                outcome = ConsensusService.event_outcome(event.reports)
+                top = outcome["leader"]
+                item["best_work"] = {
+                    "title": top.work.title,
+                    "composer": top.work.composer.name,
+                    "imslp_url": WorkService.get_score_url(top.work),
+                    "is_verified": outcome["verified"] is top,
+                }
+                item["badge_status"] = outcome["status"]
 
             years_data.append(item)
 

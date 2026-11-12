@@ -56,6 +56,7 @@ fly deploy
 ### Request Flow
 
 1. **HTML pages** (SSR): Routes defined directly in `app/main.py` return Jinja2 templates. The frontend uses HTMX for partial updates and Alpine.js for client-side wizard state.
+   Addresses are in Spanish: `/examenes/{region}/{discipline}[/{year}]`, `/obras/{id}-{slug}`, `/compositores/{id}-{slug}` (`Work.url_path` / `Composer.url_path`; the id decides, a wrong slug redirects). The old `/exams/...` addresses redirect.
 2. **API endpoints**: Registered under `/api` prefix via `app/api/api.py`, implemented in `app/api/endpoints/`.
 3. **Admin page**: `/admin`, routes in `app/api/endpoints/admin.py`, logic in `app/services/admin_service.py`. Plain form posts that redirect back with a message. Requires `User.role == "Admin"` (404 otherwise); grant it with `python scripts/set_role.py <email> Admin`.
 4. **Auth**: Magic link flow — user requests email → clicks link → cookie set. The emailed link holds a 15-minute `link` token; `/api/auth/verify` exchanges it for a 30-day `session` JWT in an HTTP-only cookie (`app/core/security.py`; neither token works in the other's place). The `User` row is created at verify, not at request. Redirects after sign-in go through `app/core/urls.py:safe_next_path` (same-site paths only). Dependency injection in `app/api/deps.py` provides `get_current_user` (required) and `get_current_user_optional`.
@@ -63,6 +64,8 @@ fly deploy
 ### Data Model
 
 The core data flow is: a user submits a **Report** linking a **Work** (by a **Composer**) to an **ExamEvent** (year × region × discipline). Other users cast **Votes** on reports. The **ConsensusService** (`app/services/consensus.py`) aggregates votes at query time — nothing is stored.
+
+`ConsensusService.event_outcome` is the single definition of what an exam's reports add up to (empty / neutral / verified / disputed, and which report counts as the exam's work). The year list, the exam page and the work and composer pages (`app/services/browse_service.py`) all use it. A work "appears" in an exam when its report is the verified one or the only one; disputed exams count for nobody.
 
 Key constraints:
 - `(event_id, work_id)` is unique on `Report`, so each work can appear at most once per exam event.

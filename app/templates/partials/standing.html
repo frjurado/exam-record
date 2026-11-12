@@ -1,0 +1,10 @@
+{# How one report stands in its exam. Expects `standing` (ConsensusService.report_standing). #}
+{% if standing == 'verified' %}
+<span class="wa-status wa-status--verified">Verificada</span>
+{% elif standing == 'unconfirmed' %}
+<span class="wa-status wa-status--neutral">Un solo aporte</span>
+{% elif standing == 'disputed' %}
+<span class="wa-status wa-status--disputed">En disputa</span>
+{% else %}
+<span class="wa-status wa-status--neutral">Se verificó otra obra</span>
+{% endif %}

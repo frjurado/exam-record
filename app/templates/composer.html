@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ composer.name }} | WikiAnálisis{% endblock %}
+
+{% block description %}Obras de {{ composer.name }} que han caído en el examen de análisis de acceso a conservatorio, con los años y especialidades de cada una.{% endblock %}
+
+{% block head_extra %}{% if not works %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">{{ composer.name }}</span>
+</nav>
+{% endblock %}
+
+{% macro exam_list(items) %}
+{% for a in items %}
+<div>
+    <a href="{{ a.url }}" class="wa-browse__link">{{ a.year }}</a> · {{ a.discipline.name }}
+    {% with standing = a.standing %}{% include "partials/standing.html" %}{% endwith %}
+</div>
+{% endfor %}
+{% endmacro %}
+
+{% block content %}
+<div class="wa-browse">
+    <div class="wa-pagehead">
+        <div>
+            <h1 class="wa-pagehead__title">{{ composer.name }}</h1>
+        </div>
+        {% if composer.wikidata_id %}
+        <a href="https://www.wikidata.org/wiki/{{ composer.wikidata_id }}" target="_blank" rel="noopener noreferrer"
+            class="wa-chip">Wikidata ↗</a>
+        {% endif %}
+    </div>
+
+    <p class="wa-browse__lede">
+        {% if total == 1 %}
+        Una obra suya ha caído en <b>1 convocatoria</b> registrada del examen de análisis.
+        {% elif total %}
+        Sus obras han caído en <b>{{ total }} convocatorias</b> registradas del examen de análisis.
+        {% else %}
+        Todavía no hay ninguna convocatoria confirmada con una obra suya.
+        {% endif %}
+    </p>
+
+    {% if works %}
+    <section class="wa-panel wa-browse__section">
+        <h2 class="wa-section-title">Obras</h2>
+        <table class="wa-table">
+            <thead>
+                <tr>
+                    <th>Obra</th>
+                    <th>Convocatorias</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in works %}
+                <tr>
+                    <td>
+                        <a href="{{ row.work.url_path }}" class="wa-browse__link">{{ row.work.title }}</a>
+                        {% if row.work.nickname %}<span class="wa-browse__detail">«{{ row.work.nickname }}»</span>{% endif %}
+                    </td>
+                    <td>{{ exam_list(row.appearances) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    {% if only_mentioned %}
+    <section class="wa-panel wa-browse__section">
+        <h2 class="wa-section-title">Menciones sin confirmar</h2>
+        <span class="wa-hint">
+            Obras aportadas para convocatorias en las que hay otras propuestas.
+            No cuentan hasta que la convocatoria se resuelva.
+        </span>
+        <table class="wa-table">
+            <tbody>
+                {% for row in only_mentioned %}
+                <tr>
+                    <td><a href="{{ row.work.url_path }}" class="wa-browse__link">{{ row.work.title }}</a></td>
+                    <td>{{ exam_list(row.mentions) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

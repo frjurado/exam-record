@@ -8,6 +8,12 @@ from app.db.base import Base
 from app.services.text import normalize
 
 
+def page_ref(row_id: int, label: str | None) -> str:
+    """The last part of a work's or composer's address, e.g. 42-sonata-para-piano-n-14."""
+    slug = normalize(label).replace(" ", "-")[:80].strip("-")
+    return f"{row_id}-{slug}" if slug else str(row_id)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -72,6 +78,11 @@ class Composer(Base):
 
     works: Mapped[list["Work"]] = relationship("Work", back_populates="composer")
 
+    @property
+    def url_path(self) -> str:
+        """Address of the composer's page. The id decides; the slug is for readers."""
+        return f"/compositores/{page_ref(self.id, self.name)}"
+
 
 class Work(Base):
     __tablename__ = "works"
@@ -89,6 +100,11 @@ class Work(Base):
     reports: Mapped[list["Report"]] = relationship("Report", back_populates="work")
 
     imslp_url: Mapped[str | None] = mapped_column(String)
+
+    @property
+    def url_path(self) -> str:
+        """Address of the work's page. The id decides; the slug is for readers."""
+        return f"/obras/{page_ref(self.id, self.title)}"
 
 
 class Report(Base):

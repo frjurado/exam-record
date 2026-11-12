@@ -280,6 +280,15 @@ button.wa-result{width:100%;text-align:left;font-size:14px}
 
 /* Admin page */
 .wa-admin__section{margin-bottom:var(--wa-s5)}
+/* Work and composer pages */
+.wa-work__title a,.wa-work__composer>a:first-child{text-decoration:underline;text-decoration-color:var(--wa-rule);text-underline-offset:3px}
+.wa-work__title a:hover,.wa-work__composer>a:first-child:hover{text-decoration-color:currentColor}
+.wa-browse__lede{font-size:15px;line-height:1.55;color:var(--wa-ink-soft);max-width:640px;margin:0 0 var(--wa-s5)}
+.wa-browse__section{margin-bottom:var(--wa-s5)}
+.wa-browse__section>.wa-hint{display:block;max-width:640px;margin:calc(-1*var(--wa-s2)) 0 var(--wa-s3)}
+.wa-browse a.wa-browse__link{color:var(--wa-accent);text-decoration:underline;text-underline-offset:2px}
+.wa-browse__detail{display:block;font-size:12px;color:var(--wa-muted)}
+.wa-browse .wa-status{white-space:nowrap}
 .wa-admin__lede{font-size:13px;line-height:1.5;color:var(--wa-muted);max-width:640px;margin:0 0 var(--wa-s5)}
 .wa-admin__lede a{color:var(--wa-accent);text-decoration:underline}
 .wa-admin__msg{display:block;margin-bottom:var(--wa-s4)}

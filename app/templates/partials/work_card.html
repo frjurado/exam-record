@@ -4,13 +4,13 @@
     <!-- Verified Badge -->
     <div class="wa-work__badge">Entrada correcta</div>
     <h2 class="wa-work__title">
-        {{ item.work.title }}
+        <a href="{{ item.work.url_path }}">{{ item.work.title }}</a>
         {% if item.work.nickname %}
         <span class="wa-work__nick">(«{{ item.work.nickname }}»)</span>
         {% endif %}
     </h2>
     <p class="wa-work__composer">
-        {{ item.composer.name }}
+        <a href="{{ item.composer.url_path }}">{{ item.composer.name }}</a>
         <a href="{{ item.score_url }}" target="_blank" rel="noopener noreferrer" class="wa-chip"
             title="Búsqueda automática en IMSLP (vía DuckDuckGo)">IMSLP ↗</a>
     </p>
@@ -52,13 +52,13 @@
 <article class="work-card wa-work{% if item.is_flagged %} wa-work--disputed{% endif %}"
     id="report-{{ item.report_id }}" {% if swap_oob %}hx-swap-oob="true" {% endif %}>
     <h2 class="wa-work__title">
-        {{ item.work.title }}
+        <a href="{{ item.work.url_path }}">{{ item.work.title }}</a>
         {% if item.work.nickname %}
         <span class="wa-work__nick">(«{{ item.work.nickname }}»)</span>
         {% endif %}
     </h2>
     <p class="wa-work__composer">
-        {{ item.composer.name }}
+        <a href="{{ item.composer.url_path }}">{{ item.composer.name }}</a>
         <a href="{{ item.score_url }}" target="_blank" rel="noopener noreferrer" class="wa-chip"
             title="Búsqueda automática en IMSLP (vía DuckDuckGo)">IMSLP ↗</a>
     </p>

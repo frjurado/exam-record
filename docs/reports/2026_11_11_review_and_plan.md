@@ -5,7 +5,7 @@ came out of it. Phase 1 (hygiene) was carried out and deployed the same day (sec
 Phase 2 (wizard rework) was written, reviewed and released the same day (section 9).
 Phase 3 (admin tools) was written and released the same day (section 10).
 The code half of the side items (sessions, rate limits, cold start, pinned dependencies)
-was written and released on 2026-11-12 (section 11). Phases 4 and 5 have not been started.
+was written and released on 2026-11-12 (section 11). Phase 4 is in progress (section 13). Phase 5 has not been started.
 
 **Summary.** The backend is in decent shape (tests pass, coverage ~88%, clean lint and types).
 The contribution wizard is the weak point: it loses data, creates duplicates and has dead
@@ -169,9 +169,20 @@ Merge two works or two composers (moving their reports and votes), delete a repo
 a flag. A small page gated on `role == "Admin"`, or CLI scripts if that is enough. Then
 use it to clean the existing duplicates and any empty events created before Phase 1.
 
-### Phase 4 — Statistics and discovery
-Statistics view, work and composer pages, year × discipline table, analytics, sitemap
-entries for the new pages.
+### Phase 4 — Statistics and discovery (in progress, see section 13)
+0. Groundwork: one definition of an exam's outcome; https canonical addresses; addresses
+   in Spanish. ✅
+1. Work and composer pages. ✅ (written, awaiting review)
+2. Statistics page (`/estadisticas`): most frequent composers and works, by discipline.
+3. Coverage table per region (`/examenes/andalucia`): disciplines × years.
+4. Sitemap entries and structured data for the new pages.
+5. Analytics with GoatCounter (page views plus the steps of the contribute form), and a
+   short privacy page.
+
+Decided with the owner: a work counts for an exam when its report is the verified one or
+the only one (shown as unconfirmed); disputed exams count for nobody. The same work set
+for two disciplines in one year counts twice, because those choices are made
+independently. Releases after steps 1, 3 and 4, each reviewed first.
 
 ### Phase 5 — Email capture (ready by spring 2027)
 "Avísame" sign-up with explicit consent, one mailing after the June exams, privacy note.
@@ -509,3 +520,48 @@ Status: written and tested on branch `feat/backups`, then merged to `main` and r
 - Decided: future sections go in paths on this domain, not in subdomains. The reasons,
   and the content ideas put aside for later, are in
   `docs/decisions/002_domain_and_future_content.md`.
+
+---
+
+## 13. Phase 4 record: statistics and discovery
+
+### Steps 0 and 1 — groundwork, work and composer pages
+
+Status: written and tested on branch `feat/work-pages` on 2026-11-12. Awaiting the
+owner's review; not merged or released.
+
+**Groundwork**
+- `ConsensusService.event_outcome` is now the only place that decides what an exam's
+  reports add up to. The year list had its own copy of the rule; it uses this one.
+- Pages declared an `http://` canonical and sharing address in production. They now
+  declare `https://`.
+- Exam pages moved from `/exams/...` to `/examenes/...`. The old addresses redirect, so
+  existing links and search results keep working.
+
+**Work pages** (`/obras/{id}-{slug}`)
+- Title, nickname, composer, IMSLP link, and the exams where the work fell: year,
+  discipline, region, status and movement details, each linked to its exam page.
+- Reports that do not count (the exam is disputed, or another work was verified) are
+  listed apart as "Menciones sin confirmar".
+- A work with no counted appearance has a page, but asks search engines not to index it.
+- A place is reserved in the template for study material (decision 002). Nothing is
+  shown there until such material exists.
+
+**Composer pages** (`/compositores/{id}-{slug}`)
+- The composer's works that fell in an exam, most frequent first, with year and
+  discipline; unconfirmed mentions apart; a Wikidata link when known.
+
+**Addresses**
+- The number decides which page is shown. A missing or outdated slug redirects to the
+  current one, so renaming a work does not break links.
+- A work removed by an admin merge returns 404 at its old address. Accepted for now.
+
+**Links in**
+- On an exam page, the work title and the composer name link to their pages. The year
+  list on a discipline page is unchanged: each row is already one link to the exam.
+
+**Verification**
+- 223 automated tests pass (14 new); `ruff` and `mypy` clean.
+- Both pages were rendered from a copy of the local database and looked at as desktop
+  screenshots. Phone width was not checked: the screenshot tool could not go below about
+  500 px.
