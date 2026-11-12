@@ -81,6 +81,7 @@ An `ExamEvent` is created by `ReportService.get_or_create_event` when the first 
 - `app/services/catalog_service.py` merges local and external results for the contribute form
 - **Resend** (`app/services/email.py`): Magic link emails — falls back to console logging if `RESEND_API_KEY` is unset (dev mode)
 - **Cloudflare Turnstile**: CAPTCHA on report submission
+- **Backups** (`app/services/backup_service.py`, `scripts/backup.py`): nightly snapshot to a private Tigris bucket, run by `.github/workflows/backup.yml`; `/admin/backup` downloads one. Backups hold user emails — never store them in this public repo or its artifacts. See `docs/tech/backups.md`
 - **Sentry** (`app/core/monitoring.py`): Production error tracking — no-ops unless `ENVIRONMENT=production` and `SENTRY_DSN` is set
 
 ### Database

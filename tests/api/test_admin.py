@@ -164,3 +164,35 @@ async def test_link_composer_page_and_action(client, db, data):
     assert (await client.get("/admin/composers/99999")).status_code == 404
     _sign_in(data["visitor"])
     assert (await client.get(f"/admin/composers/{data['composer']}")).status_code == 404
+
+
+async def test_backup_download_is_for_admins_only(client, data, tmp_path, monkeypatch):
+    import gzip
+    import sqlite3
+
+    from app.services import backup_service
+
+    live = tmp_path / "live.db"
+    con = sqlite3.connect(live)
+    con.execute("CREATE TABLE t (x)")
+    con.commit()
+    con.close()
+    monkeypatch.setattr(backup_service, "database_path", lambda: live)
+
+    assert (await client.get("/admin/backup")).status_code == 404
+    _sign_in(data["visitor"])
+    assert (await client.get("/admin/backup")).status_code == 404
+
+    _sign_in(data["admin"])
+    response = await client.get("/admin/backup")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert ".db.gz" in response.headers["content-disposition"]
+    assert gzip.decompress(response.content).startswith(b"SQLite format 3")
+    assert 'href="/admin/backup"' in (await client.get("/admin")).text
+
+    # A database that cannot be copied is reported on the page, not as a server error.
+    monkeypatch.setattr(backup_service, "database_path", lambda: tmp_path / "missing.db")
+    response = await client.get("/admin/backup")
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/admin?error=")

@@ -1,0 +1,27 @@
+name: Nightly backup
+
+# Copies the production database to the private bucket (see docs/tech/backups.md).
+# The backup itself never passes through GitHub: the app machine uploads it directly.
+# This repository is public, so nothing here may print database contents.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # 03:17 UTC every night
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Back up the database
+    runs-on: ubuntu-latest
+    concurrency: deploy-group    # never while a deploy is replacing the machine
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Wake the machine
+        # The machine stops when idle, and `fly ssh` does not start it; a request does.
+        run: curl --silent --fail --retry 8 --retry-delay 5 --retry-all-errors --output /dev/null https://exam-record-beta.fly.dev/health
+
+      - name: Run the backup
+        run: flyctl ssh console --app exam-record-beta --command "python /app/scripts/backup.py"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

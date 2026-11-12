@@ -471,9 +471,31 @@ on 2026-11-12.
   log; under `uvicorn --reload`, the documented way to run locally, it is.
 
 **Still open**
-- Backups. The repository is public, and workflow artifacts of a public repository can
-  be downloaded by any signed-in GitHub user, so backups (which contain emails) will go
-  to a private bucket on Fly's storage (Tigris), as agreed with the owner.
+- Backups: written, waiting for the bucket (section 12).
 - Sentry: the owner is creating the project and setting `SENTRY_DSN`.
 - Domain: `wikianalisis.org` already serves the app. Left to do: redirect the `fly.dev`
   address to it so there is one canonical address.
+
+---
+
+## 12. Backups record (finding 10)
+
+Status: written and tested on branch `feat/backups` on 2026-11-12. Not merged: the
+bucket has to exist first, or the nightly job would fail every night.
+
+- `scripts/backup.py` takes a consistent, integrity-checked, gzipped snapshot of the
+  database and uploads it to a private bucket on Fly's storage (Tigris), keeping the
+  newest 90.
+- `.github/workflows/backup.yml` runs it on the app machine every night. The backup goes
+  from the machine straight to the bucket and never passes through GitHub: the
+  repository is public, and its workflow artifacts can be downloaded by any signed-in
+  GitHub user.
+- The admin page has a link that downloads a snapshot to the admin's computer.
+- Setup, manual use and restoring are in `docs/tech/backups.md`.
+
+**Verification**
+- 200 automated tests pass; `ruff` and `mypy` clean.
+- The script was run on the local database: the unpacked copy holds the same reports.
+- Not verified: the upload to Tigris, the nightly job, and the restore steps on the real
+  machine. None of these can be tried until the bucket exists. The first manual run of
+  the workflow is the test.

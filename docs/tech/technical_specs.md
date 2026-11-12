@@ -126,6 +126,7 @@ erDiagram
 *   `POST /admin/works/merge`, `GET|POST /admin/works/{id}` (edit), `POST /admin/works/{id}/link` (OpenOpus), `POST /admin/works/{id}/delete`
 *   `POST /admin/composers/merge`, `POST /admin/composers/rename`
 *   `POST /admin/events/delete-empty`
+*   `GET /admin/backup`: downloads a gzipped snapshot of the database (see `backups.md`).
 *   Roles are granted with `scripts/set_role.py`.
 
 ---

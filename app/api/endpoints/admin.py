@@ -6,23 +6,29 @@ plain form POSTs that redirect back with a message. The session cookie is SameSi
 so another site cannot submit these forms on an admin's behalf.
 """
 
+import logging
+import tempfile
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.background import BackgroundTask
+from starlette.concurrency import run_in_threadpool
 
 from app.api import deps
 from app.core.constants import Roles
 from app.db.session import get_db
 from app.models import User
-from app.services import openopus
+from app.services import backup_service, openopus
 from app.services.admin_service import AdminError, AdminService
 
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger("uvicorn")
 
 router = APIRouter(include_in_schema=False)
 
@@ -67,6 +73,32 @@ async def _run(db: AsyncSession, action: Any, *, ok: str, back: str = "/admin") 
             back, error="La operación choca con otro dato existente; no se ha cambiado nada."
         )
     return _back(back, msg=ok.format(result=result))
+
+
+@router.get("/backup")
+async def download_backup(admin: User = Depends(require_admin)) -> Response:
+    """A snapshot of the database, straight to the admin's browser. It contains users'
+    emails: it is never cached and never stored anywhere on the way."""
+    folder = Path(tempfile.mkdtemp(prefix="backup-"))
+    archive = folder / backup_service.backup_name()
+
+    def cleanup() -> None:
+        archive.unlink(missing_ok=True)
+        folder.rmdir()
+
+    try:
+        await run_in_threadpool(backup_service.snapshot, archive)
+    except backup_service.BackupError as e:
+        cleanup()
+        return _back("/admin", error=f"No se pudo hacer la copia: {e}")
+    logger.info("admin: backup downloaded by user %s", admin.id)
+    return FileResponse(
+        archive,
+        media_type="application/gzip",
+        filename=archive.name,
+        headers={"Cache-Control": "no-store"},
+        background=BackgroundTask(cleanup),
+    )
 
 
 @router.get("", response_class=HTMLResponse)
