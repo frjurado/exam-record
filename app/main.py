@@ -95,6 +95,32 @@ async def logout() -> Response:
     return response
 
 
+@app.get("/estadisticas", response_class=HTMLResponse)
+async def statistics_page(
+    request: Request,
+    especialidad: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional),
+) -> Response:
+    context = await BrowseService.statistics_context(db, especialidad or None)
+    if context is None:
+        return HTMLResponse(content="<h1>Especialidad no encontrada</h1>", status_code=404)
+    return templates.TemplateResponse(request, "stats.html", {**context, "user": current_user})
+
+
+@app.get("/examenes/{region_slug}", response_class=HTMLResponse)
+async def region_page(
+    request: Request,
+    region_slug: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(deps.get_current_user_optional),
+) -> Response:
+    context = await BrowseService.coverage_context(db, region_slug)
+    if context is None:
+        return HTMLResponse(content="<h1>Región no encontrada</h1>", status_code=404)
+    return templates.TemplateResponse(request, "region.html", {**context, "user": current_user})
+
+
 @app.get("/examenes/{region_slug}/{discipline_slug}", response_class=HTMLResponse)
 async def discipline_page(
     request: Request,

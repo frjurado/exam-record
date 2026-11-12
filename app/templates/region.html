@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ region.name }}: convocatorias registradas | WikiAnálisis{% endblock %}
+
+{% block description %}Qué convocatorias del examen de análisis de acceso a conservatorio están registradas en {{ region.name }}, por especialidad y año, y cuáles faltan.{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">{{ region.name }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="wa-browse">
+    <div class="wa-pagehead">
+        <div>
+            <h1 class="wa-pagehead__title">{{ region.name }}</h1>
+            <p class="wa-pagehead__sub">Convocatorias registradas, por especialidad y año.</p>
+        </div>
+    </div>
+
+    <p class="wa-browse__lede">
+        Hay datos de <b>{{ filled }}</b> de las {{ total }} convocatorias de los últimos {{ years|length }} años.
+        Si hiciste alguna de las que faltan, pulsa en su casilla para aportar la obra.
+    </p>
+
+    <div class="wa-coverage__scroll">
+        <table class="wa-coverage">
+            <thead>
+                <tr>
+                    <th scope="col">Especialidad</th>
+                    {% for year in years %}
+                    <th scope="col">{{ year }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <th scope="row">
+                        <a href="/examenes/{{ region.slug }}/{{ row.discipline.slug }}">{{ row.discipline.name }}</a>
+                    </th>
+                    {% for cell in row.cells %}
+                    <td>
+                        {% if cell.status == 'verified' %}
+                        <a href="{{ cell.url }}" class="wa-coverage__cell wa-coverage__cell--verified"
+                            title="{{ row.discipline.name }} {{ cell.year }}: verificada"
+                            aria-label="{{ row.discipline.name }} {{ cell.year }}: verificada">●</a>
+                        {% elif cell.status == 'disputed' %}
+                        <a href="{{ cell.url }}" class="wa-coverage__cell wa-coverage__cell--disputed"
+                            title="{{ row.discipline.name }} {{ cell.year }}: en disputa"
+                            aria-label="{{ row.discipline.name }} {{ cell.year }}: en disputa">●</a>
+                        {% elif cell.status == 'neutral' %}
+                        <a href="{{ cell.url }}" class="wa-coverage__cell wa-coverage__cell--neutral"
+                            title="{{ row.discipline.name }} {{ cell.year }}: un solo aporte"
+                            aria-label="{{ row.discipline.name }} {{ cell.year }}: un solo aporte">○</a>
+                        {% else %}
+                        <a href="{{ cell.url }}" rel="nofollow" class="wa-coverage__cell wa-coverage__cell--empty"
+                            title="{{ row.discipline.name }} {{ cell.year }}: sin datos. Aportar"
+                            aria-label="{{ row.discipline.name }} {{ cell.year }}: sin datos. Aportar">+</a>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p class="wa-coverage__legend">
+        <span class="wa-coverage__cell--verified">●</span> Verificada
+        <span class="wa-coverage__cell--neutral">○</span> Un solo aporte
+        <span class="wa-coverage__cell--disputed">●</span> En disputa
+        <span class="wa-coverage__cell--empty">+</span> Sin datos: aportar
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas{% if discipline %} · {{ discipline.name }}{% endif %} | WikiAnálisis{% endblock %}
+
+{% block description %}Compositores y obras que más han caído en el examen de análisis de acceso a conservatorio{% if discipline %}, especialidad de {{ discipline.name }}{% endif %}.{% endblock %}
+
+{% block head_extra %}{% if not composers %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="wa-crumbs" aria-label="Ruta">
+    <a href="/">Inicio</a>
+    <span class="wa-crumbs__sep">›</span>
+    {% if discipline %}
+    <a href="/estadisticas">Estadísticas</a>
+    <span class="wa-crumbs__sep">›</span>
+    <span aria-current="page">{{ discipline.name }}</span>
+    {% else %}
+    <span aria-current="page">Estadísticas</span>
+    {% endif %}
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="wa-browse">
+    <div class="wa-pagehead">
+        <div>
+            <h1 class="wa-pagehead__title">Estadísticas{% if discipline %} <i>— {{ discipline.name }}</i>{% endif %}</h1>
+        </div>
+    </div>
+
+    <p class="wa-browse__lede">
+        {% if exams_counted == 1 %}
+        Basadas en <b>1 convocatoria</b> registrada.
+        {% else %}
+        Basadas en <b>{{ exams_counted }} convocatorias</b> registradas.
+        {% endif %}
+        {% if exams_disputed == 1 %}
+        Otra está en disputa y no cuenta hasta que se resuelva.
+        {% elif exams_disputed %}
+        Otras {{ exams_disputed }} están en disputa y no cuentan hasta que se resuelvan.
+        {% endif %}
+        Con tan pocos datos, tómalas como una orientación, no como una predicción.
+    </p>
+
+    {% if disciplines|length > 1 %}
+    <nav class="wa-filter" aria-label="Especialidad">
+        <a href="/estadisticas" {% if not discipline %}aria-current="true"{% endif %}>Todas</a>
+        {% for d in disciplines %}
+        <a href="/estadisticas?especialidad={{ d.slug }}" {% if discipline and discipline.slug == d.slug %}aria-current="true"{% endif %}>{{ d.name }}</a>
+        {% endfor %}
+    </nav>
+    {% endif %}
+
+    {% if composers %}
+    <section class="wa-panel wa-browse__section">
+        <h2 class="wa-section-title">Compositores más frecuentes</h2>
+        <table class="wa-table">
+            <thead>
+                <tr>
+                    <th>Compositor</th>
+                    <th class="wa-table__num">Convocatorias</th>
+                    <th class="wa-table__num">Obras distintas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in composers %}
+                <tr>
+                    <td><a href="{{ row.composer.url_path }}" class="wa-browse__link">{{ row.composer.name }}</a></td>
+                    <td class="wa-table__num">{{ row.count }}</td>
+                    <td class="wa-table__num">{{ row.works }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="wa-panel wa-browse__section">
+        <h2 class="wa-section-title">Obras que se repiten</h2>
+        {% if works %}
+        <table class="wa-table">
+            <thead>
+                <tr>
+                    <th>Obra</th>
+                    <th class="wa-table__num">Veces</th>
+                    <th>Convocatorias</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in works %}
+                <tr>
+                    <td>
+                        <a href="{{ row.work.url_path }}" class="wa-browse__link">{{ row.work.title }}</a>
+                        <span class="wa-browse__detail">{{ row.work.composer.name }}</span>
+                    </td>
+                    <td class="wa-table__num">{{ row.appearances|length }}</td>
+                    <td>
+                        {% for a in row.appearances %}
+                        <div><a href="{{ a.url }}" class="wa-browse__link">{{ a.year }}</a> · {{ a.discipline.name }}</div>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="wa-hint">Ninguna obra ha caído más de una vez en las convocatorias registradas.</p>
+        {% endif %}
+        {% if single_works %}
+        <p class="wa-hint wa-browse__foot">
+            {% if single_works == 1 %}Otra obra ha caído una sola vez.{% else %}Otras {{ single_works }} obras han caído una sola vez.{% endif %}
+            Están en la página de cada compositor.
+        </p>
+        {% endif %}
+    </section>
+    {% else %}
+    <div class="wa-empty">
+        <p class="wa-empty__text">Todavía no hay convocatorias registradas{% if discipline %} para esta especialidad{% endif %}.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

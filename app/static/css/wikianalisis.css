@@ -289,6 +289,32 @@ button.wa-result{width:100%;text-align:left;font-size:14px}
 .wa-browse a.wa-browse__link{color:var(--wa-accent);text-decoration:underline;text-underline-offset:2px}
 .wa-browse__detail{display:block;font-size:12px;color:var(--wa-muted)}
 .wa-browse .wa-status{white-space:nowrap}
+.wa-browse__foot{display:block;margin-top:var(--wa-s3)}
+.wa-table__num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.wa-table th.wa-table__num{text-align:right}
+.wa-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 var(--wa-s5)}
+.wa-filter a{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border:1px solid var(--wa-rule);border-radius:var(--wa-r-pill);font-size:13px;color:var(--wa-ink-soft);background:var(--wa-card)}
+.wa-filter a:hover{border-color:var(--wa-accent);color:var(--wa-accent)}
+.wa-filter a[aria-current="true"]{background:var(--wa-accent);border-color:var(--wa-accent);color:#fff}
+.wa-region__links{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0 0 var(--wa-s4);font-size:13px}
+.wa-region__links a{color:var(--wa-accent);text-decoration:underline;text-underline-offset:2px}
+/* Coverage table (region page): disciplines x years */
+.wa-coverage__scroll{overflow-x:auto;background:var(--wa-card);border:1px solid var(--wa-rule);border-radius:var(--wa-r-sm)}
+.wa-coverage{border-collapse:collapse;font-size:13px;width:100%}
+.wa-coverage th,.wa-coverage td{padding:0;border-bottom:1px solid var(--wa-rule);text-align:center}
+.wa-coverage tbody tr:last-child th,.wa-coverage tbody tr:last-child td{border-bottom:0}
+.wa-coverage thead th{padding:10px 6px;font-size:11px;font-weight:500;letter-spacing:.04em;color:var(--wa-muted);font-variant-numeric:tabular-nums}
+.wa-coverage th:first-child{position:sticky;left:0;z-index:1;background:var(--wa-card);text-align:left;padding:0 14px;font-weight:500;white-space:nowrap;border-right:1px solid var(--wa-rule)}
+.wa-coverage thead th:first-child{text-transform:uppercase}
+.wa-coverage tbody th a:hover{color:var(--wa-accent)}
+.wa-coverage__cell{display:flex;align-items:center;justify-content:center;min-width:44px;height:40px;font-size:14px}
+a.wa-coverage__cell:hover{background:var(--wa-bg-soft)}
+.wa-coverage__cell--verified{color:var(--wa-ok)}
+.wa-coverage__cell--disputed{color:var(--wa-warn)}
+.wa-coverage__cell--neutral{color:var(--wa-muted)}
+.wa-coverage__cell--empty{color:var(--wa-faint)}
+a.wa-coverage__cell--empty:hover{color:var(--wa-accent)}
+.wa-coverage__legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:var(--wa-s3) 0 0;font-size:12px;color:var(--wa-muted)}
 .wa-admin__lede{font-size:13px;line-height:1.5;color:var(--wa-muted);max-width:640px;margin:0 0 var(--wa-s5)}
 .wa-admin__lede a{color:var(--wa-accent);text-decoration:underline}
 .wa-admin__msg{display:block;margin-bottom:var(--wa-s4)}

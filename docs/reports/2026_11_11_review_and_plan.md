@@ -174,7 +174,9 @@ use it to clean the existing duplicates and any empty events created before Phas
    in Spanish. ✅
 1. Work and composer pages. ✅
 2. Statistics page (`/estadisticas`): most frequent composers and works, by discipline.
+   ✅ (written, awaiting review)
 3. Coverage table per region (`/examenes/andalucia`): disciplines × years.
+   ✅ (written, awaiting review)
 4. Sitemap entries and structured data for the new pages.
 5. Analytics with GoatCounter (page views plus the steps of the contribute form), and a
    short privacy page.
@@ -565,3 +567,36 @@ to `main` and released on 2026-11-12.
 - Both pages were rendered from a copy of the local database and looked at as desktop
   screenshots. Phone width was not checked: the screenshot tool could not go below about
   500 px.
+
+### Steps 2 and 3 — statistics and coverage table
+
+Status: written and tested on branch `feat/stats-coverage` on 2026-11-12. Awaiting the
+owner's review; not merged or released.
+
+**Statistics** (`/estadisticas`, filter `?especialidad=piano`)
+- Most frequent composers: exams counted and distinct works, each linked to the
+  composer's page.
+- "Obras que se repiten": only works that fell at least twice, with the exams. Works
+  that fell once are counted in a line below and found on each composer's page.
+- The page says how many exams the figures rest on, how many disputed exams are left
+  out, and that with so few the figures are a guide, not a prediction.
+- The filter lists only disciplines that have data.
+- On the local database: 5 exams counted, three composers, no repeated work yet. The
+  page is honest but thin until more exams are on record.
+
+**Coverage table** (`/examenes/{region}`)
+- Disciplines as rows, the last 12 exam years as columns, newest first. Each cell is
+  verified, a single report, disputed, or empty. Filled cells link to the exam; empty
+  ones link to its contribute form.
+- Disciplines with most data come first. The discipline column stays in place when the
+  table scrolls sideways on a narrow screen.
+- A line above gives the count of exams on record out of the total.
+
+**Ways in**
+- The home page links to both pages under the region's name.
+- Breadcrumbs on discipline and exam pages now go up through the region page.
+
+**Verification**
+- 230 automated tests pass (7 new); `ruff` and `mypy` clean.
+- Statistics, coverage and home were looked at as screenshots from a copy of the local
+  database, at desktop width and (coverage) at 500 px. Narrower phones were not checked.

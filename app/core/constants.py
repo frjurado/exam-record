@@ -51,6 +51,18 @@ class Cache:
     OPENOPUS_MAX_COMPOSERS = 128
 
 
+class Statistics:
+    # A work appears in the "works that repeat" list from this many appearances.
+    MIN_WORK_APPEARANCES = 2
+    # Longest ranking shown.
+    MAX_ROWS = 30
+
+
+class Coverage:
+    # How many recent years the region table shows.
+    YEARS = 12
+
+
 class Suggestions:
     # How many frequently reported composers the contribute form offers before typing.
     MAX_COMPOSERS = 8
