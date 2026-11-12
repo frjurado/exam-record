@@ -177,7 +177,7 @@ use it to clean the existing duplicates and any empty events created before Phas
    ✅
 3. Coverage table per region (`/examenes/andalucia`): disciplines × years.
    ✅
-4. Sitemap entries and structured data for the new pages.
+4. Sitemap entries and structured data for the new pages. ✅ (written, awaiting review)
 5. Analytics with GoatCounter (page views plus the steps of the contribute form), and a
    short privacy page.
 
@@ -605,3 +605,40 @@ released on 2026-11-12.
 - 230 automated tests pass (7 new); `ruff` and `mypy` clean.
 - Statistics, coverage and home were looked at as screenshots from a copy of the local
   database, at desktop width and (coverage) at 500 px. Narrower phones were not checked.
+
+### Step 4 — sitemap and structured data
+
+Status: written and tested on branch `feat/sitemap-structured-data` on 2026-11-12. Awaiting
+the owner's review; not merged or released.
+
+**Sitemap**
+- Now lists, besides the home page and the exams with reports: the statistics page, each
+  region page, each discipline page that has data, and the work and composer pages that
+  have at least one counted appearance.
+- Works and composers that only appear in disputed exams are left out, in line with
+  their pages asking not to be indexed.
+- The file is served as XML (it was labelled HTML).
+
+**robots.txt**
+- Asks crawlers to stay out of `/api/`, `/admin` and `/auth/`.
+
+**Structured data**
+- Work pages describe themselves as a schema.org `MusicComposition` (title, nickname,
+  composer, the stored IMSLP address when there is one); composer pages as a `Person`
+  (name, Wikidata address when known).
+- Whether search engines use it for anything visible is up to them; it costs nothing.
+
+**Canonical address**
+- The "Todos los años" view of a region declares the plain region address as canonical,
+  so it is not indexed as a second page.
+
+**Verification**
+- 236 automated tests pass (6 new); `ruff` and `mypy` clean.
+- Not verified: how Google reads the sitemap and the structured data. That can only be
+  checked after release, with Google's Rich Results Test and Search Console.
+
+**After the release that included steps 2 and 3**
+- The first deploy attempt failed on Fly's side ("insufficient memory available" on the
+  machine's host); the site stayed up on the previous version and a retry succeeded.
+  If this recurs, the machine may need moving to another host.
+

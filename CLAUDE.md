@@ -65,7 +65,7 @@ fly deploy
 
 The core data flow is: a user submits a **Report** linking a **Work** (by a **Composer**) to an **ExamEvent** (year × region × discipline). Other users cast **Votes** on reports. The **ConsensusService** (`app/services/consensus.py`) aggregates votes at query time — nothing is stored.
 
-`ConsensusService.event_outcome` is the single definition of what an exam's reports add up to (empty / neutral / verified / disputed, and which report counts as the exam's work). The year list, the exam page and the work and composer pages (`app/services/browse_service.py`) all use it. A work "appears" in an exam when its report is the verified one or the only one; disputed exams count for nobody.
+`ConsensusService.event_outcome` is the single definition of what an exam's reports add up to (empty / neutral / verified / disputed, and which report counts as the exam's work). The year list, the exam page and the work and composer pages (`app/services/browse_service.py`) all use it. The sitemap (`BrowseService.sitemap_paths`) lists only pages with something to show; work and composer pages carry schema.org JSON-LD. A work "appears" in an exam when its report is the verified one or the only one; disputed exams count for nobody.
 
 Key constraints:
 - `(event_id, work_id)` is unique on `Report`, so each work can appear at most once per exam event.

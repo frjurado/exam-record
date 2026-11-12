@@ -4,6 +4,9 @@
 
 {% block description %}Qué convocatorias del examen de análisis de acceso a conservatorio están registradas en {{ region.name }}, por especialidad y año, y cuáles faltan.{% endblock %}
 
+{% block canonical %}
+    <link rel="canonical" href="{{ request.url.replace(query='') }}">{% endblock %}
+
 {% block breadcrumbs %}
 <nav class="wa-crumbs" aria-label="Ruta">
     <a href="/">Inicio</a>

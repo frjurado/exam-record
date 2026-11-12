@@ -5,7 +5,10 @@
 {% block description %}{{ work.title }}, de {{ composer.name }}: {% if appearances %}en qué exámenes de análisis de acceso a conservatorio ha caído ({{ appearances|map(attribute='year')|unique|join(', ') }}).{% else %}obra registrada en WikiAnálisis.{% endif %}{% endblock %}
 
 {# Nothing confirmed to show yet: keep it out of search results. #}
-{% block head_extra %}{% if not appearances %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+{% block head_extra %}
+{% if not appearances %}<meta name="robots" content="noindex">{% endif %}
+<script type="application/ld+json">{{ structured_data|tojson }}</script>
+{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="wa-crumbs" aria-label="Ruta">

@@ -4,7 +4,10 @@
 
 {% block description %}Obras de {{ composer.name }} que han caído en el examen de análisis de acceso a conservatorio, con los años y especialidades de cada una.{% endblock %}
 
-{% block head_extra %}{% if not works %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+{% block head_extra %}
+{% if not works %}<meta name="robots" content="noindex">{% endif %}
+<script type="application/ld+json">{{ structured_data|tojson }}</script>
+{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="wa-crumbs" aria-label="Ruta">

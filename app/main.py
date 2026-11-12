@@ -1,3 +1,5 @@
+from xml.sax.saxutils import escape
+
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -6,7 +8,6 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload
 
 from app.api import deps
 from app.api.api import api_router
@@ -217,6 +218,9 @@ async def work_page(
     if request.url.path != context["work"].url_path:
         # An old or mistyped slug: the id found the work, send them to its real address.
         return RedirectResponse(url=context["work"].url_path, status_code=301)
+    context["structured_data"] = BrowseService.work_schema(
+        context["work"], public_base_url(request)
+    )
     return templates.TemplateResponse(request, "work.html", {**context, "user": current_user})
 
 
@@ -235,6 +239,9 @@ async def composer_page(
         return HTMLResponse(content="<h1>Compositor no encontrado</h1>", status_code=404)
     if request.url.path != context["composer"].url_path:
         return RedirectResponse(url=context["composer"].url_path, status_code=301)
+    context["structured_data"] = BrowseService.composer_schema(
+        context["composer"], public_base_url(request)
+    )
     return templates.TemplateResponse(request, "composer.html", {**context, "user": current_user})
 
 
@@ -247,6 +254,9 @@ async def health_check() -> dict[str, str]:
 async def robots_txt(request: Request) -> Response:
     content = f"""User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /auth/
 Sitemap: {public_base_url(request)}/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
@@ -254,37 +264,14 @@ Sitemap: {public_base_url(request)}/sitemap.xml
 
 @app.get("/sitemap.xml", response_class=HTMLResponse)
 async def sitemap_xml(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
-    # Only events that have at least one report: empty events have nothing to index.
-    stmt = (
-        select(ExamEvent)
-        .where(ExamEvent.reports.any())
-        .options(joinedload(ExamEvent.region), joinedload(ExamEvent.discipline))
-    )
-    result = await db.execute(stmt)
-    events = result.scalars().all()
-
     base_url = public_base_url(request)
-
-    xml_content = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_content.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    xml_content.append(f"<url><loc>{base_url}/</loc></url>")
-
-    for event in events:
-        loc = f"{base_url}/examenes/{event.region.slug}/{event.discipline.slug}/{event.year}"
-        xml_content.append(f"""
-            <url>
-                <loc>{loc}</loc>
-                <changefreq>weekly</changefreq>
-                <priority>0.8</priority>
-            </url>
-        """)
-
-    xml_content.append("</urlset>")
-
-    return Response(content="".join(xml_content), media_type="application/xml")
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    lines += [
+        f"<url><loc>{escape(base_url + path)}</loc></url>"
+        for path in await BrowseService.sitemap_paths(db)
+    ]
+    lines.append("</urlset>")
+    return Response(content="\n".join(lines), media_type="application/xml")

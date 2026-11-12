@@ -234,3 +234,60 @@ class BrowseService:
             "filled": sum(row["filled"] for row in rows),
             "total": len(rows) * len(years),
         }
+
+    @staticmethod
+    async def sitemap_paths(db: AsyncSession) -> list[str]:
+        """Every page worth a search engine's visit, most general first. A page is listed
+        only if it has something to show: exams with reports, and works and composers
+        with at least one counted appearance (the others ask not to be indexed)."""
+        events = await BrowseService._events(db)
+        regions = sorted({e.region.slug for e in events})
+        disciplines = sorted({(e.region.slug, e.discipline.slug) for e in events})
+        exams = sorted(
+            {(e.region.slug, e.discipline.slug, e.year) for e in events},
+            key=lambda key: (key[0], key[1], -key[2]),
+        )
+        counted = [a for a in BrowseService._appearances(events) if a["counted"]]
+        composers = {a["work"].composer_id: a["work"].composer for a in counted}
+        works = {a["work"].id: a["work"] for a in counted}
+
+        paths = ["/"]
+        if counted:
+            paths.append("/estadisticas")
+        paths += [f"/examenes/{region}" for region in regions]
+        paths += [f"/examenes/{region}/{discipline}" for region, discipline in disciplines]
+        paths += [exam_url(*exam) for exam in exams]
+        paths += [composers[key].url_path for key in sorted(composers)]
+        paths += [works[key].url_path for key in sorted(works)]
+        return paths
+
+    @staticmethod
+    def composer_schema(composer: Composer, base_url: str) -> dict[str, Any]:
+        """schema.org description of a composer, for search engines."""
+        data: dict[str, Any] = {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": composer.name,
+            "url": base_url + composer.url_path,
+        }
+        if composer.wikidata_id:
+            data["sameAs"] = f"https://www.wikidata.org/wiki/{composer.wikidata_id}"
+        return data
+
+    @staticmethod
+    def work_schema(work: Work, base_url: str) -> dict[str, Any]:
+        """schema.org description of a work, for search engines."""
+        composer = BrowseService.composer_schema(work.composer, base_url)
+        del composer["@context"]
+        data: dict[str, Any] = {
+            "@context": "https://schema.org",
+            "@type": "MusicComposition",
+            "name": work.title,
+            "url": base_url + work.url_path,
+            "composer": composer,
+        }
+        if work.nickname:
+            data["alternateName"] = work.nickname
+        if work.imslp_url:
+            data["sameAs"] = work.imslp_url
+        return data
