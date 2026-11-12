@@ -15,8 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 python -m venv .venv
 source .venv/Scripts/activate  # Windows (bash)
 
-# Install dependencies (includes pre-commit)
-pip install -r requirements.txt
+# Install dependencies (runtime + test/lint tools; production installs requirements.txt only)
+pip install -r requirements-dev.txt
 
 # Install pre-commit hooks (once per clone)
 pre-commit install
@@ -58,7 +58,7 @@ fly deploy
 1. **HTML pages** (SSR): Routes defined directly in `app/main.py` return Jinja2 templates. The frontend uses HTMX for partial updates and Alpine.js for client-side wizard state.
 2. **API endpoints**: Registered under `/api` prefix via `app/api/api.py`, implemented in `app/api/endpoints/`.
 3. **Admin page**: `/admin`, routes in `app/api/endpoints/admin.py`, logic in `app/services/admin_service.py`. Plain form posts that redirect back with a message. Requires `User.role == "Admin"` (404 otherwise); grant it with `python scripts/set_role.py <email> Admin`.
-4. **Auth**: Stateless JWT stored in an HTTP-only cookie. Magic link flow — user requests email → clicks link → token verified → cookie set. Dependency injection in `app/api/deps.py` provides `get_current_user` (required) and `get_current_user_optional`.
+4. **Auth**: Magic link flow — user requests email → clicks link → cookie set. The emailed link holds a 15-minute `link` token; `/api/auth/verify` exchanges it for a 30-day `session` JWT in an HTTP-only cookie (`app/core/security.py`; neither token works in the other's place). The `User` row is created at verify, not at request. Redirects after sign-in go through `app/core/urls.py:safe_next_path` (same-site paths only). Dependency injection in `app/api/deps.py` provides `get_current_user` (required) and `get_current_user_optional`.
 
 ### Data Model
 

@@ -19,7 +19,7 @@ The complete documentation is located in the `docs/` folder:
 ```bash
 python -m venv .venv
 source .venv/Scripts/activate  # Windows (bash) — use source .venv/bin/activate on Linux/macOS
-pip install -r requirements.txt   # includes pre-commit
+pip install -r requirements-dev.txt   # runtime + test and lint tools
 pre-commit install                # install git hooks (run once per clone)
 ```
 

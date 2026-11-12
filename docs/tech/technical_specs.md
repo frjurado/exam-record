@@ -101,8 +101,9 @@ erDiagram
 ## 3. API Design (Key Endpoints)
 
 ### auth
-*   `POST /api/auth/magic-link`: Sends email with token.
-*   `GET /api/auth/verify?token=...`: Sets HTTP-only cookie session.
+*   `POST /api/auth/magic-link`: Emails a link holding a 15-minute link token. Stores nothing.
+*   `GET /api/auth/verify?token=...&next=...`: Creates the user if new, sets a 30-day HTTP-only session cookie, redirects to `next` (same-site paths only).
+*   Rate limits (`app/core/constants.py`): link requests per IP and per target email; votes and reports per signed-in user.
 
 ### search
 *   `GET /exams/{region}/{discipline}/{year}`: Returns the Exam Event page with list of proposed works + consensus status.

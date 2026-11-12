@@ -4,7 +4,8 @@ A full read of the app, templates, docs and scripts, done on 2026-11-11, and the
 came out of it. Phase 1 (hygiene) was carried out and deployed the same day (section 8).
 Phase 2 (wizard rework) was written, reviewed and released the same day (section 9).
 Phase 3 (admin tools) was written and released the same day (section 10).
-Phases 4 and 5 have not been started.
+The code half of the side items (sessions, rate limits, cold start, pinned dependencies)
+was written and released on 2026-11-12 (section 11). Phases 4 and 5 have not been started.
 
 **Summary.** The backend is in decent shape (tests pass, coverage ~88%, clean lint and types).
 The contribution wizard is the weak point: it loses data, creates duplicates and has dead
@@ -176,8 +177,9 @@ entries for the new pages.
 "Avísame" sign-up with explicit consent, one mailing after the June exams, privacy note.
 
 ### Alongside, when convenient
-Rate-limit keying and limits (finding 4), session length and link token (5), cold-start
-weight (9), backups (10), pinning dependencies, Sentry account, domain.
+Done (section 11): rate-limit keying and limits (finding 4), session length and link
+token (5), cold-start weight (9), pinning dependencies.
+Still open: backups (10), Sentry account, domain.
 
 ---
 
@@ -401,3 +403,77 @@ these tools is still to be done (see "To do after deploying").
   database before a large cleanup.
 - No tool to spot likely duplicates; the lists are sorted so that they sit together.
 - Users cannot be managed from the page (roles are set with the script).
+
+---
+
+## 11. Side items record: sessions, rate limits, cold start, dependencies
+
+Status: written and tested on branch `feat/side-items`, then merged to `main` and released
+on 2026-11-12.
+
+**Signing in (finding 5)**
+- The emailed link now carries a link token valid for 15 minutes. Opening it sets a
+  separate session token valid for 30 days. Neither is accepted in place of the other,
+  so a leaked or forwarded link stops working after 15 minutes.
+- The link can be opened more than once within those 15 minutes. Making it single-use
+  would need a table of spent links, and mail scanners that pre-open links would spend
+  them before the user does.
+- The cookie is marked `secure` in production.
+- After signing in, the visitor is only ever sent to a page on this site; any other
+  `next` address goes to the home page.
+- The link in the email always uses https in production.
+- A user row is created when the link is opened, not when it is requested, so mistyped
+  or never-verified addresses no longer leave rows behind. Rows created that way before
+  this change are still there.
+- An expired or invalid link shows a short page in Spanish instead of a JSON error.
+- The role is no longer copied into the token; it was already read from the database.
+- Side effect on release: everyone signed in is signed out once, and links emailed
+  before the release stop working.
+
+**Rate limits (finding 4)**
+- Votes and reports are counted per signed-in user (20 and 10 per hour), so a class
+  sharing the school's address is no longer limited as one person. The anonymous click
+  that opens the email form is still counted per address.
+- Link requests: 30 per hour per address (was 5 per minute), and 5 per hour per target
+  email, so nobody can flood someone else's inbox.
+- Counters live in each worker's memory. With two workers the real limits are up to
+  twice the figures; accepted for now.
+
+**Cold start (finding 9)**
+- 2 gunicorn workers instead of 4 (the machine has one CPU).
+- Seeding runs in the background after the web server starts, instead of before it. It
+  stays best-effort and bounded by a 30-second timeout. It cannot move to Fly's
+  `release_command`, because that machine does not mount the data volume.
+- Migrations still run before the server starts.
+- The wake-up time in production has not been measured before or after. Locally the
+  seeding step takes under a second, so most of any gain will come from the workers.
+
+**Dependencies**
+- `requirements.txt` holds the runtime packages only, all pinned (gunicorn 27.0.0).
+  `requirements-dev.txt` adds the test and lint tools, pinned. The production image
+  installs the first; CI and developers install the second.
+- Alpine.js is pinned to 3.17.5, the version the `3.x.x` address was serving.
+
+**Verification**
+- 193 automated tests pass (19 new); `ruff` and `mypy` clean.
+- A clean Python 3.12 environment with only `requirements.txt` imports the app, runs the
+  migrations and seeds.
+- The production image was built and run locally on one CPU, on a copy of the local
+  database and on an empty one: it migrates, seeds in the background, starts two workers
+  and serves the pages. The sign-in round trip was checked against it (secure 30-day
+  cookie, link token refused as a session, off-site `next` sent to the home page).
+- First page after start, same image and machine, three runs each: 5.1 s with the old
+  start-up (seed first, 4 workers), 3.8 s with the new one. Production wake-up time
+  itself was not measured.
+- With two workers the per-email link limit let 6 requests through instead of 5, as
+  expected from per-worker counters.
+- In development under gunicorn the simulated email (the link) is not printed to the
+  log; under `uvicorn --reload`, the documented way to run locally, it is.
+
+**Still open**
+- Backups. The repository is public, and workflow artifacts of a public repository can
+  be downloaded by any signed-in GitHub user, so backups (which contain emails) will go
+  to a private bucket on Fly's storage (Tigris), as agreed with the owner.
+- Sentry: the owner is creating the project and setting `SENTRY_DSN`.
+- Domain: `wikianalisis.org` already serves the app. Left to do: redirect the `fly.dev`
+  address to it so there is one canonical address.
