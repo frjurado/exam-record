@@ -42,6 +42,10 @@
                 {% if user.role == "Admin" %}<a href="/admin">Admin</a>{% endif %}
                 <span class="wa-meta__email">{{ user.email }}</span>
                 <a href="/logout">Salir</a>
+                {% else %}
+                {% block header_signin %}
+                <a href="/auth/modal" rel="nofollow" hx-get="/auth/modal" hx-swap="none">Entrar</a>
+                {% endblock %}
                 {% endif %}
             </div>
         </header>

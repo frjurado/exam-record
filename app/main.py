@@ -72,6 +72,17 @@ async def root(
     )
 
 
+@app.get("/auth/modal", response_class=HTMLResponse)
+async def signin_modal(request: Request) -> Response:
+    """The email form behind the header's "Entrar" link. HTMX drops it into the page;
+    opened directly (no JavaScript, or a new tab) there is nothing to show, so go home."""
+    if request.headers.get("HX-Request") != "true":
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse(
+        request, "partials/auth_modal.html", {"signin": True, "next_url": ""}
+    )
+
+
 @app.get("/logout")
 async def logout() -> Response:
     response = Response(status_code=307, headers={"Location": "/"})

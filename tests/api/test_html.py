@@ -195,3 +195,28 @@ async def test_year_list_links_score_for_a_single_unverified_report(client, db, 
     assert "Score Work" in response.text
     # One report is not "verified", but the work is named, so its score link is offered.
     assert "IMSLP ↗" in response.text
+
+
+async def test_header_offers_sign_in_only_when_signed_out(client, db):
+    from app.api import deps
+    from app.main import app as fastapi_app
+    from app.models import User
+
+    assert 'hx-get="/auth/modal"' in (await client.get("/")).text
+
+    modal = await client.get("/auth/modal", headers={"HX-Request": "true"})
+    assert modal.status_code == 200
+    assert 'id="auth-modal"' in modal.text
+    assert "La sesión dura 30 días" in modal.text
+    # Opened as a plain link there is no page to show.
+    plain = await client.get("/auth/modal")
+    assert plain.status_code == 307
+    assert plain.headers["location"] == "/"
+
+    user = User(email="someone@test.com")
+    db.add(user)
+    await db.commit()
+    fastapi_app.dependency_overrides[deps.get_current_user_optional] = lambda: user
+    page = (await client.get("/")).text
+    assert 'hx-get="/auth/modal"' not in page
+    assert 'href="/logout"' in page

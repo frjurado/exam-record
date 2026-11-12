@@ -280,6 +280,8 @@ button.wa-result{width:100%;text-align:left;font-size:14px}
 
 /* Admin page */
 .wa-admin__section{margin-bottom:var(--wa-s5)}
+.wa-admin__lede{font-size:13px;line-height:1.5;color:var(--wa-muted);max-width:640px;margin:0 0 var(--wa-s5)}
+.wa-admin__lede a{color:var(--wa-accent);text-decoration:underline}
 .wa-admin__msg{display:block;margin-bottom:var(--wa-s4)}
 .wa-admin__msg--error{background:var(--wa-warn-soft);color:var(--wa-danger)}
 .wa-admin__form{margin-bottom:var(--wa-s4)}

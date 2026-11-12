@@ -27,12 +27,13 @@
 {% block content %}
 <div class="wa-pagehead">
     <h1 class="wa-pagehead__title">Administración</h1>
-    <p class="wa-pagehead__sub">
-        Los cambios de esta página son inmediatos y no se pueden deshacer.
-        Antes de una limpieza grande, <a href="/admin/backup" class="wa-link">descarga una copia</a>
-        de la base de datos (contiene los emails de los usuarios: guárdala en privado).
-    </p>
 </div>
+
+<p class="wa-admin__lede">
+    Los cambios de esta página son inmediatos y no se pueden deshacer.
+    Antes de una limpieza grande, <a href="/admin/backup">descarga una copia</a>
+    de la base de datos (contiene los emails de los usuarios: guárdala en privado).
+</p>
 
 {% if msg %}<p class="wa-note wa-admin__msg" role="status">{{ msg }}</p>{% endif %}
 {% if error %}<p class="wa-note wa-admin__msg wa-admin__msg--error" role="alert">{{ error }}</p>{% endif %}

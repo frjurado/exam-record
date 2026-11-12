@@ -6,11 +6,19 @@
     @click.outside="$dispatch('auth-close')">
 
     <div x-show="!sent">
+        {% if signin %}
+        <h3 class="wa-modal__title" id="auth-modal-title">Entrar</h3>
+        <p class="wa-modal__text">
+            Te enviaremos un enlace a tu email; no hay contraseña ni registro.
+            La sesión dura 30 días en este navegador.
+        </p>
+        {% else %}
         <h3 class="wa-modal__title" id="auth-modal-title">Verifica tu email</h3>
         <p class="wa-modal__text">
             Para contar un solo voto por persona necesitamos comprobar tu email.
             Te enviaremos un enlace; no hay contraseña ni registro.
         </p>
+        {% endif %}
 
         <form @submit.prevent="submit">
             <div class="wa-field" style="margin-top:24px">
