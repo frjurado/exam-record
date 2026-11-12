@@ -99,6 +99,7 @@ Optional (have dev defaults):
 - `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` — omit to skip CAPTCHA
 - `FROM_EMAIL` — code default is `onboarding@resend.dev`; production sets `noreply@wikianalisis.org` in `fly.toml`
 - `ENVIRONMENT` — `development` or `production`
+- `CANONICAL_HOST` — the site's one public host (`wikianalisis.org` in `fly.toml`); its `www` form and `*.fly.dev` redirect to it. Unset in development
 - `SENTRY_DSN` — omit to disable error tracking; only takes effect when `ENVIRONMENT=production` (see `app/core/monitoring.py`)
 
 ### Tests

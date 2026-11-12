@@ -3,8 +3,8 @@
 This roadmap defines the critical path to launch the "Constrained Beta" (Andalucía + Piano).
 
 > **Status (November 2026):** Phases 1–7 are shipped, and so is most of Phase 8. The beta now
-> covers Andalucía with 17 disciplines. Still open from Phase 8: the wikianalisis.org domain
-> (8.1) and the wizard bug list (8.4). Phases 9 onwards are summarised at the end; the detail
+> covers Andalucía with 17 disciplines. The wikianalisis.org domain (8.1) is in place. Ideas for content beyond the
+> exam registry are parked in [decisions/002_domain_and_future_content.md](decisions/002_domain_and_future_content.md). Phases 9 onwards are summarised at the end; the detail
 > lives in [reports/2026_11_11_review_and_plan.md](reports/2026_11_11_review_and_plan.md).
 
 ## Phase 1: Foundation & Setup (Week 1)

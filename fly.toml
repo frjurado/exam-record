@@ -26,6 +26,7 @@ primary_region = 'lhr'
   PORT = "8080"
   FROM_EMAIL = "noreply@wikianalisis.org"
   ENVIRONMENT = "production"
+  CANONICAL_HOST = "wikianalisis.org"
 
 [mounts]
   source = "exam_data"

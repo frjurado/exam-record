@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     TURNSTILE_SITE_KEY: str | None = None
     TURNSTILE_SECRET_KEY: str | None = None
 
+    # The one public address of the site (e.g. "wikianalisis.org"). When set, requests to
+    # its www form or to the *.fly.dev address are redirected to it.
+    CANONICAL_HOST: str | None = None
+
     # Monitoring
     SENTRY_DSN: str | None = None
 

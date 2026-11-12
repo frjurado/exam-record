@@ -5,7 +5,7 @@ import httpx
 WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
 TIMEOUT_SECONDS = 10.0
 # Wikimedia asks automated clients to identify themselves with a way to reach the operator.
-HEADERS = {"User-Agent": "WikiAnalisisBot/1.0 (https://exam-record-beta.fly.dev)"}
+HEADERS = {"User-Agent": "WikiAnalisisBot/1.0 (https://wikianalisis.org)"}
 
 # occupation (P106) = composer (Q36834)
 _COMPOSER_FILTER = "haswbstatement:P106=Q36834"

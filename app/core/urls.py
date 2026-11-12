@@ -14,6 +14,23 @@ def public_base_url(request: Request) -> str:
     return base_url
 
 
+def canonical_redirect(request: Request) -> str | None:
+    """Where to send a request that arrived at one of the site's other addresses (the
+    www form, or Fly's own *.fly.dev name), or None when it is already in the right place.
+    Only those two kinds of host are redirected, so health checks and internal calls
+    addressed by IP or private name are left alone."""
+    canonical = settings.CANONICAL_HOST
+    host = (request.headers.get("host") or "").split(":")[0].lower()
+    if not canonical or host == canonical:
+        return None
+    if host != f"www.{canonical}" and not host.endswith(".fly.dev"):
+        return None
+    target = f"https://{canonical}{request.url.path}"
+    if request.url.query:
+        target += "?" + request.url.query
+    return target
+
+
 def safe_next_path(target: str | None, request: Request) -> str:
     """Where to send the visitor after sign-in: always a path on this site.
 

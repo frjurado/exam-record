@@ -13,7 +13,7 @@ from app.api.api import api_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.monitoring import init_sentry
-from app.core.urls import public_base_url
+from app.core.urls import canonical_redirect, public_base_url
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User
 from app.services.exam_service import ExamService
@@ -35,6 +35,19 @@ templates = Jinja2Templates(directory="app/templates")
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+
+@app.middleware("http")
+async def one_address(request: Request, call_next):  # type: ignore[no-untyped-def]
+    """Send visitors of the site's other addresses to the canonical one, so links,
+    search engines and the session cookie all use a single host."""
+    target = canonical_redirect(request)
+    if target:
+        # 301 for page views; 308 keeps the method and body of anything else.
+        status = 301 if request.method in ("GET", "HEAD") else 308
+        return RedirectResponse(url=target, status_code=status)
+    return await call_next(request)
+
 
 app.include_router(api_router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

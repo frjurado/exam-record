@@ -19,7 +19,7 @@ jobs:
 
       - name: Wake the machine
         # The machine stops when idle, and `fly ssh` does not start it; a request does.
-        run: curl --silent --fail --retry 8 --retry-delay 5 --retry-all-errors --output /dev/null https://exam-record-beta.fly.dev/health
+        run: curl --silent --fail --retry 8 --retry-delay 5 --retry-all-errors --output /dev/null https://wikianalisis.org/health
 
       - name: Run the backup
         run: flyctl ssh console --app exam-record-beta --command "python /app/scripts/backup.py"

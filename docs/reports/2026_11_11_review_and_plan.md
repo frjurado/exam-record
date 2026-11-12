@@ -179,7 +179,8 @@ entries for the new pages.
 ### Alongside, when convenient
 Done (section 11): rate-limit keying and limits (finding 4), session length and link
 token (5), cold-start weight (9), pinning dependencies.
-Still open: backups (10), Sentry account, domain.
+Done (section 12): backups (10), domain.
+Still open: Sentry account (the owner is setting it up).
 
 ---
 
@@ -473,15 +474,16 @@ on 2026-11-12.
 **Still open**
 - Backups: written, waiting for the bucket (section 12).
 - Sentry: the owner is creating the project and setting `SENTRY_DSN`.
-- Domain: `wikianalisis.org` already serves the app. Left to do: redirect the `fly.dev`
-  address to it so there is one canonical address.
+- Domain: done, see section 12.
 
 ---
 
-## 12. Backups record (finding 10)
+## 12. Backups and domain record
 
-Status: written and tested on branch `feat/backups` on 2026-11-12. Not merged: the
-bucket has to exist first, or the nightly job would fail every night.
+Status: written and tested on branch `feat/backups`, then merged to `main` and released on
+2026-11-12, once the owner had created the bucket.
+
+**Backups (finding 10)**
 
 - `scripts/backup.py` takes a consistent, integrity-checked, gzipped snapshot of the
   database and uploads it to a private bucket on Fly's storage (Tigris), keeping the
@@ -499,3 +501,11 @@ bucket has to exist first, or the nightly job would fail every night.
 - Not verified: the upload to Tigris, the nightly job, and the restore steps on the real
   machine. None of these can be tried until the bucket exists. The first manual run of
   the workflow is the test.
+
+**Domain**
+- `wikianalisis.org` already served the app. Its `www` form and the `fly.dev` address now
+  redirect to it (`CANONICAL_HOST`), so links, search engines and the session cookie use
+  one address.
+- Decided: future sections go in paths on this domain, not in subdomains. The reasons,
+  and the content ideas put aside for later, are in
+  `docs/decisions/002_domain_and_future_content.md`.
