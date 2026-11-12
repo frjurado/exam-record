@@ -174,9 +174,9 @@ use it to clean the existing duplicates and any empty events created before Phas
    in Spanish. ✅
 1. Work and composer pages. ✅
 2. Statistics page (`/estadisticas`): most frequent composers and works, by discipline.
-   ✅ (written, awaiting review)
+   ✅
 3. Coverage table per region (`/examenes/andalucia`): disciplines × years.
-   ✅ (written, awaiting review)
+   ✅
 4. Sitemap entries and structured data for the new pages.
 5. Analytics with GoatCounter (page views plus the steps of the contribute form), and a
    short privacy page.
@@ -570,8 +570,9 @@ to `main` and released on 2026-11-12.
 
 ### Steps 2 and 3 — statistics and coverage table
 
-Status: written and tested on branch `feat/stats-coverage` on 2026-11-12. Awaiting the
-owner's review; not merged or released.
+Status: written and tested on branch `feat/stats-coverage`, reviewed by the owner (who asked
+for six years and larger, equal-sized marks in the table), then merged to `main` and
+released on 2026-11-12.
 
 **Statistics** (`/estadisticas`, filter `?especialidad=piano`)
 - Most frequent composers: exams counted and distinct works, each linked to the
