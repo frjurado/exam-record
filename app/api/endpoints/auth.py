@@ -1,21 +1,37 @@
-from datetime import timedelta
+import logging
 from typing import Any
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, EmailStr
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.api import deps
 from app.core import security
 from app.core.config import settings
-from app.core.constants import RateLimit
-from app.core.limiter import limiter
+from app.core.constants import RateLimit, Roles
+from app.core.limiter import allow, limiter
+from app.core.urls import public_base_url, safe_next_path
 from app.db.session import get_db
 from app.models import User
+from app.services.email import email_service
+
+logger = logging.getLogger("uvicorn")
 
 router = APIRouter()
+
+INVALID_LINK_PAGE = """<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WikiAnálisis | Enlace caducado</title></head>
+<body style="font-family: Georgia, serif; max-width: 32rem; margin: 4rem auto; padding: 0 1rem;">
+<h1 style="font-weight: 500;">El enlace ha caducado</h1>
+<p>Este enlace ya no es válido. Vuelve a la página donde estabas y pide uno nuevo.</p>
+<p><a href="/">Ir al inicio</a></p>
+</body></html>"""
 
 
 class MagicLinkRequest(BaseModel):
@@ -27,68 +43,59 @@ class MagicLinkRequest(BaseModel):
     "/magic-link",
     summary="Request a magic-link login email",
     description=(
-        "Generate a time-limited JWT magic link and deliver it to the given email address. "
-        "If the email is not yet registered, a new Visitor account is created automatically. "
-        "In development the link is printed to the console instead of being emailed."
+        "Email a short-lived sign-in link to the given address. No account is created "
+        "until the link is opened. In development the link is printed to the console "
+        "instead of being emailed."
     ),
     responses={
         200: {"description": "Magic link sent successfully"},
+        429: {"description": "Too many requests from this address or for this email"},
         500: {"description": "Failed to deliver the magic-link email"},
     },
 )
 @limiter.limit(RateLimit.MAGIC_LINK_REQUEST)
-async def request_magic_link(
-    request: Request, request_data: MagicLinkRequest, db: AsyncSession = Depends(get_db)
-) -> dict[str, str]:
-    """Generate a magic link and send it to the user's email. Auto-registers unknown addresses."""
+async def request_magic_link(request: Request, request_data: MagicLinkRequest) -> dict[str, str]:
+    """Send a sign-in link. Nothing is stored: the address is only proven when the link is opened."""
     email = request_data.email
 
-    # Check if user exists, if not create
-    result = await db.execute(select(User).filter(User.email == email))
-    user = result.scalar_one_or_none()
+    if not allow(RateLimit.MAGIC_LINK_PER_EMAIL, "magic-link-email", email.lower()):
+        raise HTTPException(status_code=429, detail="Demasiados enlaces pedidos para ese email")
 
-    if not user:
-        user = User(email=email, role="Visitor")
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(
-        data={"sub": user.email, "role": user.role}, expires_delta=access_token_expires
-    )
-
-    # In production, send email. Here, logging.
-    # Dynamic base URL to match the user's current host (localhost vs 127.0.0.1)
-    base_url = str(request.base_url).rstrip("/") + "/api/auth/verify"
-
-    next_param = ""
+    params = {"token": security.create_token(email, security.LINK)}
     if request_data.next_url:
-        from urllib.parse import quote_plus
-
-        encoded_next = quote_plus(request_data.next_url)
-        next_param = f"&next={encoded_next}"
-
-    magic_link = f"{base_url}?token={access_token}{next_param}"
-
-    from app.services.email import email_service
+        params["next"] = safe_next_path(request_data.next_url, request)
+    magic_link = f"{public_base_url(request)}/api/auth/verify?{urlencode(params)}"
 
     try:
         await email_service.send_magic_link(email, magic_link)
     except Exception:
-        # If email fails, don't break the client flow immediately but log it
-        # Actually for auth, if we can't send email, we should probably error out.
         raise HTTPException(status_code=500, detail="Error sending email") from None
 
     return {"message": "Magic link sent"}
+
+
+async def _get_or_create_user(db: AsyncSession, email: str) -> User:
+    query = select(User).filter(User.email == email)
+    user: User | None = (await db.execute(query)).scalar_one_or_none()
+    if user is None:
+        user = User(email=email, role=Roles.VISITOR)
+        db.add(user)
+        try:
+            await db.commit()
+        except IntegrityError:
+            # The same link opened twice at once: the other request created the row.
+            await db.rollback()
+            user = (await db.execute(query)).scalar_one()
+    return user
 
 
 @router.get(
     "/verify",
     summary="Verify magic-link token and open a session",
     description=(
-        "Validate the JWT supplied in the magic link. On success, set an HTTP-only session cookie "
-        "and redirect to `next` (or `/health` if omitted). Returns 400 if the token is invalid or expired."
+        "Validate the link token. On success, create the account if it is new, set an "
+        "HTTP-only session cookie and redirect to `next` (a path on this site; the home "
+        "page otherwise). An invalid or expired link gets a short explanation page."
     ),
     responses={
         307: {"description": "Token valid — redirecting with session cookie set"},
@@ -96,21 +103,26 @@ async def request_magic_link(
     },
 )
 async def verify_magic_link(
-    token: str = Query(...), next: str | None = Query(None)
-) -> RedirectResponse:
-    """Verify the magic-link JWT, set the session cookie, and redirect."""
-    payload = security.verify_token(token)
+    request: Request,
+    token: str = Query(...),
+    next: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Exchange the emailed link token for a session cookie, and redirect."""
+    payload = security.verify_token(token, security.LINK)
     if not payload:
-        raise HTTPException(status_code=400, detail="Token inválido")
+        return HTMLResponse(INVALID_LINK_PAGE, status_code=400)
 
-    redirect_url = next if next else "/health"
-    response = RedirectResponse(url=redirect_url)
+    user = await _get_or_create_user(db, payload["sub"])
+
+    max_age = int(security.SESSION_LIFETIME.total_seconds())
+    response = RedirectResponse(url=safe_next_path(next, request))
     response.set_cookie(
         key="access_token",
-        value=token,
+        value=security.create_token(str(user.email), security.SESSION),
         httponly=True,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=settings.ENVIRONMENT == "production",
+        max_age=max_age,
         samesite="lax",
         path="/",
     )

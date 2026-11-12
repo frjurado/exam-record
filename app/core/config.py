@@ -7,7 +7,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     PROJECT_NAME: str = "WikiAnálisis"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+    # The emailed link is short-lived; the session it opens is long-lived.
+    LINK_TOKEN_EXPIRE_MINUTES: int = 15
+    SESSION_EXPIRE_DAYS: int = 30
 
     # Email
     RESEND_API_KEY: str | None = None

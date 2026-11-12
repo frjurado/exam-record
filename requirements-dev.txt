@@ -1,0 +1,8 @@
+# Everything needed to develop and test: the runtime set plus the tools.
+-r requirements.txt
+pytest==9.0.2
+pytest-asyncio==1.3.0
+pytest-cov==6.1.0
+ruff==0.15.10
+mypy==1.15.0
+pre-commit==4.5.1

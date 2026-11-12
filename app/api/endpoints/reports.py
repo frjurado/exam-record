@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.core.constants import RateLimit
-from app.core.limiter import limiter
+from app.core.limiter import limiter, user_or_address
 from app.db.session import get_db
 from app.models import Report, User
 from app.schemas.report import ReportCreate, ReportResponse
@@ -35,7 +35,7 @@ router = APIRouter()
         401: {"description": "Authentication required"},
     },
 )
-@limiter.limit(RateLimit.REPORT_CREATION)
+@limiter.limit(RateLimit.REPORT_CREATION, key_func=user_or_address)
 async def create_report(
     request: Request,
     report_in: ReportCreate,
@@ -61,7 +61,7 @@ async def create_report(
         404: {"description": "Report not found"},
     },
 )
-@limiter.limit(RateLimit.VOTE_CAST)
+@limiter.limit(RateLimit.VOTE_CAST, key_func=user_or_address)
 async def vote_report(
     request: Request,
     report_id: int,

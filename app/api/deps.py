@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.core.security import verify_token
+from app.core.security import SESSION, verify_token
 from app.db.session import get_db
 from app.models import Report, User, Vote
 
@@ -33,7 +33,7 @@ async def _get_user_from_request(
         return None
 
     try:
-        payload = verify_token(token)
+        payload = verify_token(token, SESSION)
         if not payload:
             if required:
                 raise HTTPException(

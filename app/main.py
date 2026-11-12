@@ -13,6 +13,7 @@ from app.api.api import api_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.monitoring import init_sentry
+from app.core.urls import public_base_url
 from app.db.session import get_db
 from app.models import Discipline, ExamEvent, Region, Report, User
 from app.services.exam_service import ExamService
@@ -136,20 +137,11 @@ async def health_check() -> dict[str, str]:
     return {"status": "ok", "app": settings.PROJECT_NAME, "environment": settings.ENVIRONMENT}
 
 
-def _public_base_url(request: Request) -> str:
-    """Base URL as seen by visitors. Fly terminates TLS and forwards plain HTTP, so the
-    request's own scheme is http in production even though the site is https-only."""
-    base_url = str(request.base_url).rstrip("/")
-    if settings.ENVIRONMENT == "production" and base_url.startswith("http://"):
-        base_url = "https://" + base_url.removeprefix("http://")
-    return base_url
-
-
 @app.get("/robots.txt", response_class=HTMLResponse)
 async def robots_txt(request: Request) -> Response:
     content = f"""User-agent: *
 Allow: /
-Sitemap: {_public_base_url(request)}/sitemap.xml
+Sitemap: {public_base_url(request)}/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
 
@@ -165,7 +157,7 @@ async def sitemap_xml(request: Request, db: AsyncSession = Depends(get_db)) -> R
     result = await db.execute(stmt)
     events = result.scalars().all()
 
-    base_url = _public_base_url(request)
+    base_url = public_base_url(request)
 
     xml_content = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml_content.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')

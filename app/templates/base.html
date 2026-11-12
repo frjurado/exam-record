@@ -27,7 +27,7 @@
     <link rel="canonical" href="{{ request.url }}">{% endblock %}
 
     <link rel="stylesheet" href="/static/css/wikianalisis.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.5/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
     {% block head_extra %}{% endblock %}
@@ -80,7 +80,7 @@
                             this.sent = true;
                             this.$dispatch('magic-link-sent');
                         } else if (res.status === 429) {
-                            this.error = 'Demasiados intentos. Espera un minuto y vuelve a probar.';
+                            this.error = 'Demasiados intentos. Espera un rato y vuelve a probar.';
                         } else if (res.status === 422) {
                             this.error = 'Ese email no parece válido.';
                         } else {

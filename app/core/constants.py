@@ -25,8 +25,13 @@ class Consensus:
 
 
 class RateLimit:
-    # slowapi limit strings, keyed by remote address (per-IP).
-    MAGIC_LINK_REQUEST = "5/minute"
+    # slowapi limit strings. Counters live in each worker's memory, so with N workers
+    # the effective limit is up to N times the figure.
+    # Link requests are anonymous: per IP (generous, a classroom shares one address)...
+    MAGIC_LINK_REQUEST = "30/hour"
+    # ...and per target address, so nobody can flood someone else's inbox.
+    MAGIC_LINK_PER_EMAIL = "5/hour"
+    # Per signed-in user (per IP for the anonymous click that opens the email form).
     REPORT_CREATION = "10/hour"
     VOTE_CAST = "20/hour"
     # Type-ahead searches that may reach OpenOpus/Wikidata. High enough for fast typing,

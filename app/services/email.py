@@ -24,7 +24,7 @@ class EmailService:
             logger.info(f"EMAIL SIMULATION for {email}: {link}")
             return
 
-        minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes = settings.LINK_TOKEN_EXPIRE_MINUTES
         html_content = f"""
         <h1 style="font-family: Georgia, serif; font-weight: 500;">WikiAnálisis</h1>
         <p>Pulsa el botón para verificar tu email y terminar lo que estabas haciendo:</p>

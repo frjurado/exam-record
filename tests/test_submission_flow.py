@@ -52,30 +52,29 @@ async def test_submission_flow_full(client: AsyncClient, db):
     await db.commit()
     await db.refresh(event)
 
-    # 2. Request Magic Link
+    # 2. Request the magic link and read it from what would have been emailed
     email = "test@example.com"
 
-    # Mock Email Service to avoid Resend API limits
     from unittest.mock import AsyncMock, patch
 
-    with patch("app.services.email.email_service.send_magic_link", new_callable=AsyncMock):
+    from app.models import User
+
+    with patch("app.services.email.email_service.send_magic_link", new_callable=AsyncMock) as send:
         response = await client.post(
-            "/api/auth/magic-link", json={"email": email, "next_url": "http://test/wizard"}
+            "/api/auth/magic-link", json={"email": email, "next_url": "http://test/wizard?x=1"}
         )
         assert response.status_code == 200
+    magic_link = send.call_args.args[1]
 
-    # 3. Simulate verify link (we need to extract token or just create one manually using security utils)
+    # Asking for a link does not create an account; opening it does.
+    assert (await db.execute(select(User))).scalars().all() == []
 
-    from app.core import security
-
-    access_token = security.create_access_token(data={"sub": email, "role": "Visitor"})
-
-    # Verify endpoint sets cookie
-    response = await client.get(
-        f"/api/auth/verify?token={access_token}&next=http://test/wizard", follow_redirects=False
-    )
+    # 3. Open the link: it sets the session cookie and returns to the page
+    response = await client.get(magic_link, follow_redirects=False)
     assert response.status_code == 307  # Redirect
+    assert response.headers["location"] == "/wizard?x=1"
     assert "access_token" in response.cookies
+    assert (await db.execute(select(User))).scalar_one().email == email
 
     # 4. Submit Report (Authenticated)
     # We need to manually set the cookie in the client for subsequent requests if follow_redirects=False lost it,
