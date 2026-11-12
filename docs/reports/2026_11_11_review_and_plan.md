@@ -177,7 +177,7 @@ use it to clean the existing duplicates and any empty events created before Phas
    ✅
 3. Coverage table per region (`/examenes/andalucia`): disciplines × years.
    ✅
-4. Sitemap entries and structured data for the new pages. ✅ (written, awaiting review)
+4. Sitemap entries and structured data for the new pages. ✅
 5. Analytics with GoatCounter (page views plus the steps of the contribute form), and a
    short privacy page.
 
@@ -608,8 +608,9 @@ released on 2026-11-12.
 
 ### Step 4 — sitemap and structured data
 
-Status: written and tested on branch `feat/sitemap-structured-data` on 2026-11-12. Awaiting
-the owner's review; not merged or released.
+Status: written and tested on branch `feat/sitemap-structured-data`, approved by the owner,
+then merged to `main` and released on 2026-11-12. Step 5 (analytics and privacy page) is
+next; it needs a GoatCounter account from the owner.
 
 **Sitemap**
 - Now lists, besides the home page and the exams with reports: the statistics page, each
