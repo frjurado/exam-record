@@ -59,8 +59,10 @@ class Statistics:
 
 
 class Coverage:
-    # How many recent years the region table shows.
-    YEARS = 12
+    # How many recent years the region table shows by default. Recent exams are the
+    # ones people can still report (fresh memory, candidates still reachable); the full
+    # range back to Calendar.MIN_YEAR is one click away.
+    YEARS = 6
 
 
 class Suggestions:

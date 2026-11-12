@@ -112,10 +112,11 @@ async def statistics_page(
 async def region_page(
     request: Request,
     region_slug: str,
+    todos: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(deps.get_current_user_optional),
 ) -> Response:
-    context = await BrowseService.coverage_context(db, region_slug)
+    context = await BrowseService.coverage_context(db, region_slug, all_years=todos)
     if context is None:
         return HTMLResponse(content="<h1>Región no encontrada</h1>", status_code=404)
     return templates.TemplateResponse(request, "region.html", {**context, "user": current_user})

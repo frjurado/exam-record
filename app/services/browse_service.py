@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.core.constants import Coverage, Statistics
+from app.core.constants import Calendar, Coverage, Statistics
 from app.models import Composer, Discipline, ExamEvent, Report, Work
 from app.services.consensus import ConsensusService
 from app.services.exam_service import ExamService
@@ -183,13 +183,17 @@ class BrowseService:
         }
 
     @staticmethod
-    async def coverage_context(db: AsyncSession, region_slug: str) -> dict[str, Any] | None:
-        """Disciplines × recent years for one region: what is on record and what is missing."""
+    async def coverage_context(
+        db: AsyncSession, region_slug: str, all_years: bool = False
+    ) -> dict[str, Any] | None:
+        """Disciplines × years for one region: what is on record and what is missing.
+        The last few years by default; every year since Calendar.MIN_YEAR on request."""
         region = await ReferenceDataService.get_region_by_slug(db, region_slug)
         if region is None:
             return None
         latest = ExamService.latest_exam_year()
-        years = list(range(latest, latest - Coverage.YEARS, -1))
+        first = Calendar.MIN_YEAR if all_years else latest - Coverage.YEARS + 1
+        years = list(range(latest, first - 1, -1))
         events = await BrowseService._events(
             db, ExamEvent.region_id == region.id, ExamEvent.year.in_(years)
         )
@@ -224,6 +228,7 @@ class BrowseService:
         rows.sort(key=lambda row: (-row["filled"], row["discipline"].name))
         return {
             "region": region,
+            "all_years": all_years,
             "years": years,
             "rows": rows,
             "filled": sum(row["filled"] for row in rows),

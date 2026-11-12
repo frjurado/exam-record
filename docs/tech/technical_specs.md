@@ -107,7 +107,7 @@ erDiagram
 
 ### search
 *   `GET /examenes/{region}/{discipline}/{year}`: Returns the Exam Event page with list of proposed works + consensus status. (`/exams/...` redirects here.)
-*   `GET /examenes/{region}`: Coverage table, disciplines × the last 12 years.
+*   `GET /examenes/{region}`: Coverage table, disciplines × the last 6 years (`?todos=1` for every year since 2000).
 *   `GET /estadisticas[?especialidad=slug]`: Most frequent composers, and works that fell at least twice.
 *   `GET /obras/{id}-{slug}`: A work and every exam it appeared in.
 *   `GET /compositores/{id}-{slug}`: A composer's works that appeared, with years. In both, the id decides and a wrong slug redirects.

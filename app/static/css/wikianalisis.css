@@ -309,9 +309,13 @@ button.wa-result{width:100%;text-align:left;font-size:14px}
 .wa-coverage tbody th a:hover{color:var(--wa-accent)}
 .wa-coverage__cell{display:flex;align-items:center;justify-content:center;min-width:44px;height:40px;font-size:14px}
 a.wa-coverage__cell:hover{background:var(--wa-bg-soft)}
+/* cells with data are large marks; the empty '+' stays small and faint */
+.wa-coverage__cell--verified,.wa-coverage__cell--disputed,.wa-coverage__cell--neutral{font-size:26px;line-height:1}
+.wa-coverage__cell--neutral{font-size:22px}
+.wa-coverage__legend span{font-size:inherit;line-height:inherit}
 .wa-coverage__cell--verified{color:var(--wa-ok)}
 .wa-coverage__cell--disputed{color:var(--wa-warn)}
-.wa-coverage__cell--neutral{color:var(--wa-muted)}
+.wa-coverage__cell--neutral{color:var(--wa-ink-soft)}
 .wa-coverage__cell--empty{color:var(--wa-faint)}
 a.wa-coverage__cell--empty:hover{color:var(--wa-accent)}
 .wa-coverage__legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:var(--wa-s3) 0 0;font-size:12px;color:var(--wa-muted)}

@@ -19,10 +19,15 @@
             <h1 class="wa-pagehead__title">{{ region.name }}</h1>
             <p class="wa-pagehead__sub">Convocatorias registradas, por especialidad y año.</p>
         </div>
+        <div class="wa-toggle" role="group" aria-label="Años mostrados">
+            <a href="/examenes/{{ region.slug }}" {% if not all_years %}aria-current="true"{% endif %}>Recientes</a>
+            <a href="/examenes/{{ region.slug }}?todos=1" rel="nofollow" {% if all_years %}aria-current="true"{% endif %}>Todos los años</a>
+        </div>
     </div>
 
     <p class="wa-browse__lede">
-        Hay datos de <b>{{ filled }}</b> de las {{ total }} convocatorias de los últimos {{ years|length }} años.
+        Hay datos de <b>{{ filled }}</b> de las {{ total }} convocatorias
+        {% if all_years %}desde {{ years[-1] }}.{% else %}de los últimos {{ years|length }} años.{% endif %}
         Si hiciste alguna de las que faltan, pulsa en su casilla para aportar la obra.
     </p>
 
@@ -75,5 +80,11 @@
         <span class="wa-coverage__cell--disputed">●</span> En disputa
         <span class="wa-coverage__cell--empty">+</span> Sin datos: aportar
     </p>
+    {% if not all_years %}
+    <p class="wa-hint wa-browse__foot">
+        ¿Hiciste la prueba hace más tiempo?
+        <a href="/examenes/{{ region.slug }}?todos=1" rel="nofollow" class="wa-browse__link">Ver todos los años desde 2000</a>.
+    </p>
+    {% endif %}
 </div>
 {% endblock %}

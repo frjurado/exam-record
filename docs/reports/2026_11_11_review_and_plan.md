@@ -585,9 +585,13 @@ owner's review; not merged or released.
   page is honest but thin until more exams are on record.
 
 **Coverage table** (`/examenes/{region}`)
-- Disciplines as rows, the last 12 exam years as columns, newest first. Each cell is
+- Disciplines as rows, the last 6 exam years as columns, newest first. Each cell is
   verified, a single report, disputed, or empty. Filled cells link to the exam; empty
-  ones link to its contribute form.
+  ones link to its contribute form. Cells with data are drawn large so they stand out
+  from the empty ones.
+- Six years because most data is recent and recent exams are the ones people can still
+  report. A "Todos los años" switch (and a line under the table) shows every year since
+  2000, scrolling sideways, for someone who took the exam longer ago.
 - Disciplines with most data come first. The discipline column stays in place when the
   table scrolls sideways on a narrow screen.
 - A line above gives the count of exams on record out of the total.

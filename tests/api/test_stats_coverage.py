@@ -107,8 +107,8 @@ async def test_coverage(db, world):
     latest = world["latest"]
     coverage = await BrowseService.coverage_context(db, "andalucia")
     assert coverage["years"][0] == latest
-    assert len(coverage["years"]) == 12
-    assert (coverage["filled"], coverage["total"]) == (5, 36)
+    assert len(coverage["years"]) == 6
+    assert (coverage["filled"], coverage["total"]) == (5, 18)
     # Most complete discipline first; one with nothing is still listed.
     assert [row["discipline"].slug for row in coverage["rows"]] == ["piano", "violin", "tuba"]
 
@@ -125,13 +125,26 @@ async def test_coverage(db, world):
     assert violin[latest - 1]["status"] == "empty"
     assert await BrowseService.coverage_context(db, "atlantida") is None
 
+    # Older exams are reachable too: the full range goes back to the first valid year.
+    full = await BrowseService.coverage_context(db, "andalucia", all_years=True)
+    assert full["years"][0] == latest
+    assert full["years"][-1] == 2000
+    assert full["filled"] == 5
+
 
 async def test_region_page(client, world):
     latest = world["latest"]
     response = await client.get("/examenes/andalucia")
     assert response.status_code == 200
     page = response.text
-    assert "<b>5</b> de las 36 convocatorias" in page
+    assert "<b>5</b> de las 18 convocatorias" in page
+    assert "de los últimos 6 años" in page
+    assert 'href="/examenes/andalucia?todos=1"' in page
+    assert f'href="/examenes/andalucia/piano/{latest - 6}/contribute"' not in page
+
+    full = (await client.get("/examenes/andalucia?todos=1")).text
+    assert "desde 2000" in full
+    assert 'href="/examenes/andalucia/piano/2000/contribute"' in full
     assert f'href="/examenes/andalucia/piano/{latest}"' in page
     assert f'href="/examenes/andalucia/tuba/{latest}/contribute"' in page
     assert 'href="/examenes/andalucia/piano"' in page
